@@ -73,7 +73,7 @@ export function ProductDetail() {
   const mrp = selectedVariant?.mrp || Math.min(...variants.map((variant) => variant.mrp))
   const discount = selectedVariant ? Math.round((1 - price / mrp) * 100) : null
   const stock = selectedVariant?.stock
-  const addToBag = () => { if (!selectedVariant || stock < 1) return; addItem({ productId: product.slug, slug: product.slug, name: product.name, sku: selectedVariant.sku, attributes: selectedVariant.attributes, price: selectedVariant.price, quantity, stock, image: selectedVariant.image }); }
+  const addToBag = () => { if (!selectedVariant || stock < 1) return; addItem({ productId: product.slug, slug: product.slug, name: product.name, category: product.category, sku: selectedVariant.sku, attributes: selectedVariant.attributes, price: selectedVariant.price, mrp: selectedVariant.mrp, quantity, stock, image: selectedVariant.image }); }
   const related = catalog.filter((item) => item.slug !== product.slug && ['gentle-barrier-cleanser', 'hyaluronic-water-gel', 'daily-defence-spf-50', 'cica-recovery-gel'].includes(item.slug)).slice(0, 4)
 
   return <>
