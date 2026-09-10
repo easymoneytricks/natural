@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ProductCard } from '../components/product/ProductCard'
 import { useCart } from '../context/CartContext'
 import { products, newArrivals } from '../data/products'
-import { getDetailContent } from '../data/productDetails'
+import { getProductBySlug } from '../services/catalogApi'
 import { useCompare, useWishlist } from '../context/PreferenceContext'
 import './ProductDetail.css'
 
@@ -13,6 +13,7 @@ const money = (value) => `₹${value.toLocaleString('en-IN')}`
 const slugify = (value) => value.toUpperCase().replace(/[^A-Z0-9]+/g, '-')
 
 function makeVariants(product, detail) {
+  if (detail.skus) return detail.skus.map((sku) => ({ skuId: sku.id, sku: sku.sku, attributes: Object.fromEntries(Object.entries(sku.attributes).map(([key, value]) => [key, value.value])), mrp: sku.mrp, price: sku.price, stock: sku.stock.available ?? 999, image: sku.primaryImage || product.image }))
   if (detail.variants) return detail.variants.map(([sku, size, skinType, concern, mrp, price, stock]) => ({ sku, attributes: { size, skinType, concern }, mrp, price, stock, image: product.image }))
   return product.sizes.map((size) => ({ sku: `NB-${slugify(product.slug)}-${slugify(size)}`, attributes: { size }, mrp: product.mrp, price: product.price, stock: product.availability === 'out-of-stock' ? 0 : 10, image: product.image }))
 }
@@ -23,8 +24,21 @@ export function ProductDetail() {
   const { addItem } = useCart()
   const wishlist = useWishlist()
   const compareList = useCompare()
-  const product = catalog.find((item) => item.slug === slug)
-  const detail = product ? getDetailContent(product) : null
+  const [product, setProduct] = useState(null)
+  const [detail, setDetail] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  useEffect(() => {
+    const controller = new AbortController()
+    setLoading(true)
+    setLoadError(false)
+    getProductBySlug(slug, { signal: controller.signal }).then((apiProduct) => {
+      if (controller.signal.aborted) return
+      setProduct(apiProduct)
+      setDetail({ ...apiProduct, positioning: apiProduct.shortDescription, benefits: (apiProduct.benefits || []).map((benefit) => [benefit, '']), ingredients: (apiProduct.keyIngredients || []).map((ingredient) => [ingredient.name, ingredient.description || '']), fullIngredients: apiProduct.keyIngredients?.map((ingredient) => ingredient.name).join(', ') || '' })
+    }).catch((error) => { if (error?.name !== 'AbortError' && !controller.signal.aborted) setLoadError(error?.code === 'PRODUCT_NOT_FOUND' ? 'not-found' : 'error') }).finally(() => { if (!controller.signal.aborted) setLoading(false) })
+    return () => controller.abort()
+  }, [slug])
   const variants = useMemo(() => product ? makeVariants(product, detail) : [], [product, detail])
   const dimensions = product ? [...new Set(variants.flatMap((variant) => Object.keys(variant.attributes)))] : []
   const [selection, setSelection] = useState({})
@@ -59,10 +73,11 @@ export function ProductDetail() {
   // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [slug])
 
-  if (!product) return <section className="product-not-found container"><p className="eyebrow">Natural Beauty</p><h1>We couldn't find that formula.</h1><p>This product may have moved, but there are still considered rituals waiting in the collection.</p><Link className="button" to="/shop">Return to shop</Link></section>
+  if (loading) return <section className="product-detail-loading container"><p className="eyebrow">Natural Beauty</p><h1>Finding your formula…</h1></section>
+  if (loadError === 'not-found' || !product) return <section className="product-not-found container"><p className="eyebrow">Natural Beauty</p><h1>{loadError === 'error' ? "We couldn't load that formula." : "We couldn't find that formula."}</h1><p>{loadError === 'error' ? 'Please try again in a moment.' : 'This product may have moved, but there are still considered rituals waiting in the collection.'}</p><Link className="button" to="/shop">Return to shop</Link></section>
 
   const selectedVariant = variants.find((variant) => dimensions.every((dimension) => selection[dimension] && variant.attributes[dimension] === selection[dimension]))
-  const gallery = [product.image, product.hoverImage, 'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=1200&q=85', 'https://images.unsplash.com/photo-1556229010-6c3f2c9c7f6e?auto=format&fit=crop&w=1200&q=85', 'https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?auto=format&fit=crop&w=1200&q=85']
+  const gallery = product.gallery?.length ? product.gallery : [product.image, product.hoverImage].filter(Boolean)
   const availableValues = (dimension) => [...new Set(variants.filter((variant) => dimensions.filter((item) => item !== dimension).every((item) => !selection[item] || variant.attributes[item] === selection[item])).map((variant) => variant.attributes[dimension]))]
   const choose = (dimension, value) => {
     const next = { ...selection, [dimension]: value }
@@ -74,7 +89,7 @@ export function ProductDetail() {
   const mrp = selectedVariant?.mrp || Math.min(...variants.map((variant) => variant.mrp))
   const discount = selectedVariant ? Math.round((1 - price / mrp) * 100) : null
   const stock = selectedVariant?.stock
-  const addToBag = () => { if (!selectedVariant || stock < 1) return; addItem({ productId: product.slug, slug: product.slug, name: product.name, category: product.category, sku: selectedVariant.sku, attributes: selectedVariant.attributes, price: selectedVariant.price, mrp: selectedVariant.mrp, quantity, stock, image: selectedVariant.image }); }
+  const addToBag = () => { if (!selectedVariant || stock < 1) return; addItem({ productId: product.id, skuId: selectedVariant.skuId, slug: product.slug, name: product.name, category: product.category, sku: selectedVariant.sku, attributes: selectedVariant.attributes, selectedAttributes: selectedVariant.attributes, price: selectedVariant.price, mrp: selectedVariant.mrp, unitPrice: selectedVariant.price, quantity, stock, availableStock: stock, image: selectedVariant.image }); }
   const related = catalog.filter((item) => item.slug !== product.slug && ['gentle-barrier-cleanser', 'hyaluronic-water-gel', 'daily-defence-spf-50', 'cica-recovery-gel'].includes(item.slug)).slice(0, 4)
 
   return <>

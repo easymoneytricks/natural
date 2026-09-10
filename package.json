@@ -1,0 +1,17 @@
+{
+  "name": "natural-beauty",
+  "private": true,
+  "workspaces": ["storefront", "admin", "backend"],
+  "scripts": {
+    "dev": "concurrently --names STOREFRONT,ADMIN,BACKEND --prefix name \"npm run dev:storefront\" \"npm run dev:admin\" \"npm run dev:backend\"",
+    "dev:storefront": "npm --workspace storefront run dev",
+    "dev:admin": "npm --workspace natural-beauty-admin run dev",
+    "dev:backend": "npm --workspace natural-beauty-api run dev",
+    "build": "npm run build:storefront && npm run build:admin",
+    "build:storefront": "npm --workspace storefront run build",
+    "build:admin": "npm --workspace natural-beauty-admin run build",
+    "migrate": "npm --workspace natural-beauty-api run migrate",
+    "seed:dev": "npm --workspace natural-beauty-api run seed:dev"
+  },
+  "devDependencies": { "concurrently": "^9.2.1" }
+}

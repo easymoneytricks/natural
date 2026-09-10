@@ -6,7 +6,7 @@ import { QuickOptions } from '../components/product/QuickOptions'
 import { Footer } from '../components/layout/Footer'
 import { Newsletter } from '../components/layout/Newsletter'
 import { brandPrinciples, concernTiles, homeImages, ingredients, skinTypes, trustItems } from '../data/home'
-import { newArrivals, products } from '../data/products'
+import { getProducts } from '../services/catalogApi'
 
 const trustIcons = {
   sparkle: Sparkles,
@@ -18,6 +18,9 @@ const trustIcons = {
 export function Home() {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [testimonialIndex, setTestimonialIndex] = useState(0)
+  const [bestSellers, setBestSellers] = useState([])
+  const [newArrivals, setNewArrivals] = useState([])
+  const [catalogError, setCatalogError] = useState(false)
 
   const testimonials = [
     { name: 'Aanya Mehta', product: 'Barrier Restore Moisturizer', quote: 'The Barrier Restore Moisturizer became the easiest part of my evening routine. The texture feels rich without feeling heavy.' },
@@ -41,6 +44,21 @@ export function Home() {
       window.removeEventListener('keydown', closeOnEscape)
     }
   }, [selectedProduct])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    Promise.all([
+      getProducts({ sort: 'best-selling', limit: 4 }, { signal: controller.signal }),
+      getProducts({ sort: 'newest', limit: 4 }, { signal: controller.signal }),
+    ]).then(([best, arrivals]) => {
+      if (controller.signal.aborted) return
+      setBestSellers(best.data)
+      setNewArrivals(arrivals.data)
+    }).catch((error) => {
+      if (error?.name !== 'AbortError' && !controller.signal.aborted) setCatalogError(true)
+    })
+    return () => controller.abort()
+  }, [])
 
   return (
     <>
@@ -149,7 +167,7 @@ export function Home() {
         </header>
 
         <div className="product-grid">
-          {products.slice(0, 4).map((product) => (
+          {bestSellers.map((product) => (
             <ProductCard
               key={product.slug}
               product={product}
@@ -211,6 +229,7 @@ export function Home() {
       <section className="new-arrivals-section homepage-container">
         <header className="section-heading"><div><p className="eyebrow">Just in</p><h2>New to the ritual</h2></div><div className="section-heading-copy"><p>Fresh additions designed to find an easy place in your everyday routine.</p><Link to="/new-arrivals">Shop new arrivals <ArrowRight size={15} /></Link></div></header>
         <div className="product-grid">{newArrivals.map((product) => <ProductCard key={product.slug} product={product} onChooseOptions={setSelectedProduct} />)}</div>
+        {catalogError && <p className="account-muted">This collection is temporarily unavailable. Please try again shortly.</p>}
       </section>
 
       <section className="routine-section homepage-container">

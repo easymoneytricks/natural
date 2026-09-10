@@ -7,7 +7,8 @@ const formatPrice = (value) => `₹${value.toLocaleString('en-IN')}`
 export function ProductCard({ product, onChooseOptions }) {
   const { has, toggle } = useWishlist()
   const wishlisted = has(product.slug)
-  const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100)
+  const discount = product.mrp ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : 0
+  const priceLabel = product.maxPrice && product.maxPrice !== product.price ? `From ${formatPrice(product.price)}` : formatPrice(product.price)
 
   const toggleWishlist = (event) => {
     event.preventDefault()
@@ -44,7 +45,7 @@ export function ProductCard({ product, onChooseOptions }) {
           <Star size={13} fill="currentColor" /> {product.rating} <span>({product.reviews})</span>
         </p>
         <p className="product-price">
-          <strong>{formatPrice(product.price)}</strong>
+          <strong>{priceLabel}</strong>
           <s>{formatPrice(product.mrp)}</s>
           <em>{discount}% off</em>
         </p>
