@@ -11,7 +11,7 @@ export function CartProvider({ children }) {
     } catch { return [] }
   })
 
-  useEffect(() => { localStorage.setItem('natural-beauty-cart', JSON.stringify(items)) }, [items])
+  useEffect(() => { try { localStorage.setItem('natural-beauty-cart', JSON.stringify(items)) } catch { /* demo cart remains available for this session */ } }, [items])
 
   const addItem = (item) => {
     setItems((current) => {
