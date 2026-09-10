@@ -1,0 +1,1 @@
+export function AnnouncementBar(){return <aside className="announcement"><div className="container"><span>Complimentary shipping on orders above ₹999</span><span className="announcement-extra">Thoughtfully formulated skincare</span><span className="announcement-extra">Secure checkout</span></div></aside>}

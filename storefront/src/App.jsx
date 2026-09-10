@@ -1,0 +1,10 @@
+import { useEffect, useState } from 'react'
+import { Route, Routes } from 'react-router-dom'
+import { AnnouncementBar } from './components/layout/AnnouncementBar'
+import { Header } from './components/layout/Header'
+import { SearchOverlay } from './components/search/SearchOverlay'
+import { CartDrawer } from './components/cart/CartDrawer'
+import { MobileMenu } from './components/navigation/MobileMenu'
+import { Home } from './pages/Home'
+import { RouteShell } from './pages/RouteShell'
+export default function App(){const [searchOpen,setSearchOpen]=useState(false),[cartOpen,setCartOpen]=useState(false),[menuOpen,setMenuOpen]=useState(false);useEffect(()=>{const close=e=>e.key==='Escape'&&(setSearchOpen(false),setCartOpen(false),setMenuOpen(false));window.addEventListener('keydown',close);return()=>window.removeEventListener('keydown',close)},[]);useEffect(()=>{document.body.classList.toggle('overlay-open',searchOpen||cartOpen||menuOpen);return()=>document.body.classList.remove('overlay-open')},[searchOpen,cartOpen,menuOpen]);return <><AnnouncementBar/><Header onSearch={()=>setSearchOpen(true)} onCart={()=>setCartOpen(true)} onMenu={()=>setMenuOpen(true)}/><main><Routes><Route path="/" element={<Home/>}/><Route path="/product/:slug" element={<RouteShell title="Product"/>}/>{['/shop','/wishlist','/compare','/cart','/account','/about','/journal'].map(path=><Route key={path} path={path} element={<RouteShell title={path.slice(1)}/>}/>)}</Routes></main><SearchOverlay open={searchOpen} onClose={()=>setSearchOpen(false)}/><CartDrawer open={cartOpen} onClose={()=>setCartOpen(false)}/><MobileMenu open={menuOpen} onClose={()=>setMenuOpen(false)}/></>}
