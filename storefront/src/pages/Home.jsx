@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ProductCard } from '../components/product/ProductCard'
 import { QuickOptions } from '../components/product/QuickOptions'
-import { concernTiles, homeImages, trustItems } from '../data/home'
-import { products } from '../data/products'
+import { Footer } from '../components/layout/Footer'
+import { Newsletter } from '../components/layout/Newsletter'
+import { brandPrinciples, concernTiles, homeImages, ingredients, skinTypes, trustItems } from '../data/home'
+import { newArrivals, products } from '../data/products'
 
 const trustIcons = {
   sparkle: Sparkles,
@@ -15,6 +17,14 @@ const trustIcons = {
 
 export function Home() {
   const [selectedProduct, setSelectedProduct] = useState(null)
+  const [testimonialIndex, setTestimonialIndex] = useState(0)
+
+  const testimonials = [
+    { name: 'Aanya Mehta', product: 'Barrier Restore Moisturizer', quote: 'The Barrier Restore Moisturizer became the easiest part of my evening routine. The texture feels rich without feeling heavy.' },
+    { name: 'Riya Kapoor', product: 'Vitamin C Radiance Serum', quote: 'I love how simple the routine feels. The Vitamin C serum layers beautifully under sunscreen in the morning.' },
+    { name: 'Meera Sharma', product: 'Gentle Barrier Cleanser', quote: 'The cleanser and moisturizer combination feels gentle and uncomplicated, which is exactly what I wanted from my routine.' },
+    { name: 'Sara Khan', product: 'Niacinamide Balance Serum', quote: 'The website made it surprisingly easy to browse by concern instead of guessing which product I should start with.' },
+  ]
 
   useEffect(() => {
     if (!selectedProduct) return undefined
@@ -149,16 +159,72 @@ export function Home() {
         </div>
       </section>
 
-      <section className="editorial-teaser skin-teaser">
-        <div className="homepage-container">
-          <p className="eyebrow">Skin, understood</p>
-          <h2>Care that starts with your skin.</h2>
-          <p>
-            Build a routine around your skin type, not around trends.
-          </p>
-          <Link className="hero-secondary" to="/shop">Shop by skin type <ArrowRight size={15} /></Link>
+      <section className="skin-types-section homepage-container">
+        <header className="section-heading">
+          <div>
+            <p className="eyebrow">Skin, understood</p>
+            <h2>Care that starts with your skin.</h2>
+          </div>
+          <div className="section-heading-copy">
+            <p>Build a routine around your skin type, its changing needs, and the concerns that matter to you.</p>
+            <Link to="/shop">Explore all skin types <ArrowRight size={15} /></Link>
+          </div>
+        </header>
+        <div className="skin-types-grid">
+          {skinTypes.map((skin, index) => (
+            <Link className={`skin-type-tile skin-type-${index + 1}`} to="/shop" key={skin.name}>
+              <img src={skin.image} alt={`${skin.name} skin care`} />
+              <div><h3>{skin.name}</h3><p>{skin.description}</p><ArrowRight size={17} /></div>
+            </Link>
+          ))}
         </div>
       </section>
+
+      <section className="brand-story-section homepage-container">
+        <div className="brand-story-visual"><img src={homeImages.hero} alt="Botanical skincare bottles in soft natural light" /></div>
+        <div className="brand-story-copy">
+          <p className="eyebrow">Our philosophy</p>
+          <h2>Nature, refined by thoughtful formulation.</h2>
+          <p>We believe skincare should feel considered, uncomplicated and personal. Natural Beauty brings together botanical inspiration and modern cosmetic formulation to create everyday rituals designed around real skin needs.</p>
+          <p>No crowded routines. No unnecessary complexity. Just purposeful care you can understand and enjoy using every day.</p>
+          <Link className="hero-secondary" to="/about">Discover our story <ArrowRight size={15} /></Link>
+          <div className="brand-note"><strong>Formulated with purpose</strong><span>Designed around skin needs, texture and everyday usability.</span></div>
+        </div>
+      </section>
+
+      <section className="ingredient-section homepage-container">
+        <div className="ingredient-visual"><img src={homeImages.hero} alt="Unbranded skincare bottles and botanical ingredients prepared for formulation" /></div>
+        <div className="ingredient-copy">
+          <p className="eyebrow">Formulas with intention</p>
+          <h2>Ingredients your routine will recognize.</h2>
+          <p>Discover familiar skincare actives and botanical ingredients, organized around what they bring to your ritual.</p>
+          <div className="ingredient-list">
+            {ingredients.map((ingredient) => <button key={ingredient.name}><span><strong>{ingredient.name}</strong><small>{ingredient.description}</small></span><ArrowRight size={16} /></button>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="principles-strip"><div className="homepage-container principles-grid">{brandPrinciples.map((principle) => <article key={principle.title}><h3>{principle.title}</h3><p>{principle.text}</p></article>)}</div></section>
+
+      <section className="ritual-banner"><img src={homeImages.hero} alt="A calm botanical skincare ritual arranged on stone" /><div className="ritual-banner-content"><p className="eyebrow">The daily ritual</p><h2>Small rituals.<br />Beautiful consistency.</h2><p>Build a simple routine for morning, evening and everything in between.</p><Link className="hero-secondary" to="/shop">Build your routine <ArrowRight size={15} /></Link></div></section>
+
+      <section className="new-arrivals-section homepage-container">
+        <header className="section-heading"><div><p className="eyebrow">Just in</p><h2>New to the ritual</h2></div><div className="section-heading-copy"><p>Fresh additions designed to find an easy place in your everyday routine.</p><Link to="/new-arrivals">Shop new arrivals <ArrowRight size={15} /></Link></div></header>
+        <div className="product-grid">{newArrivals.map((product) => <ProductCard key={product.slug} product={product} onChooseOptions={setSelectedProduct} />)}</div>
+      </section>
+
+      <section className="routine-section homepage-container">
+        <div className="routine-visual"><img src={homeImages.hero} alt="Unbranded skincare ritual products arranged on natural stone" /></div>
+        <div className="routine-copy"><p className="eyebrow">Find your routine</p><h2>Your skin.<br />Your concerns.<br />Your ritual.</h2><p>Start with what your skin feels like today and discover products that fit naturally into your routine.</p><ol><li><span>01</span><strong>Choose your skin type</strong></li><li><span>02</span><strong>Tell us your main concern</strong></li><li><span>03</span><strong>Discover your routine</strong></li></ol><Link className="button" to="/shop">Find my routine <ArrowRight size={15} /></Link><Link className="routine-secondary" to="/shop">Shop all products</Link></div>
+      </section>
+
+      <section className="testimonials-section homepage-container">
+        <div className="testimonial-feature"><p className="eyebrow">Notes from the ritual <span>• Demo content</span></p><div className="quote-mark">“</div><blockquote>{testimonials[testimonialIndex].quote}</blockquote><p className="testimonial-name">{testimonials[testimonialIndex].name}</p><p className="testimonial-product">★★★★★ &nbsp; {testimonials[testimonialIndex].product}</p></div>
+        <div className="testimonial-list">{testimonials.map((testimonial, index) => <button key={testimonial.name} className={testimonialIndex === index ? 'is-active' : ''} onClick={() => setTestimonialIndex(index)}><span>0{index + 1}</span><strong>{testimonial.name}</strong><small>{testimonial.product}</small></button>)}</div>
+      </section>
+
+      <Newsletter />
+      <Footer />
 
       <QuickOptions product={selectedProduct} onClose={() => setSelectedProduct(null)} />
     </>
