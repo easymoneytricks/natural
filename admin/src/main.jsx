@@ -5,10 +5,13 @@ import {
   Link,
   Route,
   Routes,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 import { LayoutDashboard, LogOut, Package } from "lucide-react";
 import { BrandsPage, CategoriesPage, ProductsPage } from "./catalog";
+import { CustomersPage } from "./customer";
+import { PromotionsPage } from "./promotions";
 import "./styles.css";
 const API = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1"
@@ -121,9 +124,12 @@ const nav = [
   ["Products", "/catalog/products", Package, "catalog.view"],
   ["Brands", "/catalog/brands", Package, "catalog.view"],
   ["Categories", "/catalog/categories", Package, "catalog.view"],
+  ["Customers", "/customers", Package, "customers.view"],
+  ["Promotions", "/promotions", Package, "promotions.view"],
 ];
 function Shell({ children }) {
   const { admin, logout } = useAuth();
+  const location = useLocation();
   return (
     <div className="shell">
       <aside>
@@ -134,7 +140,7 @@ function Shell({ children }) {
           {nav
             .filter((n) => admin?.effectivePermissions?.includes(n[3]))
             .map(([l, t, I]) => (
-              <Link to={t} key={t}>
+              <Link to={t} key={t} aria-current={location.pathname === t ? "true" : undefined}>
                 <I size={17} />
                 {l}
               </Link>
@@ -207,6 +213,8 @@ function App() {
           </Protected>
         }
       />
+      <Route path="/customers" element={<Protected permission="customers.view"><CustomersPage /></Protected>} />
+      <Route path="/promotions" element={<Protected permission="promotions.view"><PromotionsPage /></Protected>} />
       <Route path="*" element={<Dashboard />} />
     </Routes>
   );

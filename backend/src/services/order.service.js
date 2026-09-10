@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 import { AuthError } from './auth.service.js'
 import { quote } from './checkoutPricing.service.js'
+import { earnForOrder } from './reward.service.js'
 
 const hash = (value) => crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex')
 const orderNumber = () => `NB-${new Date().getFullYear()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`
@@ -20,7 +21,7 @@ export async function placeCodOrder(pool, input = {}, customer) {
     if(p.coupon?.code){const [rows]=await connection.execute('SELECT id FROM coupons WHERE code=? FOR UPDATE',[p.coupon.code]);if(rows[0]){await connection.execute('UPDATE coupons SET usage_count=usage_count+1 WHERE id=?',[rows[0].id]);await connection.execute('INSERT INTO coupon_redemptions (coupon_id,customer_id,order_id,discount_amount) VALUES (?,?,?,?)',[rows[0].id,customer?.id||null,orderId,p.coupon.discount])}}
     if(gift){const before=Number(gift.current_balance);const applied=Math.min(before,p.payableTotal+p.giftCard.applied);const after=before-applied;await connection.execute('UPDATE gift_cards SET current_balance=?,status=? WHERE id=?',[after,after>0?'active':'exhausted',gift.id]);await connection.execute('INSERT INTO gift_card_transactions (gift_card_id,transaction_type,amount,balance_before,balance_after,reference_type,reference_id) VALUES (?,"redeem",?,?,?,?,?)',[gift.id,applied,before,after,'order',orderId])}
     if(customer) { const [carts]=await connection.execute('SELECT id FROM customer_carts WHERE customer_id=? FOR UPDATE',[customer.id]); if(carts[0]) await connection.execute('DELETE FROM customer_cart_items WHERE cart_id=?',[carts[0].id]) }
-    await connection.commit(); return getOrder(pool,orderId,customer?.id)
+    await connection.commit(); if(customer) await earnForOrder(pool,customer.id,orderId,p.subtotal); return getOrder(pool,orderId,customer?.id)
   } catch(error){await connection.rollback();throw error} finally{connection.release()}
 }
 export async function getOrder(pool,id,customerId){const [orders]=await pool.execute('SELECT * FROM orders WHERE id=? AND (? IS NULL OR customer_id=?)',[id,customerId||null,customerId||null]);if(!orders[0])throw new AuthError(404,'ORDER_NOT_FOUND','Order not found.');const order=orders[0];const [items]=await pool.execute('SELECT * FROM order_items WHERE order_id=?',[id]);const [addresses]=await pool.execute('SELECT * FROM order_addresses WHERE order_id=?',[id]);const [history]=await pool.execute('SELECT status,note,created_at AS createdAt FROM order_status_history WHERE order_id=? ORDER BY created_at',[id]);return {orderNumber:order.order_number,status:order.status,paymentMethod:order.payment_method,paymentStatus:order.payment_status,placedAt:order.placed_at,pricing:{subtotal:Number(order.items_subtotal),couponDiscount:Number(order.coupon_discount),shipping:Number(order.shipping_amount),giftCardApplied:Number(order.gift_card_amount),total:Number(order.grand_total)},items:items.map(i=>({sku:i.sku_code,name:i.product_name,slug:i.product_slug,quantity:i.quantity,price:Number(i.unit_price),mrp:Number(i.unit_mrp),lineSubtotal:Number(i.line_subtotal)})),shippingAddress:addresses[0]||null,timeline:history}}

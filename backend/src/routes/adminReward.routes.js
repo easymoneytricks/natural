@@ -1,0 +1,1 @@
+import{Router}from'express';import{requireAdminAuth,requireAdminPermission}from'../middleware/adminAuth.js';import{customer,config}from'../controllers/adminReward.controller.js';const r=Router();r.use(requireAdminAuth,requireAdminPermission('customers.view'));r.get('/rewards/config',config);r.get('/customers/:customerId/rewards',customer);export default r

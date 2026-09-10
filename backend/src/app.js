@@ -13,6 +13,12 @@ import paymentRoutes, { webhook } from './routes/payment.routes.js'
 import adminRoutes from './routes/admin.routes.js'
 import adminCatalogRoutes from './routes/adminCatalog.routes.js'
 import adminProductRoutes from './routes/adminProduct.routes.js'
+import adminInventoryRoutes from './routes/adminInventory.routes.js'
+import adminOrderRoutes from './routes/adminOrder.routes.js'
+import adminCustomerRoutes from './routes/adminCustomer.routes.js'
+import adminPromotionRoutes from './routes/adminPromotion.routes.js'
+import rewardRoutes from './routes/reward.routes.js'
+import adminRewardRoutes from './routes/adminReward.routes.js'
 import path from 'node:path'
 import { notFound } from './middleware/notFound.js'
 import { errorHandler } from './middleware/errorHandler.js'
@@ -36,6 +42,12 @@ export function createApp() {
   app.use('/api/v1/admin', adminRoutes)
   app.use('/api/v1/admin', adminCatalogRoutes)
   app.use('/api/v1/admin', adminProductRoutes)
+  app.use('/api/v1/admin', adminInventoryRoutes)
+  app.use('/api/v1/admin', adminOrderRoutes)
+  app.use('/api/v1/admin', adminCustomerRoutes)
+  app.use('/api/v1/admin', adminPromotionRoutes)
+  app.use('/api/v1/customer', rewardRoutes)
+  app.use('/api/v1/admin', adminRewardRoutes)
   app.use('/uploads', express.static(path.resolve(process.cwd(), 'storage', 'uploads'), { dotfiles: 'deny', index: false }))
   app.use(notFound)
   app.use(errorHandler)
