@@ -1,17 +1,18 @@
 import { Heart, Star } from 'lucide-react'
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useWishlist } from '../../context/PreferenceContext'
 
 const formatPrice = (value) => `₹${value.toLocaleString('en-IN')}`
 
 export function ProductCard({ product, onChooseOptions }) {
-  const [wishlisted, setWishlisted] = useState(false)
+  const { has, toggle } = useWishlist()
+  const wishlisted = has(product.slug)
   const discount = Math.round(((product.mrp - product.price) / product.mrp) * 100)
 
   const toggleWishlist = (event) => {
     event.preventDefault()
     event.stopPropagation()
-    setWishlisted((current) => !current)
+    toggle(product)
   }
 
   return (

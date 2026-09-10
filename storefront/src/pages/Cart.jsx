@@ -5,6 +5,7 @@ import { ProductCard } from '../components/product/ProductCard'
 import { useCart } from '../context/CartContext'
 import { products, newArrivals } from '../data/products'
 import { demoCoupons, demoGiftCards, shippingRules } from '../data/promotions'
+import { useWishlist } from '../context/PreferenceContext'
 import './Cart.css'
 
 const money = (value) => `₹${Math.max(0, value).toLocaleString('en-IN')}`
@@ -12,6 +13,7 @@ const catalog = [...products, ...newArrivals]
 
 export function Cart() {
   const { items, updateQuantity, removeItem, clearCart } = useCart()
+  const { toggle: toggleWishlist } = useWishlist()
   const [couponInput, setCouponInput] = useState('')
   const [coupon, setCoupon] = useState(null)
   const [couponMessage, setCouponMessage] = useState('')
@@ -35,7 +37,7 @@ export function Cart() {
     if (!candidate) return setCouponMessage("This coupon code isn't valid.")
     if (candidate.expired) return setCouponMessage('This coupon has expired.')
     if (subtotal < candidate.minimum) return setCouponMessage(`Add ${money(candidate.minimum - subtotal)} more to use this coupon.`)
-    setCoupon({ ...candidate, code }); setCouponMessage('')
+    setCoupon({ ...candidate, code }); sessionStorage.setItem('natural-beauty-coupon', JSON.stringify({ ...candidate, code })); setCouponMessage('')
   }
   const redeemGift = () => {
     const code = giftInput.trim().toUpperCase()
@@ -43,15 +45,9 @@ export function Cart() {
     if (!candidate) return setGiftMessage("This gift card code isn't valid.")
     if (candidate.expired) return setGiftMessage('This gift card has expired.')
     if (!candidate.balance) return setGiftMessage('This gift card has no available balance.')
-    setGift({ ...candidate, code }); setGiftMessage('')
+    setGift({ ...candidate, code }); sessionStorage.setItem('natural-beauty-gift', JSON.stringify({ ...candidate, code })); setGiftMessage('')
   }
-  const moveToWishlist = (item) => {
-    try {
-      const current = JSON.parse(localStorage.getItem('natural-beauty-wishlist') || '[]')
-      if (!current.some((entry) => entry.sku === item.sku)) localStorage.setItem('natural-beauty-wishlist', JSON.stringify([...current, { slug: item.slug, sku: item.sku, attributes: item.attributes }]))
-    } catch { localStorage.setItem('natural-beauty-wishlist', JSON.stringify([{ slug: item.slug, sku: item.sku, attributes: item.attributes }])) }
-    removeItem(item.sku); setWishlistMessage(`${item.name} moved to wishlist.`); window.setTimeout(() => setWishlistMessage(''), 2800)
-  }
+  const moveToWishlist = (item) => { toggleWishlist(item, { preferredSku: item.sku, preferredAttributes: item.attributes }); removeItem(item.sku); setWishlistMessage(`${item.name} moved to wishlist.`); window.setTimeout(() => setWishlistMessage(''), 2800) }
 
   if (!items.length) return <><section className="cart-empty-page container"><p className="eyebrow">Your bag</p><h1>Your ritual is waiting.</h1><p>Explore skincare by concern, skin type or the formulas that catch your eye.</p><Link className="button" to="/shop">Explore skincare <ArrowRight size={15} /></Link><Link className="empty-secondary" to="/best-sellers">View best sellers</Link></section><Recommendations items={recommendations} /></>
 
