@@ -1,20 +1,119 @@
-import { useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { X, ChevronDown, UserRound, Heart, Scale, Headphones } from 'lucide-react'
-import { menus } from '../../data/navigation'
-import { linkTarget } from '../../data/navigationLinks'
-import { useFocusTrap } from '../ui/useFocusTrap'
-import { useAuth } from '../../context/AuthContext'
-import { useWishlist, useCompare } from '../../context/PreferenceContext'
+import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  X,
+  ChevronDown,
+  UserRound,
+  Heart,
+  Scale,
+  Headphones,
+} from "lucide-react";
+import { menus } from "../../data/navigation";
+import { linkTarget } from "../../data/navigationLinks";
+import { useFocusTrap } from "../ui/useFocusTrap";
+import { useAuth } from "../../context/AuthContext";
+import { useWishlist, useCompare } from "../../context/PreferenceContext";
 
-const groups = ['Shop', 'Skin', 'Concerns', 'Collections']
+const groups = ["Shop", "Skin", "Concerns", "Collections"];
 
 export function MobileMenu({ open, onClose }) {
-  const [active, setActive] = useState(null)
-  const ref = useRef(null)
-  const { isAuthenticated, logout } = useAuth()
-  const { count: wishlistCount } = useWishlist()
-  const { count: compareCount } = useCompare()
-  useFocusTrap(ref, open, onClose)
-  return <div className={`overlay mobile-overlay ${open ? 'is-open' : ''}`} aria-hidden={!open}><button className="scrim" onClick={onClose} aria-label="Close navigation" /><aside ref={ref} className="mobile-drawer" role="dialog" aria-modal="true" aria-label="Mobile navigation"><header><Link to="/" onClick={onClose} className="wordmark">Natural Beauty</Link><button className="close-button" onClick={onClose} aria-label="Close navigation"><X /></button></header><nav>{groups.map((group) => <div className="mobile-group" key={group}><button aria-expanded={active === group} onClick={() => setActive(active === group ? null : group)}>{group}<ChevronDown /></button><div aria-hidden={active !== group} className={`mobile-submenu ${active === group ? 'open' : ''}`}><div>{menus[group].columns.flatMap((column) => column.links).map((link) => <Link key={link} to={linkTarget(link)} onClick={onClose}>{link}</Link>)}</div></div></div>)}<Link to="/journal" onClick={onClose}>Journal</Link><Link to="/about" onClick={onClose}>About</Link></nav><div className="mobile-utilities"><Link to={isAuthenticated ? '/account' : '/login'} onClick={onClose}><UserRound /> {isAuthenticated ? 'My account' : 'Sign in'}</Link><Link to="/wishlist" onClick={onClose}><Heart /> Wishlist {wishlistCount > 0 && <i>{wishlistCount}</i>}</Link><Link to="/compare" onClick={onClose}><Scale /> Compare {compareCount > 0 && <i>{compareCount}</i>}</Link>{isAuthenticated && <button onClick={() => { logout(); onClose() }}>Log out</button>}</div><div className="support"><Headphones /><span>Need a little guidance?<small>Speak with a skincare specialist</small></span></div></aside></div>
+  const [active, setActive] = useState(null);
+  const ref = useRef(null);
+  const { isAuthenticated, logout } = useAuth();
+  const { count: wishlistCount } = useWishlist();
+  const { count: compareCount } = useCompare();
+  useFocusTrap(ref, open, onClose);
+  return (
+    <div
+      className={`overlay mobile-overlay ${open ? "is-open" : ""}`}
+      aria-hidden={!open}
+    >
+      <button
+        className="scrim"
+        onClick={onClose}
+        aria-label="Close navigation"
+      />
+      <aside
+        ref={ref}
+        className="mobile-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mobile navigation"
+      >
+        <header>
+          <Link to="/" onClick={onClose} className="wordmark">
+            Natural Beauty
+          </Link>
+          <button
+            className="close-button"
+            onClick={onClose}
+            aria-label="Close navigation"
+          >
+            <X />
+          </button>
+        </header>
+        <nav>
+          {groups.map((group) => (
+            <div className="mobile-group" key={group}>
+              <button
+                aria-expanded={active === group}
+                onClick={() => setActive(active === group ? null : group)}
+              >
+                {group}
+                <ChevronDown />
+              </button>
+              <div
+                aria-hidden={active !== group}
+                className={`mobile-submenu ${active === group ? "open" : ""}`}
+              >
+                <div>
+                  {menus[group].columns
+                    .flatMap((column) => column.links)
+                    .map((link) => (
+                      <Link key={link} to={linkTarget(link)} onClick={onClose}>
+                        {link}
+                      </Link>
+                    ))}
+                </div>
+              </div>
+            </div>
+          ))}
+          <Link to="/journal" onClick={onClose}>
+            Journal
+          </Link>
+          <Link to="/about" onClick={onClose}>
+            About
+          </Link>
+        </nav>
+        <div className="mobile-utilities">
+          <Link to={isAuthenticated ? "/account" : "/login"} onClick={onClose}>
+            <UserRound /> {isAuthenticated ? "My account" : "Sign in"}
+          </Link>
+          <Link to="/wishlist" onClick={onClose}>
+            <Heart /> Wishlist {wishlistCount > 0 && <i>{wishlistCount}</i>}
+          </Link>
+          <Link to="/compare" onClick={onClose}>
+            <Scale /> Compare {compareCount > 0 && <i>{compareCount}</i>}
+          </Link>
+          {isAuthenticated && (
+            <button
+              onClick={() => {
+                logout();
+                onClose();
+              }}
+            >
+              Log out
+            </button>
+          )}
+        </div>
+        <div className="support">
+          <Headphones />
+          <span>
+            Need a little guidance?
+            <small>Speak with a skincare specialist</small>
+          </span>
+        </div>
+      </aside>
+    </div>
+  );
 }

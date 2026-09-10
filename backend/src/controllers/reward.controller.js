@@ -1,1 +1,18 @@
-import{pool}from'../config/database.js';import * as s from'../services/reward.service.js';export const mine=async(req,res,next)=>{try{res.json({data:await s.account(pool,req.customer.id)})}catch(e){next(e)}};export const redeem=async(req,res,next)=>{try{res.json({data:await s.redeem(pool,req.customer.id,Number(req.body.points))})}catch(e){next(e)}}
+import { pool } from "../config/database.js";
+import * as s from "../services/reward.service.js";
+export const mine = async (req, res, next) => {
+  try {
+    res.json({ data: await s.account(pool, req.customer.id) });
+  } catch (e) {
+    next(e);
+  }
+};
+export const redeem = async (req, res, next) => {
+  try {
+    res.json({
+      data: await s.redeem(pool, req.customer.id, Number(req.body.points)),
+    });
+  } catch (e) {
+    next(e);
+  }
+};

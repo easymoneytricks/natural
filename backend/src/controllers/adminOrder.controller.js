@@ -1,1 +1,36 @@
-import{pool}from'../config/database.js';import * as s from'../services/adminOrder.service.js';const w=f=>(req,res,next)=>f(req,res).catch(next);export const list=w(async(req,res)=>res.json({data:await s.list(pool,req.query)}));export const summary=w(async(req,res)=>res.json({data:await s.summary(pool)}));export const detail=w(async(req,res)=>res.json({data:await s.detail(pool,req.params.orderNumber)}));export const status=w(async(req,res)=>res.json({data:await s.updateStatus(pool,req.params.orderNumber,req.body.status,req.body.note,req.admin.id,req)}));export const shipping=w(async(req,res)=>res.json({data:await s.shipping(pool,req.params.orderNumber,req.body.courier,req.body.trackingId,req.admin.id,req)}))
+import { pool } from "../config/database.js";
+import * as s from "../services/adminOrder.service.js";
+const w = (f) => (req, res, next) => f(req, res).catch(next);
+export const list = w(async (req, res) =>
+  res.json({ data: await s.list(pool, req.query) }),
+);
+export const summary = w(async (req, res) =>
+  res.json({ data: await s.summary(pool) }),
+);
+export const detail = w(async (req, res) =>
+  res.json({ data: await s.detail(pool, req.params.orderNumber) }),
+);
+export const status = w(async (req, res) =>
+  res.json({
+    data: await s.updateStatus(
+      pool,
+      req.params.orderNumber,
+      req.body.status,
+      req.body.note,
+      req.admin.id,
+      req,
+    ),
+  }),
+);
+export const shipping = w(async (req, res) =>
+  res.json({
+    data: await s.shipping(
+      pool,
+      req.params.orderNumber,
+      req.body.courier,
+      req.body.trackingId,
+      req.admin.id,
+      req,
+    ),
+  }),
+);

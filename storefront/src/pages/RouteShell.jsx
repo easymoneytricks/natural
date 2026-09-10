@@ -1,1 +1,9 @@
-export function RouteShell({title}){return <section className="route-shell container"><p className="eyebrow">Natural Beauty</p><h1>{title}</h1><p>This destination is being thoughtfully prepared.</p></section>}
+export function RouteShell({ title }) {
+  return (
+    <section className="route-shell container">
+      <p className="eyebrow">Natural Beauty</p>
+      <h1>{title}</h1>
+      <p>This destination is being thoughtfully prepared.</p>
+    </section>
+  );
+}

@@ -12,6 +12,9 @@ import { LayoutDashboard, LogOut, Package } from "lucide-react";
 import { BrandsPage, CategoriesPage, ProductsPage } from "./catalog";
 import { CustomersPage } from "./customer";
 import { PromotionsPage } from "./promotions";
+import { ProductEditor } from "./productEditor";
+import { InventoryDetail } from "./inventory";
+import { InventoryPage as InventoryManagementPage } from "./inventoryPage";
 import "./styles.css";
 const API = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1"
@@ -126,6 +129,7 @@ const nav = [
   ["Categories", "/catalog/categories", Package, "catalog.view"],
   ["Customers", "/customers", Package, "customers.view"],
   ["Promotions", "/promotions", Package, "promotions.view"],
+  ["Inventory", "/inventory", Package, "inventory.view"],
 ];
 function Shell({ children }) {
   const { admin, logout } = useAuth();
@@ -140,7 +144,11 @@ function Shell({ children }) {
           {nav
             .filter((n) => admin?.effectivePermissions?.includes(n[3]))
             .map(([l, t, I]) => (
-              <Link to={t} key={t} aria-current={location.pathname === t ? "true" : undefined}>
+              <Link
+                to={t}
+                key={t}
+                aria-current={location.pathname === t ? "true" : undefined}
+              >
                 <I size={17} />
                 {l}
               </Link>
@@ -197,6 +205,8 @@ function App() {
           </Protected>
         }
       />
+      <Route path="/catalog/products/new" element={<ProductEditor />} />
+      <Route path="/catalog/products/:id" element={<ProductEditor />} />
       <Route
         path="/catalog/brands"
         element={
@@ -213,8 +223,38 @@ function App() {
           </Protected>
         }
       />
-      <Route path="/customers" element={<Protected permission="customers.view"><CustomersPage /></Protected>} />
-      <Route path="/promotions" element={<Protected permission="promotions.view"><PromotionsPage /></Protected>} />
+      <Route
+        path="/customers"
+        element={
+          <Protected permission="customers.view">
+            <CustomersPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/promotions"
+        element={
+          <Protected permission="promotions.view">
+            <PromotionsPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/inventory/:skuId"
+        element={
+          <Protected permission="inventory.view">
+            <InventoryDetail />
+          </Protected>
+        }
+      />
+      <Route
+        path="/inventory"
+        element={
+          <Protected permission="inventory.view">
+            <InventoryManagementPage />
+          </Protected>
+        }
+      />
       <Route path="*" element={<Dashboard />} />
     </Routes>
   );

@@ -40,3 +40,25 @@ export const sku = wrap(async (req, res) =>
     ),
   }),
 );
+export const removeSku = wrap(async (req, res) =>
+  res.json({
+    data: await service.removeSku(
+      pool,
+      req.params.productId,
+      req.params.skuId,
+      req.admin.id,
+      req,
+    ),
+  }),
+);
+export const restoreSku = wrap(async (req, res) =>
+  res.json({
+    data: await service.restoreSku(
+      pool,
+      req.params.productId,
+      req.params.skuId,
+      req.admin.id,
+      req,
+    ),
+  }),
+);

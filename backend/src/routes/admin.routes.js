@@ -1,7 +1,72 @@
-import { Router } from 'express'
-import rateLimit from 'express-rate-limit'
-import cookieParser from 'cookie-parser'
-import { login, refresh, logout, logoutAll, me } from '../controllers/adminAuth.controller.js'
-import { requireAdminAuth, requireAdminPermission } from '../middleware/adminAuth.js'
-import { pool } from '../config/database.js'
-const router=Router(); router.use(cookieParser()); const limit=rateLimit({windowMs:15*60*1000,limit:20}); router.post('/auth/login',limit,login);router.post('/auth/refresh',refresh);router.post('/auth/logout',logout);router.post('/auth/logout-all',requireAdminAuth,logoutAll);router.get('/auth/me',requireAdminAuth,me);router.get('/audit-logs',requireAdminAuth,requireAdminPermission('audit.view'),async(req,res,next)=>{try{const [rows]=await pool.execute('SELECT action,entity_type,entity_id,created_at FROM admin_audit_logs ORDER BY created_at DESC LIMIT 100');res.json({data:rows})}catch(e){next(e)}}); router.get('/dashboard/summary',requireAdminAuth,requireAdminPermission('dashboard.view'),async(req,res,next)=>{try{const [[orders]]=await pool.execute('SELECT COUNT(*) totalOrders,SUM(CASE WHEN status IN ("pending","confirmed") THEN 1 ELSE 0 END) openOrders,SUM(CASE WHEN payment_status="paid" THEN grand_total ELSE 0 END) paidRevenue FROM orders');const [[products]]=await pool.execute('SELECT COUNT(*) count FROM products WHERE is_active=1 AND deleted_at IS NULL');const [[customers]]=await pool.execute('SELECT COUNT(*) count FROM customers WHERE status="active" AND deleted_at IS NULL');const [[low]]=await pool.execute('SELECT COUNT(*) count FROM inventory i JOIN product_skus s ON s.id=i.sku_id WHERE s.is_active=1 AND i.quantity_on_hand-i.reserved_quantity<=i.reorder_level');res.json({data:{totalOrders:orders.totalOrders,openOrders:orders.openOrders,paidRevenue:Number(orders.paidRevenue||0),activeProducts:products.count,customers:customers.count,lowStockSkus:low.count}})}catch(e){next(e)}}); export default router
+import { Router } from "express";
+import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
+import {
+  login,
+  refresh,
+  logout,
+  logoutAll,
+  me,
+} from "../controllers/adminAuth.controller.js";
+import {
+  requireAdminAuth,
+  requireAdminPermission,
+} from "../middleware/adminAuth.js";
+import { pool } from "../config/database.js";
+const router = Router();
+router.use(cookieParser());
+const limit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20 });
+router.post("/auth/login", limit, login);
+router.post("/auth/refresh", refresh);
+router.post("/auth/logout", logout);
+router.post("/auth/logout-all", requireAdminAuth, logoutAll);
+router.get("/auth/me", requireAdminAuth, me);
+router.get(
+  "/audit-logs",
+  requireAdminAuth,
+  requireAdminPermission("audit.view"),
+  async (req, res, next) => {
+    try {
+      const [rows] = await pool.execute(
+        "SELECT action,entity_type,entity_id,created_at FROM admin_audit_logs ORDER BY created_at DESC LIMIT 100",
+      );
+      res.json({ data: rows });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+router.get(
+  "/dashboard/summary",
+  requireAdminAuth,
+  requireAdminPermission("dashboard.view"),
+  async (req, res, next) => {
+    try {
+      const [[orders]] = await pool.execute(
+        'SELECT COUNT(*) totalOrders,SUM(CASE WHEN status IN ("pending","confirmed") THEN 1 ELSE 0 END) openOrders,SUM(CASE WHEN payment_status="paid" THEN grand_total ELSE 0 END) paidRevenue FROM orders',
+      );
+      const [[products]] = await pool.execute(
+        "SELECT COUNT(*) count FROM products WHERE is_active=1 AND deleted_at IS NULL",
+      );
+      const [[customers]] = await pool.execute(
+        'SELECT COUNT(*) count FROM customers WHERE status="active" AND deleted_at IS NULL',
+      );
+      const [[low]] = await pool.execute(
+        "SELECT COUNT(*) count FROM inventory i JOIN product_skus s ON s.id=i.sku_id WHERE s.is_active=1 AND i.quantity_on_hand-i.reserved_quantity<=i.reorder_level",
+      );
+      res.json({
+        data: {
+          totalOrders: orders.totalOrders,
+          openOrders: orders.openOrders,
+          paidRevenue: Number(orders.paidRevenue || 0),
+          activeProducts: products.count,
+          customers: customers.count,
+          lowStockSkus: low.count,
+        },
+      });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+export default router;

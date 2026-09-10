@@ -22,11 +22,9 @@ export async function register(req, res, next) {
   try {
     const result = await registerCustomer(pool, req.body, req);
     setRefreshCookie(res, result.rawToken);
-    res
-      .status(201)
-      .json({
-        data: { accessToken: result.accessToken, customer: result.customer },
-      });
+    res.status(201).json({
+      data: { accessToken: result.accessToken, customer: result.customer },
+    });
   } catch (error) {
     next(error);
   }

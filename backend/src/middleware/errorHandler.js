@@ -1,4 +1,29 @@
-import { env } from '../config/env.js'
-import { logger } from '../utils/logger.js'
-const codes=new Set('INVALID_QUERY PRODUCT_NOT_FOUND CATEGORY_NOT_FOUND BRAND_NOT_FOUND VALIDATION_ERROR EMAIL_ALREADY_EXISTS PHONE_ALREADY_EXISTS INVALID_CREDENTIALS UNAUTHENTICATED SESSION_EXPIRED RATE_LIMITED ADDRESS_NOT_FOUND SKU_NOT_FOUND SKU_UNAVAILABLE INSUFFICIENT_STOCK COUPON_NOT_FOUND COUPON_EXPIRED COUPON_MINIMUM_NOT_MET GIFT_CARD_NOT_FOUND GIFT_CARD_DISABLED GIFT_CARD_EMPTY GIFT_CARD_EXPIRED SHIPPING_METHOD_UNAVAILABLE CART_INVALID ONLINE_PAYMENT_NOT_AVAILABLE_YET IDEMPOTENCY_KEY_CONFLICT ORDER_NOT_FOUND COD_UNAVAILABLE GIFT_CARD_INVALID RAZORPAY_UNAVAILABLE RAZORPAY_NOT_CONFIGURED PAYMENT_VERIFICATION_FAILED FORBIDDEN ACCOUNT_DISABLED SLUG_ALREADY_EXISTS INVALID_PRICE INVALID_MRP SKU_CODE_EXISTS SKU_COMBINATION_EXISTS ATTRIBUTE_NOT_ASSIGNED ATTRIBUTE_VALUE_NOT_ALLOWED INCOMPLETE_SKU_ATTRIBUTES NOT_FOUND INVALID_FILE FILE_TOO_LARGE'.split(' '))
-export function errorHandler(error,req,res,next){logger.error(`${req.method} ${req.originalUrl}: ${error.message}`);let status=Number(error.statusCode||error.status||500);if(error.code==='LIMIT_FILE_SIZE'){status=413;error.code='FILE_TOO_LARGE';error.message='Image must be 5MB or smaller.'}res.status(status).json({error:{code:codes.has(error.code)?error.code:(status===500?'INTERNAL_ERROR':'REQUEST_ERROR'),message:status===500?'Something went wrong.':error.message,...(env.nodeEnv==='development'&&status===500?{details:error.message}:{})}})}
+import { env } from "../config/env.js";
+import { logger } from "../utils/logger.js";
+const codes = new Set(
+  "INVALID_QUERY PRODUCT_NOT_FOUND CATEGORY_NOT_FOUND BRAND_NOT_FOUND VALIDATION_ERROR EMAIL_ALREADY_EXISTS PHONE_ALREADY_EXISTS INVALID_CREDENTIALS UNAUTHENTICATED SESSION_EXPIRED RATE_LIMITED ADDRESS_NOT_FOUND SKU_NOT_FOUND SKU_UNAVAILABLE INSUFFICIENT_STOCK COUPON_NOT_FOUND COUPON_EXPIRED COUPON_MINIMUM_NOT_MET GIFT_CARD_NOT_FOUND GIFT_CARD_DISABLED GIFT_CARD_EMPTY GIFT_CARD_EXPIRED SHIPPING_METHOD_UNAVAILABLE CART_INVALID ONLINE_PAYMENT_NOT_AVAILABLE_YET IDEMPOTENCY_KEY_CONFLICT ORDER_NOT_FOUND COD_UNAVAILABLE GIFT_CARD_INVALID RAZORPAY_UNAVAILABLE RAZORPAY_NOT_CONFIGURED PAYMENT_VERIFICATION_FAILED FORBIDDEN ACCOUNT_DISABLED SLUG_ALREADY_EXISTS INVALID_PRICE INVALID_MRP SKU_CODE_EXISTS SKU_COMBINATION_EXISTS ATTRIBUTE_NOT_ASSIGNED ATTRIBUTE_VALUE_NOT_ALLOWED INCOMPLETE_SKU_ATTRIBUTES NOT_FOUND INVALID_FILE FILE_TOO_LARGE".split(
+    " ",
+  ),
+);
+export function errorHandler(error, req, res, next) {
+  logger.error(`${req.method} ${req.originalUrl}: ${error.message}`);
+  let status = Number(error.statusCode || error.status || 500);
+  if (error.code === "LIMIT_FILE_SIZE") {
+    status = 413;
+    error.code = "FILE_TOO_LARGE";
+    error.message = "Image must be 5MB or smaller.";
+  }
+  res.status(status).json({
+    error: {
+      code: codes.has(error.code)
+        ? error.code
+        : status === 500
+          ? "INTERNAL_ERROR"
+          : "REQUEST_ERROR",
+      message: status === 500 ? "Something went wrong." : error.message,
+      ...(env.nodeEnv === "development" && status === 500
+        ? { details: error.message }
+        : {}),
+    },
+  });
+}

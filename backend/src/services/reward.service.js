@@ -1,6 +1,89 @@
-import { AuthError } from './auth.service.js'
-const fail=(s,c,m)=>{throw new AuthError(s,c,m)}
-export async function account(pool,customerId){await pool.execute('INSERT INTO reward_accounts(customer_id) VALUES(?) ON DUPLICATE KEY UPDATE customer_id=VALUES(customer_id)',[customerId]);const[[a]]=await pool.execute('SELECT available_points,lifetime_earned,lifetime_redeemed FROM reward_accounts WHERE customer_id=?',[customerId]);const[t]=await pool.execute('SELECT transaction_type,points,note,created_at FROM reward_transactions r JOIN reward_accounts a ON a.id=r.reward_account_id WHERE a.customer_id=? ORDER BY r.created_at DESC LIMIT 50',[customerId]);return {availablePoints:Number(a.available_points),lifetimeEarned:Number(a.lifetime_earned),lifetimeRedeemed:Number(a.lifetime_redeemed),transactions:t}}
-export async function adminList(pool,customerId){return account(pool,customerId)}
-export async function earnForOrder(pool,customerId,orderId,amount){const[[cfg]]=await pool.execute('SELECT * FROM reward_config WHERE id=1');if(!cfg?.enabled)return;const points=Math.floor(Number(amount)*Number(cfg.points_per_rupee));if(points<=0)return;await pool.execute('INSERT INTO reward_accounts(customer_id) VALUES(?) ON DUPLICATE KEY UPDATE customer_id=VALUES(customer_id)',[customerId]);const[[a]]=await pool.execute('SELECT id FROM reward_accounts WHERE customer_id=?',[customerId]);try{await pool.execute('INSERT INTO reward_transactions(reward_account_id,transaction_type,points,order_id,note) VALUES(?,"earn",?,?,"Order reward")',[a.id,points,orderId]);await pool.execute('UPDATE reward_accounts SET available_points=available_points+?,lifetime_earned=lifetime_earned+? WHERE id=?',[points,points,a.id])}catch(e){if(e.code!=='ER_DUP_ENTRY')throw e}}
-export async function redeem(pool,customerId,points){const[[cfg]]=await pool.execute('SELECT * FROM reward_config WHERE id=1');if(!cfg?.enabled)fail(409,'REWARDS_DISABLED','Rewards are currently unavailable.');if(!Number.isInteger(points)||points<cfg.min_points_to_redeem)fail(400,'INVALID_REWARD_REDEMPTION','Minimum points requirement not met.');const c=await pool.getConnection();try{await c.beginTransaction();const[[a]]=await c.execute('SELECT * FROM reward_accounts WHERE customer_id=? FOR UPDATE',[customerId]);if(!a||a.available_points<points)fail(409,'INSUFFICIENT_REWARD_POINTS','Insufficient reward points.');await c.execute('UPDATE reward_accounts SET available_points=available_points-?,lifetime_redeemed=lifetime_redeemed+? WHERE id=?',[points,points,a.id]);await c.execute('INSERT INTO reward_transactions(reward_account_id,transaction_type,points,note) VALUES(?,"redeem",?,"Checkout redemption")',[a.id,-points]);await c.commit();return {points,discount:Number(points)*Number(cfg.rupees_per_point)} }catch(e){await c.rollback();throw e}finally{c.release()}}
+import { AuthError } from "./auth.service.js";
+const fail = (s, c, m) => {
+  throw new AuthError(s, c, m);
+};
+export async function account(pool, customerId) {
+  await pool.execute(
+    "INSERT INTO reward_accounts(customer_id) VALUES(?) ON DUPLICATE KEY UPDATE customer_id=VALUES(customer_id)",
+    [customerId],
+  );
+  const [[a]] = await pool.execute(
+    "SELECT available_points,lifetime_earned,lifetime_redeemed FROM reward_accounts WHERE customer_id=?",
+    [customerId],
+  );
+  const [t] = await pool.execute(
+    "SELECT transaction_type,points,note,created_at FROM reward_transactions r JOIN reward_accounts a ON a.id=r.reward_account_id WHERE a.customer_id=? ORDER BY r.created_at DESC LIMIT 50",
+    [customerId],
+  );
+  return {
+    availablePoints: Number(a.available_points),
+    lifetimeEarned: Number(a.lifetime_earned),
+    lifetimeRedeemed: Number(a.lifetime_redeemed),
+    transactions: t,
+  };
+}
+export async function adminList(pool, customerId) {
+  return account(pool, customerId);
+}
+export async function earnForOrder(pool, customerId, orderId, amount) {
+  const [[cfg]] = await pool.execute("SELECT * FROM reward_config WHERE id=1");
+  if (!cfg?.enabled) return;
+  const points = Math.floor(Number(amount) * Number(cfg.points_per_rupee));
+  if (points <= 0) return;
+  await pool.execute(
+    "INSERT INTO reward_accounts(customer_id) VALUES(?) ON DUPLICATE KEY UPDATE customer_id=VALUES(customer_id)",
+    [customerId],
+  );
+  const [[a]] = await pool.execute(
+    "SELECT id FROM reward_accounts WHERE customer_id=?",
+    [customerId],
+  );
+  try {
+    await pool.execute(
+      'INSERT INTO reward_transactions(reward_account_id,transaction_type,points,order_id,note) VALUES(?,"earn",?,?,"Order reward")',
+      [a.id, points, orderId],
+    );
+    await pool.execute(
+      "UPDATE reward_accounts SET available_points=available_points+?,lifetime_earned=lifetime_earned+? WHERE id=?",
+      [points, points, a.id],
+    );
+  } catch (e) {
+    if (e.code !== "ER_DUP_ENTRY") throw e;
+  }
+}
+export async function redeem(pool, customerId, points) {
+  const [[cfg]] = await pool.execute("SELECT * FROM reward_config WHERE id=1");
+  if (!cfg?.enabled)
+    fail(409, "REWARDS_DISABLED", "Rewards are currently unavailable.");
+  if (!Number.isInteger(points) || points < cfg.min_points_to_redeem)
+    fail(
+      400,
+      "INVALID_REWARD_REDEMPTION",
+      "Minimum points requirement not met.",
+    );
+  const c = await pool.getConnection();
+  try {
+    await c.beginTransaction();
+    const [[a]] = await c.execute(
+      "SELECT * FROM reward_accounts WHERE customer_id=? FOR UPDATE",
+      [customerId],
+    );
+    if (!a || a.available_points < points)
+      fail(409, "INSUFFICIENT_REWARD_POINTS", "Insufficient reward points.");
+    await c.execute(
+      "UPDATE reward_accounts SET available_points=available_points-?,lifetime_redeemed=lifetime_redeemed+? WHERE id=?",
+      [points, points, a.id],
+    );
+    await c.execute(
+      'INSERT INTO reward_transactions(reward_account_id,transaction_type,points,note) VALUES(?,"redeem",?,"Checkout redemption")',
+      [a.id, -points],
+    );
+    await c.commit();
+    return { points, discount: Number(points) * Number(cfg.rupees_per_point) };
+  } catch (e) {
+    await c.rollback();
+    throw e;
+  } finally {
+    c.release();
+  }
+}

@@ -1,11 +1,159 @@
-import { AuthError } from './auth.service.js'
-import { adjustStock } from './inventory.service.js'
-import { audit } from './adminCatalog.service.js'
-const fail=(s,c,m)=>{throw new AuthError(s,c,m)}
-const status=(r)=>!r.track_inventory?'not_tracked':r.available_quantity<=0?'out_of_stock':r.available_quantity<=r.reorder_level?'low_stock':'in_stock'
-export async function list(pool,q={}){const w=['s.deleted_at IS NULL'],a=[];if(q.q){w.push('(s.sku LIKE ? OR s.title LIKE ? OR p.name LIKE ?)');a.push(`%${q.q}%`,`%${q.q}%`,`%${q.q}%`)}if(q.stockStatus&&q.stockStatus!=='all'){const expr="CASE WHEN s.track_inventory=0 THEN 'not_tracked' WHEN i.quantity_on_hand-i.reserved_quantity<=0 THEN 'out_of_stock' WHEN i.quantity_on_hand-i.reserved_quantity<=i.reorder_level THEN 'low_stock' ELSE 'in_stock' END";w.push(`${expr}=?`);a.push(q.stockStatus)}const limit=Math.min(Math.max(Number(q.limit)||20,1),100),offset=Math.max(Number(q.page||1)-1,0)*limit;const[rows]=await pool.execute(`SELECT s.id sku_id,s.sku,s.product_id,p.name product_name,p.slug product_slug,s.title variant_title,s.track_inventory,s.allow_backorder,COALESCE(i.quantity_on_hand,0) quantity_on_hand,COALESCE(i.reserved_quantity,0) reserved_quantity,COALESCE(i.reorder_level,0) reorder_level,s.updated_at FROM product_skus s JOIN products p ON p.id=s.product_id LEFT JOIN inventory i ON i.sku_id=s.id WHERE ${w.join(' AND ')} ORDER BY s.updated_at DESC LIMIT ? OFFSET ?`,[...a,limit,offset]);return rows.map(r=>({...r,available_quantity:Number(r.quantity_on_hand)-Number(r.reserved_quantity),stock_status:status(r)}))}
-export async function summary(pool){const[[r]]=await pool.execute("SELECT COUNT(CASE WHEN s.track_inventory=1 THEN 1 END) tracked,COUNT(CASE WHEN s.track_inventory=1 AND i.quantity_on_hand-i.reserved_quantity>i.reorder_level THEN 1 END) in_stock,COUNT(CASE WHEN s.track_inventory=1 AND i.quantity_on_hand-i.reserved_quantity>0 AND i.quantity_on_hand-i.reserved_quantity<=i.reorder_level THEN 1 END) low_stock,COUNT(CASE WHEN s.track_inventory=1 AND i.quantity_on_hand-i.reserved_quantity<=0 THEN 1 END) out_stock,SUM(COALESCE(i.quantity_on_hand,0)) on_hand,SUM(COALESCE(i.reserved_quantity,0)) reserved FROM product_skus s LEFT JOIN inventory i ON i.sku_id=s.id WHERE s.deleted_at IS NULL");return {trackedSkuCount:Number(r.tracked||0),inStockSkuCount:Number(r.in_stock||0),lowStockSkuCount:Number(r.low_stock||0),outOfStockSkuCount:Number(r.out_stock||0),totalOnHandUnits:Number(r.on_hand||0),totalReservedUnits:Number(r.reserved||0),totalAvailableUnits:Number(r.on_hand||0)-Number(r.reserved||0)}}
-export async function detail(pool,id){const[[r]]=await pool.execute('SELECT s.id sku_id,s.sku,s.title variant_title,s.product_id,p.name product_name,s.track_inventory,s.allow_backorder,i.quantity_on_hand,i.reserved_quantity,i.reorder_level FROM product_skus s JOIN products p ON p.id=s.product_id LEFT JOIN inventory i ON i.sku_id=s.id WHERE s.id=? AND s.deleted_at IS NULL',[id]);if(!r)fail(404,'SKU_NOT_FOUND','SKU not found.');const[m]=await pool.execute('SELECT id,movement_type,quantity_change,quantity_before,quantity_after,reserved_before,reserved_after,reference_type,reference_id,note,created_at FROM inventory_movements WHERE sku_id=? ORDER BY created_at DESC,id DESC LIMIT 50',[id]);return {...r,availableQuantity:Number(r.quantity_on_hand||0)-Number(r.reserved_quantity||0),movements:m}}
-export async function movements(pool,id,q={}){const limit=Math.min(Math.max(Number(q.limit)||50,1),100),offset=Math.max(Number(q.page||1)-1,0)*limit;const[m]=await pool.execute('SELECT id,movement_type,quantity_change,quantity_before,quantity_after,reserved_before,reserved_after,reference_type,reference_id,note,created_at FROM inventory_movements WHERE sku_id=? ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?',[id,limit,offset]);return m}
-export async function adjust(pool,id,change,reason,adminId,req){if(!Number.isInteger(change)||change===0)fail(400,'INVALID_QUANTITY_CHANGE','Quantity change must be a non-zero integer.');const[[s]]=await pool.execute('SELECT sku,track_inventory,deleted_at FROM product_skus WHERE id=?',[id]);if(!s||s.deleted_at)fail(404,'SKU_NOT_FOUND','SKU not found.');if(!s.track_inventory)fail(409,'INVENTORY_NOT_TRACKED','This SKU does not track physical inventory.');let result;const c=await pool.getConnection();try{result=await adjustStock(c,s.sku,change,reason);await audit(pool,adminId,'inventory.adjusted','inventory',id,req)}finally{c.release()}return result}
-export async function reorder(pool,id,value,adminId,req){if(!Number.isInteger(value)||value<0)fail(400,'INVALID_REORDER_LEVEL','Reorder level must be a non-negative integer.');const[[r]]=await pool.execute('SELECT reorder_level FROM inventory WHERE sku_id=?',[id]);if(!r)fail(404,'SKU_NOT_FOUND','Inventory record not found.');await pool.execute('UPDATE inventory SET reorder_level=? WHERE sku_id=?',[value,id]);await audit(pool,adminId,'inventory.reorder_level_updated','inventory',id,req);return {reorderLevel:value}}
+import { AuthError } from "./auth.service.js";
+import { adjustStock } from "./inventory.service.js";
+import { audit } from "./adminCatalog.service.js";
+const fail = (s, c, m) => {
+  throw new AuthError(s, c, m);
+};
+const status = (r) =>
+  !r.track_inventory
+    ? "not_tracked"
+    : r.available_quantity <= 0
+      ? "out_of_stock"
+      : r.available_quantity <= r.reorder_level
+        ? "low_stock"
+        : "in_stock";
+export async function list(pool, q = {}) {
+  const w = ["s.deleted_at IS NULL"],
+    a = [];
+  if (q.q) {
+    w.push(
+      "(s.sku LIKE ? OR s.title LIKE ? OR p.name LIKE ? OR s.barcode LIKE ?)",
+    );
+    a.push(`%${q.q}%`, `%${q.q}%`, `%${q.q}%`, `%${q.q}%`);
+  }
+  if (q.stockStatus && q.stockStatus !== "all") {
+    const expr =
+      "CASE WHEN s.track_inventory=0 THEN 'not_tracked' WHEN i.quantity_on_hand-i.reserved_quantity<=0 THEN 'out_of_stock' WHEN i.quantity_on_hand-i.reserved_quantity<=i.reorder_level THEN 'low_stock' ELSE 'in_stock' END";
+    w.push(`${expr}=?`);
+    a.push(q.stockStatus);
+  }
+  if (q.tracking === "tracked") w.push("s.track_inventory=1");
+  if (q.tracking === "not_tracked") w.push("s.track_inventory=0");
+  const limit = Math.min(Math.max(Number(q.limit) || 20, 1), 100),
+    offset = Math.max(Number(q.page || 1) - 1, 0) * limit;
+  const [rows] = await pool.execute(
+    `SELECT s.id sku_id,s.sku,s.product_id,p.name product_name,p.slug product_slug,s.title variant_title,s.barcode,s.track_inventory,s.allow_backorder,COALESCE(i.quantity_on_hand,0) quantity_on_hand,COALESCE(i.reserved_quantity,0) reserved_quantity,COALESCE(i.reorder_level,0) reorder_level,s.updated_at,(SELECT GROUP_CONCAT(CONCAT(a.name,': ',av.value) ORDER BY a.sort_order,a.id SEPARATOR ' / ') FROM sku_attribute_values sav JOIN attributes a ON a.id=sav.attribute_id JOIN attribute_values av ON av.id=sav.attribute_value_id WHERE sav.sku_id=s.id) attributes FROM product_skus s JOIN products p ON p.id=s.product_id LEFT JOIN inventory i ON i.sku_id=s.id WHERE ${w.join(" AND ")} ORDER BY s.updated_at DESC LIMIT ? OFFSET ?`,
+    [...a, limit, offset],
+  );
+  return rows.map((r) => ({
+    ...r,
+    available_quantity:
+      Number(r.quantity_on_hand) - Number(r.reserved_quantity),
+    stock_status: status(r),
+  }));
+}
+export async function summary(pool) {
+  const [[r]] = await pool.execute(
+    "SELECT COUNT(CASE WHEN s.track_inventory=1 THEN 1 END) tracked,COUNT(CASE WHEN s.track_inventory=1 AND i.quantity_on_hand-i.reserved_quantity>i.reorder_level THEN 1 END) in_stock,COUNT(CASE WHEN s.track_inventory=1 AND i.quantity_on_hand-i.reserved_quantity>0 AND i.quantity_on_hand-i.reserved_quantity<=i.reorder_level THEN 1 END) low_stock,COUNT(CASE WHEN s.track_inventory=1 AND i.quantity_on_hand-i.reserved_quantity<=0 THEN 1 END) out_stock,SUM(COALESCE(i.quantity_on_hand,0)) on_hand,SUM(COALESCE(i.reserved_quantity,0)) reserved FROM product_skus s LEFT JOIN inventory i ON i.sku_id=s.id WHERE s.deleted_at IS NULL",
+  );
+  return {
+    trackedSkuCount: Number(r.tracked || 0),
+    inStockSkuCount: Number(r.in_stock || 0),
+    lowStockSkuCount: Number(r.low_stock || 0),
+    outOfStockSkuCount: Number(r.out_stock || 0),
+    totalOnHandUnits: Number(r.on_hand || 0),
+    totalReservedUnits: Number(r.reserved || 0),
+    totalAvailableUnits: Number(r.on_hand || 0) - Number(r.reserved || 0),
+  };
+}
+export async function detail(pool, id) {
+  const [[r]] = await pool.execute(
+    "SELECT s.id sku_id,s.sku,s.title variant_title,s.product_id,p.name product_name,s.track_inventory,s.allow_backorder,i.quantity_on_hand,i.reserved_quantity,i.reorder_level FROM product_skus s JOIN products p ON p.id=s.product_id LEFT JOIN inventory i ON i.sku_id=s.id WHERE s.id=? AND s.deleted_at IS NULL",
+    [id],
+  );
+  if (!r) fail(404, "SKU_NOT_FOUND", "SKU not found.");
+  const [m] = await pool.execute(
+    "SELECT id,movement_type,quantity_change,quantity_before,quantity_after,reserved_before,reserved_after,reference_type,reference_id,note,created_at FROM inventory_movements WHERE sku_id=? ORDER BY created_at DESC,id DESC LIMIT 50",
+    [id],
+  );
+  return {
+    ...r,
+    availableQuantity:
+      Number(r.quantity_on_hand || 0) - Number(r.reserved_quantity || 0),
+    movements: m,
+  };
+}
+export async function movements(pool, id, q = {}) {
+  const limit = Math.min(Math.max(Number(q.limit) || 50, 1), 100),
+    offset = Math.max(Number(q.page || 1) - 1, 0) * limit;
+  const [m] = await pool.execute(
+    "SELECT id,movement_type,quantity_change,quantity_before,quantity_after,reserved_before,reserved_after,reference_type,reference_id,note,created_at FROM inventory_movements WHERE sku_id=? ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?",
+    [id, limit, offset],
+  );
+  return m;
+}
+export async function adjust(pool, id, change, reason, adminId, req) {
+  if (!Number.isInteger(change) || change === 0)
+    fail(
+      400,
+      "INVALID_QUANTITY_CHANGE",
+      "Quantity change must be a non-zero integer.",
+    );
+  const [[s]] = await pool.execute(
+    "SELECT sku,track_inventory,deleted_at FROM product_skus WHERE id=?",
+    [id],
+  );
+  if (!s || s.deleted_at) fail(404, "SKU_NOT_FOUND", "SKU not found.");
+  if (!s.track_inventory)
+    fail(
+      409,
+      "INVENTORY_NOT_TRACKED",
+      "This SKU does not track physical inventory.",
+    );
+  let result;
+  const c = await pool.getConnection();
+  try {
+    result = await adjustStock(c, s.sku, change, reason);
+    await audit(pool, adminId, "inventory.adjusted", "inventory", id, req);
+  } finally {
+    c.release();
+  }
+  return result;
+}
+export async function reorder(pool, id, value, adminId, req) {
+  if (!Number.isInteger(value) || value < 0)
+    fail(
+      400,
+      "INVALID_REORDER_LEVEL",
+      "Reorder level must be a non-negative integer.",
+    );
+  const [[r]] = await pool.execute(
+    "SELECT reorder_level FROM inventory WHERE sku_id=?",
+    [id],
+  );
+  if (!r) fail(404, "SKU_NOT_FOUND", "Inventory record not found.");
+  await pool.execute("UPDATE inventory SET reorder_level=? WHERE sku_id=?", [
+    value,
+    id,
+  ]);
+  await audit(
+    pool,
+    adminId,
+    "inventory.reorder_level_updated",
+    "inventory",
+    id,
+    req,
+  );
+  return { reorderLevel: value };
+}
+export async function correct(pool, id, actual, reason, adminId, req) {
+  if (!Number.isInteger(actual) || actual < 0)
+    fail(
+      400,
+      "INVALID_QUANTITY",
+      "Actual on-hand must be a non-negative integer.",
+    );
+  const [[r]] = await pool.execute(
+    "SELECT quantity_on_hand FROM inventory WHERE sku_id=?",
+    [id],
+  );
+  if (!r) fail(404, "SKU_NOT_FOUND", "Inventory record not found.");
+  return adjust(
+    pool,
+    id,
+    actual - Number(r.quantity_on_hand),
+    reason,
+    adminId,
+    req,
+  );
+}

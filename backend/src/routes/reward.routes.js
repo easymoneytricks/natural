@@ -1,1 +1,8 @@
-import{Router}from'express';import{requireCustomerAuth}from'../middleware/customerAuth.js';import{mine,redeem}from'../controllers/reward.controller.js';const r=Router();r.use(requireCustomerAuth);r.get('/rewards',mine);r.post('/rewards/redeem',redeem);export default r
+import { Router } from "express";
+import { requireCustomerAuth } from "../middleware/customerAuth.js";
+import { mine, redeem } from "../controllers/reward.controller.js";
+const r = Router();
+r.use(requireCustomerAuth);
+r.get("/rewards", mine);
+r.post("/rewards/redeem", redeem);
+export default r;

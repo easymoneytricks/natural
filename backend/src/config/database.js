@@ -1,5 +1,5 @@
-import mysql from 'mysql2/promise'
-import { env } from './env.js'
+import mysql from "mysql2/promise";
+import { env } from "./env.js";
 
 export const pool = mysql.createPool({
   host: env.db.host,
@@ -10,9 +10,9 @@ export const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  charset: 'utf8mb4',
-})
+  charset: "utf8mb4",
+});
 
 export async function checkDatabase() {
-  await pool.query('SELECT 1')
+  await pool.query("SELECT 1");
 }

@@ -1,11 +1,136 @@
-import { hashPassword, comparePassword } from '../utils/password.js'
-import { AuthError } from './auth.service.js'
-import { createAdminAccessToken, createAdminRefreshToken, hashAdminRefreshToken } from '../utils/adminTokens.js'
-const safe = (row, roles, permissions) => ({ id: row.id, firstName: row.first_name, lastName: row.last_name, email: row.email, roles, effectivePermissions: permissions })
-async function identity(connection, id) { const [[user]]=await connection.execute('SELECT * FROM admin_users WHERE id=? AND status="active" AND deleted_at IS NULL',[id]); if(!user) throw new AuthError(401,'UNAUTHENTICATED','Please sign in to continue.'); const [roles]=await connection.execute('SELECT r.name,r.slug FROM admin_user_roles ur JOIN admin_roles r ON r.id=ur.role_id WHERE ur.admin_user_id=? AND r.deleted_at IS NULL',[id]); const [permissions]=await connection.execute('SELECT DISTINCT p.slug FROM admin_user_roles ur JOIN admin_role_permissions rp ON rp.role_id=ur.role_id JOIN admin_permissions p ON p.id=rp.permission_id WHERE ur.admin_user_id=?',[id]); return safe(user,roles,permissions.map((p)=>p.slug)) }
-export async function loginAdmin(pool,input,req){const email=String(input?.email||'').trim().toLowerCase();const password=String(input?.password||'');const [rows]=await pool.execute('SELECT * FROM admin_users WHERE email=? AND deleted_at IS NULL LIMIT 1',[email]);if(!rows[0]||rows[0].status!=='active'||!(await comparePassword(password,rows[0].password_hash)))throw new AuthError(401,'INVALID_CREDENTIALS','Invalid email or password.');const c=await pool.getConnection();try{await c.beginTransaction();const raw=createAdminRefreshToken();const [s]=await c.execute('INSERT INTO admin_sessions (admin_user_id,token_hash,expires_at,user_agent,ip_address) VALUES (?,?,DATE_ADD(NOW(),INTERVAL ? DAY),?,?)',[rows[0].id,hashAdminRefreshToken(raw),7,String(req.get('user-agent')||'').slice(0,500),req.ip]);await c.execute('UPDATE admin_users SET last_login_at=NOW() WHERE id=?',[rows[0].id]);await c.commit();return {rawToken:raw,accessToken:createAdminAccessToken(rows[0].id,s.insertId),admin:await identity(c,rows[0].id)}}catch(e){await c.rollback();throw e}finally{c.release()}}
-export async function refreshAdmin(pool,raw){if(!raw)throw new AuthError(401,'SESSION_EXPIRED','Your session has expired.');const c=await pool.getConnection();try{await c.beginTransaction();const [rows]=await c.execute('SELECT s.*,u.* FROM admin_sessions s JOIN admin_users u ON u.id=s.admin_user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>NOW() AND u.status="active" AND u.deleted_at IS NULL FOR UPDATE',[hashAdminRefreshToken(raw)]);if(!rows[0])throw new AuthError(401,'SESSION_EXPIRED','Your session has expired.');const next=createAdminRefreshToken();await c.execute('UPDATE admin_sessions SET token_hash=?,last_used_at=NOW() WHERE id=?',[hashAdminRefreshToken(next),rows[0].id]);await c.commit();return {rawToken:next,accessToken:createAdminAccessToken(rows[0].admin_user_id,rows[0].id),admin:await identity(c,rows[0].admin_user_id)}}catch(e){await c.rollback();throw e}finally{c.release()}}
-export const getAdminIdentity=(pool,id)=>pool.getConnection().then(async(c)=>{try{return await identity(c,id)}finally{c.release()}})
-export const revokeAdminSession=(pool,raw)=>raw?pool.execute('UPDATE admin_sessions SET revoked_at=COALESCE(revoked_at,NOW()) WHERE token_hash=?',[hashAdminRefreshToken(raw)]):Promise.resolve()
-export const revokeAllAdminSessions=(pool,id)=>pool.execute('UPDATE admin_sessions SET revoked_at=COALESCE(revoked_at,NOW()) WHERE admin_user_id=? AND revoked_at IS NULL',[id])
-export { hashPassword }
+import { hashPassword, comparePassword } from "../utils/password.js";
+import { AuthError } from "./auth.service.js";
+import {
+  createAdminAccessToken,
+  createAdminRefreshToken,
+  hashAdminRefreshToken,
+} from "../utils/adminTokens.js";
+const safe = (row, roles, permissions) => ({
+  id: row.id,
+  firstName: row.first_name,
+  lastName: row.last_name,
+  email: row.email,
+  roles,
+  effectivePermissions: permissions,
+});
+async function identity(connection, id) {
+  const [[user]] = await connection.execute(
+    'SELECT * FROM admin_users WHERE id=? AND status="active" AND deleted_at IS NULL',
+    [id],
+  );
+  if (!user)
+    throw new AuthError(401, "UNAUTHENTICATED", "Please sign in to continue.");
+  const [roles] = await connection.execute(
+    "SELECT r.name,r.slug FROM admin_user_roles ur JOIN admin_roles r ON r.id=ur.role_id WHERE ur.admin_user_id=? AND r.deleted_at IS NULL",
+    [id],
+  );
+  const [permissions] = await connection.execute(
+    "SELECT DISTINCT p.slug FROM admin_user_roles ur JOIN admin_role_permissions rp ON rp.role_id=ur.role_id JOIN admin_permissions p ON p.id=rp.permission_id WHERE ur.admin_user_id=?",
+    [id],
+  );
+  return safe(
+    user,
+    roles,
+    permissions.map((p) => p.slug),
+  );
+}
+export async function loginAdmin(pool, input, req) {
+  const email = String(input?.email || "")
+    .trim()
+    .toLowerCase();
+  const password = String(input?.password || "");
+  const [rows] = await pool.execute(
+    "SELECT * FROM admin_users WHERE email=? AND deleted_at IS NULL LIMIT 1",
+    [email],
+  );
+  if (
+    !rows[0] ||
+    rows[0].status !== "active" ||
+    !(await comparePassword(password, rows[0].password_hash))
+  )
+    throw new AuthError(
+      401,
+      "INVALID_CREDENTIALS",
+      "Invalid email or password.",
+    );
+  const c = await pool.getConnection();
+  try {
+    await c.beginTransaction();
+    const raw = createAdminRefreshToken();
+    const [s] = await c.execute(
+      "INSERT INTO admin_sessions (admin_user_id,token_hash,expires_at,user_agent,ip_address) VALUES (?,?,DATE_ADD(NOW(),INTERVAL ? DAY),?,?)",
+      [
+        rows[0].id,
+        hashAdminRefreshToken(raw),
+        7,
+        String(req.get("user-agent") || "").slice(0, 500),
+        req.ip,
+      ],
+    );
+    await c.execute("UPDATE admin_users SET last_login_at=NOW() WHERE id=?", [
+      rows[0].id,
+    ]);
+    await c.commit();
+    return {
+      rawToken: raw,
+      accessToken: createAdminAccessToken(rows[0].id, s.insertId),
+      admin: await identity(c, rows[0].id),
+    };
+  } catch (e) {
+    await c.rollback();
+    throw e;
+  } finally {
+    c.release();
+  }
+}
+export async function refreshAdmin(pool, raw) {
+  if (!raw)
+    throw new AuthError(401, "SESSION_EXPIRED", "Your session has expired.");
+  const c = await pool.getConnection();
+  try {
+    await c.beginTransaction();
+    const [rows] = await c.execute(
+      'SELECT s.*,u.* FROM admin_sessions s JOIN admin_users u ON u.id=s.admin_user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>NOW() AND u.status="active" AND u.deleted_at IS NULL FOR UPDATE',
+      [hashAdminRefreshToken(raw)],
+    );
+    if (!rows[0])
+      throw new AuthError(401, "SESSION_EXPIRED", "Your session has expired.");
+    const next = createAdminRefreshToken();
+    await c.execute(
+      "UPDATE admin_sessions SET token_hash=?,last_used_at=NOW() WHERE id=?",
+      [hashAdminRefreshToken(next), rows[0].id],
+    );
+    await c.commit();
+    return {
+      rawToken: next,
+      accessToken: createAdminAccessToken(rows[0].admin_user_id, rows[0].id),
+      admin: await identity(c, rows[0].admin_user_id),
+    };
+  } catch (e) {
+    await c.rollback();
+    throw e;
+  } finally {
+    c.release();
+  }
+}
+export const getAdminIdentity = (pool, id) =>
+  pool.getConnection().then(async (c) => {
+    try {
+      return await identity(c, id);
+    } finally {
+      c.release();
+    }
+  });
+export const revokeAdminSession = (pool, raw) =>
+  raw
+    ? pool.execute(
+        "UPDATE admin_sessions SET revoked_at=COALESCE(revoked_at,NOW()) WHERE token_hash=?",
+        [hashAdminRefreshToken(raw)],
+      )
+    : Promise.resolve();
+export const revokeAllAdminSessions = (pool, id) =>
+  pool.execute(
+    "UPDATE admin_sessions SET revoked_at=COALESCE(revoked_at,NOW()) WHERE admin_user_id=? AND revoked_at IS NULL",
+    [id],
+  );
+export { hashPassword };

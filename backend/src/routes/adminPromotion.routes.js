@@ -1,1 +1,18 @@
-import{Router}from'express';import{requireAdminAuth,requireAdminPermission}from'../middleware/adminAuth.js';import * as c from'../controllers/adminPromotion.controller.js';const r=Router();r.use(requireAdminAuth);const v=requireAdminPermission('promotions.view'),m=requireAdminPermission('promotions.manage');r.get('/promotions/coupons',v,c.coupons);r.post('/promotions/coupons',m,c.saveCoupon);r.patch('/promotions/coupons/:id',m,c.saveCoupon);r.get('/promotions/gift-cards',v,c.giftCards);r.post('/promotions/gift-cards',m,c.generateGiftCard);r.get('/promotions/gift-cards/:id',v,c.giftDetail);r.patch('/promotions/gift-cards/:id/status',m,c.giftStatus);export default r
+import { Router } from "express";
+import {
+  requireAdminAuth,
+  requireAdminPermission,
+} from "../middleware/adminAuth.js";
+import * as c from "../controllers/adminPromotion.controller.js";
+const r = Router();
+r.use(requireAdminAuth);
+const v = requireAdminPermission("promotions.view"),
+  m = requireAdminPermission("promotions.manage");
+r.get("/promotions/coupons", v, c.coupons);
+r.post("/promotions/coupons", m, c.saveCoupon);
+r.patch("/promotions/coupons/:id", m, c.saveCoupon);
+r.get("/promotions/gift-cards", v, c.giftCards);
+r.post("/promotions/gift-cards", m, c.generateGiftCard);
+r.get("/promotions/gift-cards/:id", v, c.giftDetail);
+r.patch("/promotions/gift-cards/:id/status", m, c.giftStatus);
+export default r;

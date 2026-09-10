@@ -1,5 +1,27 @@
-.product-skeleton { min-height: 430px; background: linear-gradient(110deg, #eef0e9 30%, #f8f6f1 45%, #eef0e9 60%); background-size: 200% 100%; animation: shop-skeleton 1.4s infinite; }
-.pagination { display: flex; justify-content: center; gap: 8px; margin: 42px 0; }
-.pagination button { width: 34px; height: 34px; border: 1px solid var(--line); }
-.pagination button.active { background: var(--sage-dark); color: white; border-color: var(--sage-dark); }
-@keyframes shop-skeleton { to { background-position: -200% 0; } }
+.product-skeleton {
+  min-height: 430px;
+  background: linear-gradient(110deg, #eef0e9 30%, #f8f6f1 45%, #eef0e9 60%);
+  background-size: 200% 100%;
+  animation: shop-skeleton 1.4s infinite;
+}
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 42px 0;
+}
+.pagination button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+}
+.pagination button.active {
+  background: var(--sage-dark);
+  color: white;
+  border-color: var(--sage-dark);
+}
+@keyframes shop-skeleton {
+  to {
+    background-position: -200% 0;
+  }
+}

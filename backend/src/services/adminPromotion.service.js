@@ -1,11 +1,155 @@
-import crypto from 'node:crypto'
-import { AuthError } from './auth.service.js'
-import { audit } from './adminCatalog.service.js'
-const fail=(s,c,m)=>{throw new AuthError(s,c,m)}
-const hash=v=>crypto.createHash('sha256').update(String(v).trim().toUpperCase()).digest('hex')
-export async function coupons(pool,q={}){const w=['deleted_at IS NULL'],a=[];if(q.q){w.push('(code LIKE ? OR name LIKE ?)');a.push(`%${q.q}%`,`%${q.q}%`)}const[r]=await pool.execute(`SELECT id,code,name,description,discount_type,discount_value,minimum_cart_amount,maximum_discount_amount,starts_at,expires_at,usage_limit_total,usage_limit_per_customer,usage_count,first_order_only,is_active,created_at,updated_at FROM coupons WHERE ${w.join(' AND ')} ORDER BY updated_at DESC LIMIT 100`,a);return r}
-export async function saveCoupon(pool,input,id,adminId,req){const code=String(input.code||'').trim().toUpperCase();if(!/^[A-Z0-9_-]{3,50}$/.test(code))fail(400,'INVALID_COUPON_CODE','Coupon code is invalid.');if(!['percentage','flat'].includes(input.discountType))fail(400,'VALIDATION_ERROR','Discount type is invalid.');const value=Number(input.discountValue);if(!Number.isFinite(value)||value<=0||(input.discountType==='percentage'&&value>100))fail(400,'VALIDATION_ERROR','Discount value is invalid.');const vals=[code,String(input.name||code).trim(),input.description||null,input.discountType,value,Number(input.minimumCartAmount||0),input.maximumDiscountAmount===''?null:(input.maximumDiscountAmount==null?null:Number(input.maximumDiscountAmount)),input.startsAt||null,input.expiresAt||null,input.usageLimitTotal||null,input.usageLimitPerCustomer||null,!!input.firstOrderOnly,input.isActive!==false];try{if(id)await pool.execute('UPDATE coupons SET code=?,name=?,description=?,discount_type=?,discount_value=?,minimum_cart_amount=?,maximum_discount_amount=?,starts_at=?,expires_at=?,usage_limit_total=?,usage_limit_per_customer=?,first_order_only=?,is_active=? WHERE id=? AND deleted_at IS NULL',[...vals,id]);else await pool.execute('INSERT INTO coupons (code,name,description,discount_type,discount_value,minimum_cart_amount,maximum_discount_amount,starts_at,expires_at,usage_limit_total,usage_limit_per_customer,first_order_only,is_active) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',vals);const[[row]]=await pool.execute('SELECT * FROM coupons WHERE code=?',[code]);await audit(pool,adminId,id?'coupon.updated':'coupon.created','coupons',row.id,req);return row}catch(e){if(e.code==='ER_DUP_ENTRY')fail(409,'COUPON_CODE_EXISTS','That coupon code already exists.');throw e}}
-export async function giftCards(pool){const[r]=await pool.execute('SELECT id,code_last4,initial_value,current_balance,currency,status,expires_at,created_at,updated_at FROM gift_cards WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 100');return r.map(x=>({...x,id:Number(x.id),initialValue:Number(x.initial_value),currentBalance:Number(x.current_balance)}))}
-export async function generateGiftCard(pool,input,adminId,req){const value=Number(input.amount);if(!Number.isFinite(value)||value<=0)fail(400,'INVALID_GIFT_CARD_AMOUNT','Amount must be positive.');const code=`NBGC-${crypto.randomBytes(8).toString('hex').toUpperCase()}`, [r]=await pool.execute('INSERT INTO gift_cards (code_hash,code_last4,initial_value,current_balance,expires_at) VALUES (?,?,?,?,?)',[hash(code),code.slice(-4),value,value,input.expiresAt||null]);await pool.execute('INSERT INTO gift_card_transactions (gift_card_id,transaction_type,amount,balance_before,balance_after,reference_type) VALUES (? ,"issue",?,0,?,"admin")',[r.insertId,value,value]);await audit(pool,adminId,'gift_card.created','gift_cards',r.insertId,req);return {id:r.insertId,code,amount:value,expiresAt:input.expiresAt||null}}
-export async function giftDetail(pool,id){const[[card]]=await pool.execute('SELECT id,code_last4,initial_value,current_balance,currency,status,expires_at,created_at FROM gift_cards WHERE id=? AND deleted_at IS NULL',[id]);if(!card)fail(404,'GIFT_CARD_NOT_FOUND','Gift card not found.');const[transactions]=await pool.execute('SELECT transaction_type,amount,balance_before,balance_after,reference_type,reference_id,created_at FROM gift_card_transactions WHERE gift_card_id=? ORDER BY created_at DESC',[id]);return {...card,initialValue:Number(card.initial_value),currentBalance:Number(card.current_balance),transactions}}
-export async function giftStatus(pool,id,status,adminId,req){if(!['active','disabled'].includes(status))fail(400,'VALIDATION_ERROR','Invalid gift-card status.');const[[r]]=await pool.execute('SELECT id FROM gift_cards WHERE id=? AND deleted_at IS NULL',[id]);if(!r)fail(404,'GIFT_CARD_NOT_FOUND','Gift card not found.');await pool.execute('UPDATE gift_cards SET status=? WHERE id=?',[status,id]);await audit(pool,adminId,'gift_card.status_updated','gift_cards',id,req);return {status}}
+import crypto from "node:crypto";
+import { AuthError } from "./auth.service.js";
+import { audit } from "./adminCatalog.service.js";
+const fail = (s, c, m) => {
+  throw new AuthError(s, c, m);
+};
+const hash = (v) =>
+  crypto
+    .createHash("sha256")
+    .update(String(v).trim().toUpperCase())
+    .digest("hex");
+export async function coupons(pool, q = {}) {
+  const w = ["deleted_at IS NULL"],
+    a = [];
+  if (q.q) {
+    w.push("(code LIKE ? OR name LIKE ?)");
+    a.push(`%${q.q}%`, `%${q.q}%`);
+  }
+  const [r] = await pool.execute(
+    `SELECT id,code,name,description,discount_type,discount_value,minimum_cart_amount,maximum_discount_amount,starts_at,expires_at,usage_limit_total,usage_limit_per_customer,usage_count,first_order_only,is_active,created_at,updated_at FROM coupons WHERE ${w.join(" AND ")} ORDER BY updated_at DESC LIMIT 100`,
+    a,
+  );
+  return r;
+}
+export async function saveCoupon(pool, input, id, adminId, req) {
+  const code = String(input.code || "")
+    .trim()
+    .toUpperCase();
+  if (!/^[A-Z0-9_-]{3,50}$/.test(code))
+    fail(400, "INVALID_COUPON_CODE", "Coupon code is invalid.");
+  if (!["percentage", "flat"].includes(input.discountType))
+    fail(400, "VALIDATION_ERROR", "Discount type is invalid.");
+  const value = Number(input.discountValue);
+  if (
+    !Number.isFinite(value) ||
+    value <= 0 ||
+    (input.discountType === "percentage" && value > 100)
+  )
+    fail(400, "VALIDATION_ERROR", "Discount value is invalid.");
+  const vals = [
+    code,
+    String(input.name || code).trim(),
+    input.description || null,
+    input.discountType,
+    value,
+    Number(input.minimumCartAmount || 0),
+    input.maximumDiscountAmount === ""
+      ? null
+      : input.maximumDiscountAmount == null
+        ? null
+        : Number(input.maximumDiscountAmount),
+    input.startsAt || null,
+    input.expiresAt || null,
+    input.usageLimitTotal || null,
+    input.usageLimitPerCustomer || null,
+    !!input.firstOrderOnly,
+    input.isActive !== false,
+  ];
+  try {
+    if (id)
+      await pool.execute(
+        "UPDATE coupons SET code=?,name=?,description=?,discount_type=?,discount_value=?,minimum_cart_amount=?,maximum_discount_amount=?,starts_at=?,expires_at=?,usage_limit_total=?,usage_limit_per_customer=?,first_order_only=?,is_active=? WHERE id=? AND deleted_at IS NULL",
+        [...vals, id],
+      );
+    else
+      await pool.execute(
+        "INSERT INTO coupons (code,name,description,discount_type,discount_value,minimum_cart_amount,maximum_discount_amount,starts_at,expires_at,usage_limit_total,usage_limit_per_customer,first_order_only,is_active) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        vals,
+      );
+    const [[row]] = await pool.execute("SELECT * FROM coupons WHERE code=?", [
+      code,
+    ]);
+    await audit(
+      pool,
+      adminId,
+      id ? "coupon.updated" : "coupon.created",
+      "coupons",
+      row.id,
+      req,
+    );
+    return row;
+  } catch (e) {
+    if (e.code === "ER_DUP_ENTRY")
+      fail(409, "COUPON_CODE_EXISTS", "That coupon code already exists.");
+    throw e;
+  }
+}
+export async function giftCards(pool) {
+  const [r] = await pool.execute(
+    "SELECT id,code_last4,initial_value,current_balance,currency,status,expires_at,created_at,updated_at FROM gift_cards WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 100",
+  );
+  return r.map((x) => ({
+    ...x,
+    id: Number(x.id),
+    initialValue: Number(x.initial_value),
+    currentBalance: Number(x.current_balance),
+  }));
+}
+export async function generateGiftCard(pool, input, adminId, req) {
+  const value = Number(input.amount);
+  if (!Number.isFinite(value) || value <= 0)
+    fail(400, "INVALID_GIFT_CARD_AMOUNT", "Amount must be positive.");
+  const code = `NBGC-${crypto.randomBytes(8).toString("hex").toUpperCase()}`,
+    [r] = await pool.execute(
+      "INSERT INTO gift_cards (code_hash,code_last4,initial_value,current_balance,expires_at) VALUES (?,?,?,?,?)",
+      [hash(code), code.slice(-4), value, value, input.expiresAt || null],
+    );
+  await pool.execute(
+    'INSERT INTO gift_card_transactions (gift_card_id,transaction_type,amount,balance_before,balance_after,reference_type) VALUES (? ,"issue",?,0,?,"admin")',
+    [r.insertId, value, value],
+  );
+  await audit(
+    pool,
+    adminId,
+    "gift_card.created",
+    "gift_cards",
+    r.insertId,
+    req,
+  );
+  return {
+    id: r.insertId,
+    code,
+    amount: value,
+    expiresAt: input.expiresAt || null,
+  };
+}
+export async function giftDetail(pool, id) {
+  const [[card]] = await pool.execute(
+    "SELECT id,code_last4,initial_value,current_balance,currency,status,expires_at,created_at FROM gift_cards WHERE id=? AND deleted_at IS NULL",
+    [id],
+  );
+  if (!card) fail(404, "GIFT_CARD_NOT_FOUND", "Gift card not found.");
+  const [transactions] = await pool.execute(
+    "SELECT transaction_type,amount,balance_before,balance_after,reference_type,reference_id,created_at FROM gift_card_transactions WHERE gift_card_id=? ORDER BY created_at DESC",
+    [id],
+  );
+  return {
+    ...card,
+    initialValue: Number(card.initial_value),
+    currentBalance: Number(card.current_balance),
+    transactions,
+  };
+}
+export async function giftStatus(pool, id, status, adminId, req) {
+  if (!["active", "disabled"].includes(status))
+    fail(400, "VALIDATION_ERROR", "Invalid gift-card status.");
+  const [[r]] = await pool.execute(
+    "SELECT id FROM gift_cards WHERE id=? AND deleted_at IS NULL",
+    [id],
+  );
+  if (!r) fail(404, "GIFT_CARD_NOT_FOUND", "Gift card not found.");
+  await pool.execute("UPDATE gift_cards SET status=? WHERE id=?", [status, id]);
+  await audit(pool, adminId, "gift_card.status_updated", "gift_cards", id, req);
+  return { status };
+}
