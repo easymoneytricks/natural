@@ -8,7 +8,16 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import { LayoutDashboard, LogOut, Package } from "lucide-react";
+import {
+  LayoutDashboard,
+  LogOut,
+  Package,
+  Tags,
+  Users,
+  Layers,
+  Warehouse,
+  Leaf,
+} from "lucide-react";
 import { BrandsPage, CategoriesPage, ProductsPage } from "./catalog";
 import { CustomersPage } from "./customer";
 import { PromotionsPage } from "./promotions";
@@ -16,6 +25,7 @@ import { ProductEditor } from "./productEditor";
 import { InventoryDetail } from "./inventory";
 import { InventoryPage as InventoryManagementPage } from "./inventoryPage";
 import "./styles.css";
+import "./workspace.css";
 const API = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1"
 ).replace(/\/$/, "");
@@ -97,7 +107,12 @@ function Login() {
             .catch(() => setE("Invalid email or password."));
         }}
       >
-        <h1>Natural Beauty Admin</h1>
+        <div className="login-mark">
+          <Leaf size={28} />
+        </div>
+        <span className="section-kicker">NATURAL BEAUTY / ADMINISTRATION</span>
+        <h1>Welcome back.</h1>
+        <p>Sign in to manage your store.</p>
         <label>
           Email
           <input
@@ -125,11 +140,11 @@ function Login() {
 const nav = [
   ["Dashboard", "/dashboard", LayoutDashboard, "dashboard.view"],
   ["Products", "/catalog/products", Package, "catalog.view"],
-  ["Brands", "/catalog/brands", Package, "catalog.view"],
-  ["Categories", "/catalog/categories", Package, "catalog.view"],
-  ["Customers", "/customers", Package, "customers.view"],
-  ["Promotions", "/promotions", Package, "promotions.view"],
-  ["Inventory", "/inventory", Package, "inventory.view"],
+  ["Brands", "/catalog/brands", Leaf, "catalog.view"],
+  ["Categories", "/catalog/categories", Layers, "catalog.view"],
+  ["Customers", "/customers", Users, "customers.view"],
+  ["Promotions", "/promotions", Tags, "promotions.view"],
+  ["Inventory", "/inventory", Warehouse, "inventory.view"],
 ];
 function Shell({ children }) {
   const { admin, logout } = useAuth();
@@ -147,7 +162,12 @@ function Shell({ children }) {
               <Link
                 to={t}
                 key={t}
-                aria-current={location.pathname === t ? "true" : undefined}
+                aria-current={
+                  location.pathname === t ||
+                  location.pathname.startsWith(`${t}/`)
+                    ? "true"
+                    : undefined
+                }
               >
                 <I size={17} />
                 {l}
@@ -185,10 +205,35 @@ function Protected({ children, permission = "catalog.view" }) {
   return <Shell>{children}</Shell>;
 }
 function Dashboard() {
+  const { admin } = useAuth();
   return (
     <Protected permission="dashboard.view">
-      <h1>Dashboard</h1>
-      <div className="card">Welcome to your workspace.</div>
+      <div className="page-head">
+        <div>
+          <span className="section-kicker">YOUR STORE WORKSPACE</span>
+          <h1>Welcome back{admin?.firstName ? `, ${admin.firstName}` : ""}.</h1>
+          <p>
+            Keep your catalog, customers, and daily operations in one place.
+          </p>
+        </div>
+      </div>
+      <div className="dashboard-links">
+        {nav
+          .filter(
+            ([label, path, Icon, permission]) =>
+              path !== "/dashboard" &&
+              admin?.effectivePermissions?.includes(permission),
+          )
+          .map(([label, path, Icon]) => (
+            <Link key={path} to={path}>
+              <Icon size={28} aria-hidden="true" />
+              <div>
+                <strong>{label}</strong>
+                <small>Open {label.toLowerCase()} workspace →</small>
+              </div>
+            </Link>
+          ))}
+      </div>
     </Protected>
   );
 }
@@ -205,8 +250,22 @@ function App() {
           </Protected>
         }
       />
-      <Route path="/catalog/products/new" element={<ProductEditor />} />
-      <Route path="/catalog/products/:id" element={<ProductEditor />} />
+      <Route
+        path="/catalog/products/new"
+        element={
+          <Protected>
+            <ProductEditor />
+          </Protected>
+        }
+      />
+      <Route
+        path="/catalog/products/:id"
+        element={
+          <Protected>
+            <ProductEditor />
+          </Protected>
+        }
+      />
       <Route
         path="/catalog/brands"
         element={

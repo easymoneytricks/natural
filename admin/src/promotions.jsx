@@ -18,9 +18,19 @@ export function PromotionsPage() {
           <p>Manage coupons and stored-value gift cards.</p>
         </div>
       </div>
-      <div className="toolbar">
-        <button onClick={() => setTab("coupons")}>Coupons</button>
-        <button onClick={() => setTab("cards")}>Gift cards</button>
+      <div className="segmented-control">
+        <button
+          className={tab === "coupons" ? "is-active" : ""}
+          onClick={() => setTab("coupons")}
+        >
+          Coupons
+        </button>
+        <button
+          className={tab === "cards" ? "is-active" : ""}
+          onClick={() => setTab("cards")}
+        >
+          Gift cards
+        </button>
       </div>
       {tab === "coupons" ? (
         <div className="card table-wrap">
@@ -34,6 +44,13 @@ export function PromotionsPage() {
               </tr>
             </thead>
             <tbody>
+              {coupons.length === 0 && (
+                <tr>
+                  <td colSpan="4" className="empty-state">
+                    No coupons available.
+                  </td>
+                </tr>
+              )}
               {coupons.map((c) => (
                 <tr key={c.id}>
                   <td>
@@ -49,7 +66,13 @@ export function PromotionsPage() {
                     {c.usage_count}
                     {c.usage_limit_total ? ` / ${c.usage_limit_total}` : ""}
                   </td>
-                  <td>{c.is_active ? "Active" : "Disabled"}</td>
+                  <td>
+                    <span
+                      className={`status-pill ${c.is_active ? "status-active" : "status-disabled"}`}
+                    >
+                      {c.is_active ? "Active" : "Disabled"}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -67,6 +90,13 @@ export function PromotionsPage() {
               </tr>
             </thead>
             <tbody>
+              {cards.length === 0 && (
+                <tr>
+                  <td colSpan="4" className="empty-state">
+                    No gift cards available.
+                  </td>
+                </tr>
+              )}
               {cards.map((c) => (
                 <tr key={c.id}>
                   <td>•••• {c.code_last4}</td>
@@ -76,7 +106,11 @@ export function PromotionsPage() {
                       ? new Date(c.expires_at).toLocaleDateString()
                       : "—"}
                   </td>
-                  <td>{c.status}</td>
+                  <td>
+                    <span className={`status-pill status-${c.status}`}>
+                      {c.status}
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>

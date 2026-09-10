@@ -1,0 +1,248 @@
+/* Shared controls apply to every administration route, including page actions. */
+.shell button,
+.login button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 10px 16px;
+  border: 1px solid #315940;
+  border-radius: 10px;
+  background: #315940;
+  color: white;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+  box-shadow: none;
+}
+.shell button:hover,
+.login button:hover {
+  background: #254831;
+}
+.shell button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.shell :is(input, select, textarea),
+.login :is(input, select, textarea) {
+  min-height: 44px;
+  padding: 11px 13px;
+  border: 1px solid #d8e0d9;
+  border-radius: 9px;
+  background: #fff;
+  color: #23372b;
+  font-size: 14px;
+}
+.shell input[type="checkbox"] {
+  display: inline-block;
+  width: 17px;
+  height: 17px;
+  min-height: 0;
+  margin: 0 10px 0 0;
+  padding: 0;
+  vertical-align: middle;
+  accent-color: #315940;
+}
+.shell input[type="file"] {
+  width: 100%;
+  padding: 12px;
+  background: #f6f8f4;
+  border-style: dashed;
+}
+input::file-selector-button {
+  border: 0;
+  padding: 9px 12px;
+  margin-right: 12px;
+  border-radius: 7px;
+  background: #e3ecdf;
+  color: #315940;
+  font: inherit;
+  cursor: pointer;
+}
+:is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid #98b99e;
+  outline-offset: 3px;
+}
+.shell a {
+  color: #315940;
+  text-underline-offset: 4px;
+}
+.shell aside {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: #173d2b;
+  border: 0;
+}
+.shell .brand {
+  color: #f2f5e9;
+}
+.shell .brand small {
+  color: #b0c3b6;
+}
+.shell nav a {
+  color: #c0cfc4;
+}
+.shell nav a:hover {
+  background: #244d37;
+  color: white;
+}
+.shell nav a[aria-current="true"] {
+  color: #193c29;
+  background: #e2edda;
+  border-color: transparent;
+}
+.shell .logout {
+  margin-top: auto;
+  color: #d2dfd3;
+  border-color: #45644d;
+  background: transparent;
+}
+.main > header strong {
+  border-radius: 30px;
+  padding: 10px 15px;
+  background: #e9eee4;
+}
+.main > div {
+  max-width: 1440px;
+  margin-inline: auto;
+}
+.main form > section {
+  margin-bottom: 24px;
+}
+.card h2 {
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e7ece4;
+}
+.card.table-wrap {
+  padding: 0;
+}
+.table-wrap td {
+  white-space: normal;
+}
+.table-wrap td small {
+  max-width: 320px;
+  overflow-wrap: anywhere;
+}
+.table-wrap td button {
+  margin-block: 3px;
+}
+.toolbar {
+  flex-wrap: wrap;
+  align-items: center;
+}
+.toolbar select {
+  flex: 1 1 180px;
+}
+.sku-form > input {
+  flex: 1 1 180px;
+  width: auto;
+  margin: 0;
+}
+.sku-editor > button {
+  float: none;
+  margin: 8px;
+}
+.media-item {
+  min-width: 0;
+}
+.media-item button {
+  margin: 6px 4px 0 0;
+}
+.actions {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  flex-wrap: wrap;
+}
+.segmented-control button {
+  background: transparent;
+  color: #52644f;
+  border: 0;
+}
+.segmented-control button.is-active {
+  background: white;
+  color: #23492e;
+}
+.login {
+  background: radial-gradient(ellipse at top left, #496b49, #183929 70%);
+}
+.login .card {
+  border: 0;
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 35px 100px #07170d66;
+}
+.login h1 {
+  margin: 16px 0 8px;
+}
+.login button {
+  width: 100%;
+  margin-top: 24px;
+}
+.login-mark {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: #e8efdf;
+  color: #315940;
+  margin-bottom: 25px;
+}
+.dashboard-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+.dashboard-links a {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  text-decoration: none;
+  padding: 24px;
+  background: white;
+  border: 1px solid #dfe6dc;
+  border-radius: 16px;
+}
+.dashboard-links a:hover {
+  border-color: #7b9c76;
+  background: #f6f9f2;
+}
+.dashboard-links small {
+  display: block;
+  color: #788474;
+  margin-top: 6px;
+}
+@media (max-width: 760px) {
+  .shell aside {
+    position: relative;
+    height: auto;
+  }
+  .shell .logout {
+    position: static;
+    margin-top: 16px;
+    width: auto;
+    font-size: 12px;
+  }
+  .metrics {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+  .media-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+  .page-head {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .main > header {
+    gap: 12px;
+  }
+  .login {
+    padding: 20px;
+  }
+  .login .card {
+    padding: 28px;
+  }
+}

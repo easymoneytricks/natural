@@ -5,6 +5,7 @@ export const list = wrap(async (req, res) =>
   res.json({
     data: await service.list(pool, {
       search: req.query.q,
+      deleted: req.query.deleted,
       status: req.query.status,
       brand: req.query.brand,
       category: req.query.category,

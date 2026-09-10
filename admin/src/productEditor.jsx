@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "./main";
+import { SkuFields } from "./skuFields";
+import { ProductContentFields } from "./productContentFields";
 
 const API_ROOT = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1"
@@ -35,6 +37,7 @@ const emptyProduct = {
 };
 
 const emptySku = {
+  mediaIds: [],
   sku: "",
   title: "",
   price: 0,
@@ -58,6 +61,7 @@ const normalizeAttributes = (items = []) =>
 
 const normalizeSku = (item) => ({
   ...emptySku,
+  mediaIds: item.mediaIds || [],
   sku: item.sku || "",
   title: item.title || "",
   price: item.price ?? 0,
@@ -351,6 +355,34 @@ export function ProductEditor() {
         </section>
         <section className="card">
           <h2>Categories</h2>
+          <label>
+            Primary category
+            <select
+              value={form.categories.find((item) => item.isPrimary)?.id || ""}
+              onChange={(event) =>
+                updateForm(
+                  "categories",
+                  form.categories.map((item) => ({
+                    ...item,
+                    isPrimary: Number(item.id) === Number(event.target.value),
+                  })),
+                )
+              }
+            >
+              <option value="">Select primary category</option>
+              {categories
+                .filter((category) =>
+                  form.categories.some(
+                    (item) => Number(item.id) === Number(category.id),
+                  ),
+                )
+                .map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+            </select>
+          </label>
           {categories.map((category) => (
             <label key={category.id}>
               <input
@@ -556,6 +588,13 @@ export function ProductEditor() {
               )}
               {editingSkuId === item.id && !item.deleted_at && (
                 <div className="sku-form">
+                  <SkuFields
+                    sku={sku}
+                    onChange={setSku}
+                    assignments={form.attributes}
+                    attributes={attributes}
+                    media={media}
+                  />
                   <input
                     value={sku.sku}
                     onChange={(event) =>
@@ -601,6 +640,13 @@ export function ProductEditor() {
           ))}
           {id && !editingSkuId && (
             <div className="sku-form">
+              <SkuFields
+                sku={sku}
+                onChange={setSku}
+                assignments={form.attributes}
+                attributes={attributes}
+                media={media}
+              />
               <input
                 placeholder="SKU code"
                 value={sku.sku}
@@ -630,6 +676,15 @@ export function ProductEditor() {
             </div>
           )}
         </section>
+        <ProductContentFields
+          items={form.benefits}
+          onChange={(items) => updateForm("benefits", items)}
+        />
+        <ProductContentFields
+          ingredients
+          items={form.ingredients}
+          onChange={(items) => updateForm("ingredients", items)}
+        />
         {error && <div className="error">{error}</div>}
         <button>Save product</button>
       </form>

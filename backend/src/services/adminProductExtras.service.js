@@ -1,10 +1,16 @@
 import { AuthError } from "./auth.service.js";
 import { saveUpload, removeManagedFile } from "./mediaStorage.service.js";
 import { audit } from "./adminCatalog.service.js";
+import { productTransaction } from "./productTransaction.js";
+import { validateSkuAttributes } from "./sku.service.js";
 const fail = (s, c, m) => {
   throw new AuthError(s, c, m);
 };
 export async function syncContent(pool, id, input, adminId, req) {
+  return productTransaction(pool, id, (connection) => writeContent(connection, id, input, adminId, req));
+}
+
+export async function writeContent(pool, id, input, adminId, req) {
   for (const table of ["product_benefits", "product_ingredients"]) {
     const key = table === "product_benefits" ? "benefits" : "ingredients";
     if (Array.isArray(input[key])) {
@@ -22,7 +28,7 @@ export async function syncContent(pool, id, input, adminId, req) {
               id,
               String(x.name || "").trim(),
               x.description || null,
-              !!x.isKey,
+              !!(x.isKey ?? x.is_key),
               i,
             ],
           );
@@ -38,15 +44,27 @@ export async function syncContent(pool, id, input, adminId, req) {
       id,
     ]);
     for (const [i, a] of input.attributes.entries()) {
+      const [[attribute]] = await pool.execute("SELECT id FROM attributes WHERE id=?", [a.attributeId]);
+      if (!attribute) fail(400, "INVALID_ATTRIBUTE", "Unknown product attribute.");
       await pool.execute(
         "INSERT INTO product_attributes(product_id,attribute_id,sort_order,is_required) VALUES(?,?,?,?)",
         [id, a.attributeId, i, a.isRequired !== false],
       );
-      for (const [j, v] of (a.values || []).entries())
+      for (const [j, v] of (a.values || []).entries()) {
+        const valueId = v.valueId ?? v.id ?? v;
+        const [[value]] = await pool.execute("SELECT id FROM attribute_values WHERE id=? AND attribute_id=?", [valueId, a.attributeId]);
+        if (!value) fail(400, "INVALID_ATTRIBUTE_VALUE", "Value does not belong to the chosen attribute.");
         await pool.execute(
           "INSERT INTO product_attribute_values(product_id,attribute_id,attribute_value_id,sort_order) VALUES(?,?,?,?)",
-          [id, a.attributeId, v.valueId ?? v, j],
+          [id, a.attributeId, valueId, j],
         );
+      }
+    }
+    const [skus] = await pool.execute("SELECT id FROM product_skus WHERE product_id=? AND deleted_at IS NULL", [id]);
+    for (const sku of skus) {
+      const [assignments] = await pool.execute("SELECT attribute_id AS attributeId,attribute_value_id AS attributeValueId FROM sku_attribute_values WHERE sku_id=?", [sku.id]);
+      try { await validateSkuAttributes(pool, id, assignments); }
+      catch { fail(409, "SKU_ATTRIBUTE_CONFLICT", "These allowed values would invalidate an existing SKU. Update or archive that SKU first."); }
     }
   }
   await audit(pool, adminId, "product.content_updated", "products", id, req);

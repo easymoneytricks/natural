@@ -1,6 +1,8 @@
 import { AuthError } from "./auth.service.js";
 import { normalizeCombination, validateSkuAttributes } from "./sku.service.js";
 import { audit as catalogAudit } from "./adminCatalog.service.js";
+import { productTransaction } from "./productTransaction.js";
+import { writeContent } from "./adminProductExtras.service.js";
 const slugify = (v) =>
   String(v || "")
     .trim()
@@ -13,7 +15,7 @@ const fail = (s, c, m) => {
   throw new AuthError(s, c, m);
 };
 export async function list(pool, q = {}) {
-  const where = ["p.deleted_at IS NULL"],
+  const where = [q.deleted === "true" ? "p.deleted_at IS NOT NULL" : "p.deleted_at IS NULL"],
     args = [];
   if (q.search) {
     where.push("(p.name LIKE ? OR p.slug LIKE ?)");
@@ -87,6 +89,11 @@ export async function detail(pool, id) {
       [s.id],
     );
     s.attributes = a;
+    const [media] = await pool.execute(
+      "SELECT sm.product_media_id FROM sku_media sm JOIN product_media pm ON pm.id=sm.product_media_id WHERE sm.sku_id=? AND pm.deleted_at IS NULL ORDER BY sm.sort_order,sm.id",
+      [s.id],
+    );
+    s.mediaIds = media.map((item) => Number(item.product_media_id));
     s.available = Number(s.on_hand) - Number(s.reserved);
   }
   return {
@@ -107,13 +114,17 @@ export async function detail(pool, id) {
   };
 }
 export async function save(pool, input, id, adminId, req) {
+  return productTransaction(pool, id, (connection) => saveProduct(connection, input, id, adminId, req));
+}
+
+async function saveProduct(pool, input, id, adminId, req) {
   const name = String(input.name || "").trim(),
     slug = slugify(input.slug || name);
   if (!name || !slug)
     fail(400, "VALIDATION_ERROR", "Name and slug are required.");
   const price = Number(input.basePrice || 0),
     mrp = Number(input.baseMrp || 0);
-  if (price < 0 || mrp < price)
+  if (!Number.isFinite(price) || !Number.isFinite(mrp) || price < 0 || mrp < price)
     fail(400, "INVALID_PRICE", "Base price/MRP is invalid.");
   const vals = [
     input.brandId || null,
@@ -164,6 +175,7 @@ export async function save(pool, input, id, adminId, req) {
           [pid, c.id, Number(c.id) === Number(primary), c.sortOrder || 0],
         );
     }
+    await writeContent(pool, pid, input, adminId, req);
     await catalogAudit(
       pool,
       adminId,
@@ -180,19 +192,28 @@ export async function save(pool, input, id, adminId, req) {
   }
 }
 export async function sku(pool, productId, input, skuId, adminId, req) {
+  const updating = Boolean(skuId);
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
+    const [[product]] = await conn.execute("SELECT id,deleted_at FROM products WHERE id=? FOR UPDATE", [productId]);
+    if (!product || product.deleted_at) fail(404, "PRODUCT_NOT_FOUND", "Restore the product before editing SKUs.");
     const assignments = (input.attributes || []).map((a) => ({
       attributeId: Number(a.attributeId),
       attributeValueId: Number(a.valueId ?? a.attributeValueId),
     }));
-    const combination = await validateSkuAttributes(
-      conn,
-      productId,
-      assignments,
-    );
-    if (input.price < 0 || input.mrp < input.price)
+    let combination;
+    try { combination = await validateSkuAttributes(conn, productId, assignments); }
+    catch (error) { fail(400, "INVALID_SKU_ATTRIBUTES", error.message); }
+    if (input.weightGrams !== "" && input.weightGrams != null && (!Number.isInteger(Number(input.weightGrams)) || Number(input.weightGrams) < 0)) fail(400, "INVALID_WEIGHT", "Weight must be a non-negative whole number.");
+    if (!String(input.sku || "").trim())
+      fail(400, "INVALID_SKU", "SKU code is required.");
+    if (
+      !Number.isFinite(Number(input.price)) ||
+      !Number.isFinite(Number(input.mrp)) ||
+      Number(input.price) < 0 ||
+      Number(input.mrp) < Number(input.price)
+    )
       fail(400, "INVALID_PRICE", "SKU price/MRP is invalid.");
     if (skuId) {
       const [r] = await conn.execute(
@@ -240,15 +261,39 @@ export async function sku(pool, productId, input, skuId, adminId, req) {
         "INSERT INTO sku_attribute_values (sku_id,attribute_id,attribute_value_id) VALUES (?,?,?)",
         [skuId, a.attributeId, a.attributeValueId],
       );
-    await conn.commit();
+    if (input.mediaIds !== undefined) {
+      if (!Array.isArray(input.mediaIds))
+        fail(400, "INVALID_MEDIA", "Select product gallery images.");
+      const mediaIds = [...new Set(input.mediaIds.map(Number))];
+      for (const mediaId of mediaIds) {
+        const [[media]] = await conn.execute(
+          "SELECT id FROM product_media WHERE id=? AND product_id=? AND deleted_at IS NULL",
+          [mediaId, productId],
+        );
+        if (!media)
+          fail(
+            400,
+            "INVALID_MEDIA",
+            "SKU images must belong to this product gallery.",
+          );
+      }
+      await conn.execute("DELETE FROM sku_media WHERE sku_id=?", [skuId]);
+      for (const [index, mediaId] of mediaIds.entries()) {
+        await conn.execute(
+          "INSERT INTO sku_media (sku_id,product_media_id,sort_order,is_primary) VALUES (?,?,?,?)",
+          [skuId, mediaId, index, index === 0],
+        );
+      }
+    }
     await catalogAudit(
-      pool,
+      conn,
       adminId,
-      skuId ? "sku.updated" : "sku.created",
+      updating ? "sku.updated" : "sku.created",
       "product_skus",
       skuId,
       req,
     );
+    await conn.commit();
     return skuId;
   } catch (e) {
     await conn.rollback();

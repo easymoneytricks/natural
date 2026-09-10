@@ -11,8 +11,13 @@ export function CustomersPage() {
   }, [q]);
   return (
     <div>
-      <h1>Customers</h1>
-      <p>View customer profiles, orders, and account activity safely.</p>
+      <div className="page-head">
+        <div>
+          <h1>Customers</h1>
+          <p>View customer profiles, orders, and account activity safely.</p>
+        </div>
+        <span className="section-kicker">CUSTOMER DIRECTORY</span>
+      </div>
       <div className="toolbar">
         <input
           placeholder="Search name, email, or phone"
@@ -31,6 +36,13 @@ export function CustomersPage() {
             </tr>
           </thead>
           <tbody>
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan="4" className="empty-state">
+                  No customers found for this search.
+                </td>
+              </tr>
+            )}
             {rows.map((r) => (
               <tr key={r.id}>
                 <td>
@@ -39,7 +51,11 @@ export function CustomersPage() {
                     {r.email} · {r.phone}
                   </small>
                 </td>
-                <td>{r.status}</td>
+                <td>
+                  <span className={`status-pill status-${r.status}`}>
+                    {r.status}
+                  </span>
+                </td>
                 <td>{r.orderCount}</td>
                 <td>
                   {r.last_login_at
