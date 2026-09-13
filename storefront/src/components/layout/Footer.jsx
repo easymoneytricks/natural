@@ -60,6 +60,7 @@ export function Footer() {
   const [openGroup, setOpenGroup] = useState(null);
   const settings = useStoreSettings();
   const logo =
+    settings.branding?.footer_logo_url ||
     settings.branding?.logo_url ||
     "https://www.svgrepo.com/show/42722/skincare.svg";
 
@@ -76,16 +77,28 @@ export function Footer() {
           </p>
           <span>Modern botanical care, made to feel simple and personal.</span>
           <div className="footer-socials">
-            <a href="#" aria-label="Natural Beauty on Instagram">
+            <a
+              href={settings.footer?.instagram_url || "#"}
+              aria-label="Natural Beauty on Instagram"
+            >
               <Camera size={17} />
             </a>
-            <a href="#" aria-label="Natural Beauty on Facebook">
+            <a
+              href={settings.footer?.facebook_url || "#"}
+              aria-label="Natural Beauty on Facebook"
+            >
               <Globe size={17} />
             </a>
-            <a href="#" aria-label="Natural Beauty on YouTube">
+            <a
+              href={settings.footer?.youtube_url || "#"}
+              aria-label="Natural Beauty on YouTube"
+            >
               <Play size={17} />
             </a>
-            <a href="#" aria-label="Natural Beauty on Pinterest">
+            <a
+              href={settings.footer?.pinterest_url || "#"}
+              aria-label="Natural Beauty on Pinterest"
+            >
               <Bookmark size={17} />
             </a>
           </div>

@@ -5,6 +5,7 @@ import { useAuth } from "./main";
 const defaults = {
   branding: {
     logo_url: "",
+    footer_logo_url: "",
     favicon_url: "",
     announcement: "Complimentary shipping on orders above ₹999",
   },
@@ -59,6 +60,23 @@ const defaults = {
     support_phone: "+91 98765 43210",
     footer_links:
       "FAQs|/faq\nShipping|/shipping\nReturns|/returns\nContact|/contact",
+    instagram_url: "",
+    facebook_url: "",
+    youtube_url: "",
+    pinterest_url: "",
+  },
+  contact: {
+    eyebrow: "We would love to hear from you",
+    title: "Let’s make your routine feel simple.",
+    intro:
+      "Questions about a product, an order or finding your next formula? Our care team is here Monday–Saturday, 10:00 AM–6:00 PM.",
+    email: "hello@naturalbeauty.example",
+    phone: "+91 98765 43210",
+    address_name: "Natural Beauty Studio",
+    address_line: "Indiranagar, Bengaluru 560038",
+    hours: "Monday–Saturday, 10:00 AM–6:00 PM",
+    map_url:
+      "https://www.openstreetmap.org/export/embed.html?bbox=77.625%2C12.965%2C77.645%2C12.985&layer=mapnik&marker=12.975%2C77.635",
   },
   store: {
     store_name: "Natural Beauty",
@@ -276,6 +294,14 @@ export function SettingsPage() {
               setState={setState}
             />
             <Field
+              label="Footer logo URL"
+              group="branding"
+              name="footer_logo_url"
+              state={state}
+              setState={setState}
+              help="Optional separate logo for the footer. Leave blank to reuse the header logo."
+            />
+            <Field
               label="Announcement message"
               group="branding"
               name="announcement"
@@ -335,6 +361,78 @@ export function SettingsPage() {
               state={state}
               setState={setState}
               help="Example: G-XXXXXXXXXX"
+            />
+          </SettingsGroup>
+          <SettingsGroup
+            icon={Globe2}
+            title="Contact page"
+            description="Control the customer-care details, address and map shown on the storefront contact page."
+          >
+            <Field
+              label="Eyebrow"
+              group="contact"
+              name="eyebrow"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Page title"
+              group="contact"
+              name="title"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Intro"
+              group="contact"
+              name="intro"
+              type="textarea"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Support email"
+              group="contact"
+              name="email"
+              type="email"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Support phone"
+              group="contact"
+              name="phone"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Address name"
+              group="contact"
+              name="address_name"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Address line"
+              group="contact"
+              name="address_line"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Support hours"
+              group="contact"
+              name="hours"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Map embed URL"
+              group="contact"
+              name="map_url"
+              state={state}
+              setState={setState}
+              help="Use a trusted map embed URL, not a regular map share page."
             />
           </SettingsGroup>
           <SettingsGroup
@@ -746,6 +844,38 @@ export function SettingsPage() {
               state={state}
               setState={setState}
               help="One link per line in the format Label|/path."
+            />
+            <Field
+              label="Instagram URL"
+              group="footer"
+              name="instagram_url"
+              state={state}
+              setState={setState}
+              placeholder="https://instagram.com/yourbrand"
+            />
+            <Field
+              label="Facebook URL"
+              group="footer"
+              name="facebook_url"
+              state={state}
+              setState={setState}
+              placeholder="https://facebook.com/yourbrand"
+            />
+            <Field
+              label="YouTube URL"
+              group="footer"
+              name="youtube_url"
+              state={state}
+              setState={setState}
+              placeholder="https://youtube.com/@yourbrand"
+            />
+            <Field
+              label="Pinterest URL"
+              group="footer"
+              name="pinterest_url"
+              state={state}
+              setState={setState}
+              placeholder="https://pinterest.com/yourbrand"
             />
             <Field
               label="Support email"

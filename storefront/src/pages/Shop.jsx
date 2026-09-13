@@ -313,25 +313,6 @@ export function Shop() {
         </p>
       </section>
       <main className="shop-content homepage-container">
-        <nav className="category-strip" aria-label="Shop categories">
-          <button
-            className={!selected.category?.length ? "is-active" : ""}
-            onClick={clearFilters}
-          >
-            All
-          </button>
-          {(filterGroups[0]?.options || []).map((category, index) => (
-            <button
-              className={
-                selected.category?.includes(category) ? "is-active" : ""
-              }
-              key={category}
-              onClick={() => updateParams("category", category, true)}
-            >
-              {filterGroups[0].labels[index]}
-            </button>
-          ))}
-        </nav>
         <div className="shop-toolbar">
           <span>
             <strong>{resultLabel}</strong>

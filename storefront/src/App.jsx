@@ -35,6 +35,7 @@ import { SeoMeta } from "./components/SeoMeta";
 import { useLocation } from "react-router-dom";
 import { ConsentBanner } from "./components/layout/ConsentBanner";
 import { Analytics } from "./components/Analytics";
+import { ArrowUp } from "lucide-react";
 
 const informationalRoutes = [
   "/about",
@@ -55,12 +56,14 @@ const informationalRoutes = [
   "/cancellation-policy",
 ];
 const cmsRoutes = new Set([
+  "/about",
   "/privacy",
   "/terms",
   "/shipping",
   "/returns",
   "/refund-policy",
   "/cancellation-policy",
+  "/faq",
 ]);
 
 export default function App() {
@@ -68,6 +71,14 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setShowScrollTop(window.scrollY > 420);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const close = (event) => {
@@ -80,6 +91,10 @@ export default function App() {
     window.addEventListener("keydown", close);
     return () => window.removeEventListener("keydown", close);
   }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [location.pathname]);
 
   useEffect(() => {
     document.body.classList.toggle(
@@ -158,6 +173,17 @@ export default function App() {
       <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
       <ConsentBanner />
       <Analytics />
+      {showScrollTop && (
+        <button
+          className="scroll-to-top"
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="Back to top"
+          title="Back to top"
+        >
+          <ArrowUp size={18} strokeWidth={1.8} />
+        </button>
+      )}
     </StoreSettingsProvider>
   );
 }

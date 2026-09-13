@@ -418,6 +418,35 @@ export async function listOrders(pool, customerId) {
     grandTotal: Number(r.grand_total),
   }));
 }
+
+export async function trackPublicOrder(pool, input) {
+  const orderNumber = String(input.orderNumber || "").trim();
+  const trackingId = String(input.trackingId || "").trim();
+  const email = String(input.email || "").trim().toLowerCase();
+  if ((!orderNumber && !trackingId) || !email)
+    throw new AuthError(400, "TRACKING_INPUT_REQUIRED", "Enter an order ID or tracking ID and the email used at checkout.");
+  const [rows] = await pool.execute(
+    `SELECT id,order_number,status,payment_status,payment_method,placed_at,courier_name,tracking_id
+     FROM orders WHERE LOWER(customer_email)=? AND ((? <> '' AND order_number=?) OR (? <> '' AND tracking_id=?)) LIMIT 1`,
+    [email, orderNumber, orderNumber, trackingId, trackingId],
+  );
+  if (!rows[0])
+    throw new AuthError(404, "ORDER_NOT_FOUND", "We could not find an order with those details.");
+  const order = rows[0];
+  const detail = await getOrder(pool, order.id, null);
+  return {
+    orderNumber: detail.orderNumber,
+    status: detail.status,
+    paymentStatus: detail.paymentStatus,
+    paymentMethod: detail.paymentMethod,
+    placedAt: detail.placedAt,
+    courier: order.courier_name,
+    trackingId: order.tracking_id,
+    items: detail.items,
+    pricing: { total: detail.pricing.total },
+    timeline: detail.timeline,
+  };
+}
 export async function releaseOrderReservations(
   pool,
   orderId,

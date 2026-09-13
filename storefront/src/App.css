@@ -184,46 +184,94 @@
 }
 /* CMS pages */
 .cms-page {
-  max-width: 1180px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 72px 32px 96px;
+  padding: 52px 40px 76px;
 }
 .cms-page-header {
-  max-width: 760px;
-  padding-bottom: 42px;
+  max-width: 900px;
+  padding-bottom: 34px;
   border-bottom: 1px solid var(--line, #dfe4dc);
 }
 .cms-page-header h1 {
-  margin: 14px 0 16px;
-  font-size: clamp(42px, 6vw, 76px);
-  line-height: 0.98;
+  margin: 12px 0 14px;
+  font-size: clamp(38px, 4.4vw, 60px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
 }
 .cms-page-header p {
-  max-width: 640px;
+  max-width: 680px;
   margin: 0;
   color: #5e7168;
-  font-size: 18px;
-  line-height: 1.6;
+  font-size: 17px;
+  line-height: 1.55;
+}
+.cms-page-layout {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 780px);
+  gap: 64px;
+  padding-top: 34px;
+}
+.cms-page-nav {
+  position: sticky;
+  top: 28px;
+  align-self: start;
+  color: #53685c;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.cms-page-nav span {
+  color: #2f4d39;
+  font-weight: 600;
+}
+.cms-page-nav ol {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.cms-page-nav a {
+  color: #62766b;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-transform: none;
+}
+.cms-page-nav a:hover,
+.cms-page-nav a:focus-visible {
+  color: #2f4d39;
 }
 .cms-page-content {
-  max-width: 760px;
-  padding-top: 12px;
+  min-width: 0;
 }
 .cms-page-content section {
-  padding: 28px 0;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 18px;
+  padding: 26px 0 30px;
   border-bottom: 1px solid var(--line, #dfe4dc);
+  scroll-margin-top: 24px;
+}
+.cms-section-number {
+  padding-top: 4px;
+  color: #839287;
+  font-size: 12px;
+  letter-spacing: 0.12em;
 }
 .cms-page-content h2 {
-  margin: 0 0 10px;
+  margin: 0 0 9px;
   font:
-    28px Georgia,
+    25px Georgia,
     serif;
   color: #233229;
+  letter-spacing: -0.02em;
 }
 .cms-page-content p {
   margin: 0;
   color: #5e7168;
-  line-height: 1.75;
+  font-size: 15px;
+  line-height: 1.72;
   white-space: pre-line;
 }
 .cms-state {
@@ -234,9 +282,26 @@
 }
 @media (max-width: 640px) {
   .cms-page {
-    padding: 48px 20px 68px;
+    padding: 38px 20px 60px;
   }
   .cms-page-header h1 {
-    font-size: 46px;
+    font-size: 40px;
+  }
+  .cms-page-layout {
+    display: block;
+    padding-top: 22px;
+  }
+  .cms-page-nav {
+    position: static;
+    padding-bottom: 8px;
+  }
+  .cms-page-nav ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+  }
+  .cms-page-content section {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 10px;
   }
 }

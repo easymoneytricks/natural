@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { SeoMeta, StructuredData } from "../components/SeoMeta";
 
 const API = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1"
@@ -41,20 +42,62 @@ export function CmsPage({ slug: routeSlug }) {
       </div>
     );
   return (
-    <article className="cms-page">
-      <div className="cms-page-header">
-        {page.eyebrow && <span className="section-kicker">{page.eyebrow}</span>}
-        <h1>{page.title}</h1>
-        {page.intro && <p>{page.intro}</p>}
-      </div>
-      <div className="cms-page-content">
-        {(page.content || []).map(([heading, body], index) => (
-          <section key={`${heading}-${index}`}>
-            <h2>{heading}</h2>
-            <p>{body}</p>
-          </section>
-        ))}
-      </div>
-    </article>
+    <>
+      <SeoMeta
+        title={page.seoTitle || page.title}
+        description={page.seoDescription || page.intro}
+        canonicalUrl={`${window.location.origin}/pages/${page.slug}`}
+      />
+      {slug === "faq" && (
+        <StructuredData
+          data={{
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: (page.content || []).map(([question, answer]) => ({
+              "@type": "Question",
+              name: question,
+              acceptedAnswer: { "@type": "Answer", text: answer },
+            })),
+          }}
+        />
+      )}
+      <article className="cms-page">
+        <div className="cms-page-header">
+          {page.eyebrow && (
+            <span className="section-kicker">{page.eyebrow}</span>
+          )}
+          <h1>{page.title}</h1>
+          {page.intro && <p>{page.intro}</p>}
+        </div>
+        <div className="cms-page-layout">
+          <aside className="cms-page-nav" aria-label="On this page">
+            <span>On this page</span>
+            <ol>
+              {(page.content || []).map(([heading], index) => (
+                <li key={`${heading}-link`}>
+                  <a href={`#policy-section-${index}`}>{heading}</a>
+                </li>
+              ))}
+            </ol>
+          </aside>
+          <div className="cms-page-content">
+            {(page.content || []).map(([heading, body], index) => (
+              <section
+                id={`policy-section-${index}`}
+                key={`${heading}-${index}`}
+              >
+                <span className="cms-section-number">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <div>
+                  <h2>{heading}</h2>
+                  <p>{body}</p>
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
+      </article>
+    </>
   );
 }

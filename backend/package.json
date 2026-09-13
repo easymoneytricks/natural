@@ -17,7 +17,9 @@
     "inventory:status": "node scripts/inventory-status.js",
     "sku:status": "node scripts/sku-status.js",
     "media:orphans": "node scripts/media-orphans.js",
-    "seed:legal-pages": "node scripts/seed-legal-pages.js"
+    "seed:legal-pages": "node scripts/seed-legal-pages.js",
+    "seed:faq-page": "node scripts/seed-faq-page.js",
+    "seed:about-page": "node scripts/seed-about-page.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

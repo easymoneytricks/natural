@@ -3,7 +3,20 @@ import {
   listOrders,
   getOrder,
   placeCodOrder,
+  trackPublicOrder,
 } from "../services/order.service.js";
+import rateLimit from "express-rate-limit";
+
+export const trackOrder = [
+  rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-7", legacyHeaders: false }),
+  async (req, res, next) => {
+    try {
+      res.json({ data: await trackPublicOrder(pool, req.body || {}) });
+    } catch (error) {
+      next(error);
+    }
+  },
+];
 import { orderEmail, sendEmail } from "../services/mail.service.js";
 import PDFDocument from "pdfkit";
 export async function createOrder(req, res, next) {

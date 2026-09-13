@@ -13,6 +13,7 @@ const groups = [
   "homepage",
   "navigation",
   "footer",
+  "contact",
   "store",
   "smtp",
   "homepage_sections",

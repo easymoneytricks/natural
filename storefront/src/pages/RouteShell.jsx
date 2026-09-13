@@ -1,4 +1,12 @@
-import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
+import {
+  ArrowRight,
+  Beaker,
+  Leaf,
+  Mail,
+  MapPin,
+  Phone,
+  ShieldCheck,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import {
@@ -6,6 +14,7 @@ import {
   isRecaptchaEnabled,
 } from "../components/RecaptchaWidget";
 import { useStoreSettings } from "../context/StoreSettingsContext";
+import heroImage from "../assets/natural-beauty-hero.png";
 
 const content = {
   about: {
@@ -119,6 +128,7 @@ const content = {
 
 export function RouteShell({ title }) {
   if (title === "contact") return <ContactPage />;
+  if (title === "about") return <AboutPage />;
   const page = content[title] || {
     eyebrow: "Natural Beauty",
     title: title.replaceAll("-", " "),
@@ -147,8 +157,82 @@ export function RouteShell({ title }) {
   );
 }
 
+function AboutPage() {
+  const principles = [
+    [
+      Leaf,
+      "Botanical inspiration",
+      "We look to plants for comfort, resilience and texture, then pair that inspiration with ingredients selected for a clear, useful role.",
+    ],
+    [
+      Beaker,
+      "Modern formulation",
+      "Every formula is developed around everyday skin needs, with considered concentrations, pleasant textures and straightforward directions.",
+    ],
+    [
+      ShieldCheck,
+      "Honest care",
+      "We keep our language clear, our routines practical and our promises grounded in what a product is designed to do.",
+    ],
+  ];
+  return (
+    <section className="route-shell about-page container">
+      <div className="about-hero">
+        <div>
+          <p className="eyebrow">Our story</p>
+          <h1>Skincare with less noise, and more intention.</h1>
+          <p className="route-intro">
+            Natural Beauty began with a simple belief: a good routine should
+            feel easy to understand, lovely to use and genuinely useful to your
+            skin.
+          </p>
+        </div>
+        <figure className="about-hero-image">
+          <img
+            src={heroImage}
+            alt="Natural Beauty skincare bottles and botanicals"
+          />
+          <figcaption>Botanical inspiration · modern science</figcaption>
+        </figure>
+      </div>
+      <div className="about-story-copy">
+        <p className="eyebrow">A considered approach</p>
+        <h2>Make space for the rituals that stay.</h2>
+        <p>
+          We create uncomplicated formulas for real routines: the cleanser you
+          reach for every morning, the serum you use when your skin needs
+          support, and the moisturiser that brings everything together. Our
+          products are designed to work beautifully on their own and even better
+          as a thoughtful, flexible ritual.
+        </p>
+      </div>
+      <div className="about-principles">
+        {principles.map(([Icon, title, text]) => (
+          <article key={title}>
+            <Icon size={22} strokeWidth={1.5} />
+            <h2>{title}</h2>
+            <p>{text}</p>
+          </article>
+        ))}
+      </div>
+      <div className="about-footer-cta">
+        <div>
+          <p className="eyebrow">Find your everyday ritual</p>
+          <h2>Start with what your skin needs today.</h2>
+        </div>
+        <Link className="button" to="/shop">
+          Explore skincare <ArrowRight size={15} />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 function ContactPage() {
   const settings = useStoreSettings();
+  const contact = settings.contact || {};
+  const contactEmail = contact.email || "hello@naturalbeauty.example";
+  const contactPhone = contact.phone || "+91 98765 43210";
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -196,27 +280,36 @@ function ContactPage() {
   };
   return (
     <section className="route-shell contact-page container">
-      <p className="eyebrow">We would love to hear from you</p>
+      <p className="eyebrow">
+        {contact.eyebrow || "We would love to hear from you"}
+      </p>
+      <h1 className="contact-title-controlled">
+        {contact.title || "Let’s make your routine feel simple."}
+      </h1>
+      <p className="route-intro contact-intro-controlled">
+        {contact.intro ||
+          "Questions about a product, an order or finding your next formula? Our care team is here Monday–Saturday, 10:00 AM–6:00 PM."}
+      </p>
       <h1>Let’s make your routine feel simple.</h1>
-      <p className="route-intro">
+      <p className="route-intro contact-intro-fallback">
         Questions about a product, an order or finding your next formula? Our
         care team is here Monday–Saturday, 10:00 AM–6:00 PM.
       </p>
       <div className="contact-grid">
         <div className="contact-info">
-          <a href="mailto:hello@naturalbeauty.example">
+          <a href={`mailto:${contactEmail}`}>
             <Mail size={17} />
-            hello@naturalbeauty.example
+            {contactEmail}
           </a>
-          <a href="tel:+919876543210">
+          <a href={`tel:${contactPhone.replace(/\s+/g, "")}`}>
             <Phone size={17} />
-            +91 98765 43210
+            {contactPhone}
           </a>
           <p>
             <MapPin size={17} />
-            Natural Beauty Studio
+            {contact.address_name || "Natural Beauty Studio"}
             <br />
-            Indiranagar, Bengaluru 560038
+            {contact.address_line || "Indiranagar, Bengaluru 560038"}
           </p>
           <Link className="button" to="/shop">
             Explore skincare <ArrowRight size={15} />
@@ -272,7 +365,10 @@ function ContactPage() {
         </form>
         <iframe
           title="Natural Beauty Studio location"
-          src="https://www.openstreetmap.org/export/embed.html?bbox=77.625%2C12.965%2C77.645%2C12.985&layer=mapnik&marker=12.975%2C77.635"
+          src={
+            contact.map_url ||
+            "https://www.openstreetmap.org/export/embed.html?bbox=77.625%2C12.965%2C77.645%2C12.985&layer=mapnik&marker=12.975%2C77.635"
+          }
           loading="lazy"
         />
       </div>

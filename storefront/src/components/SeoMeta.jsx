@@ -39,7 +39,11 @@ export function SeoMeta({
 }) {
   useEffect(() => {
     const canonical = resolveCanonical(canonicalUrl);
-    document.title = title ? `${title} | Natural Beauty` : "Natural Beauty";
+    document.title = title
+      ? title.endsWith("| Natural Beauty")
+        ? title
+        : `${title} | Natural Beauty`
+      : "Natural Beauty";
     let link = document.head.querySelector("link[rel='canonical']");
     if (!link) {
       link = document.createElement("link");

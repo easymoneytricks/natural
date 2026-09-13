@@ -16,6 +16,304 @@
   --display-lg: clamp(36px, 3.4vw, 52px);
   --display-md: clamp(30px, 2.7vw, 42px);
 }
+
+.about-page {
+  padding-top: clamp(38px, 5vw, 64px);
+}
+.about-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 80px;
+  align-items: end;
+  padding-bottom: 52px;
+  border-bottom: 1px solid var(--line);
+}
+.about-hero h1 {
+  max-width: 760px;
+}
+.about-hero-note {
+  padding: 18px 0 2px 22px;
+  border-left: 2px solid var(--sage);
+}
+.about-hero-note span {
+  color: var(--sage-dark);
+  font-family: var(--serif);
+  font-size: 22px;
+}
+.about-hero-note p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.about-hero-image {
+  position: relative;
+  min-height: 300px;
+  margin: 0;
+  overflow: hidden;
+  background: var(--sand);
+}
+.about-hero-image img {
+  display: block;
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+.about-hero-image figcaption {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  padding: 6px 9px;
+  background: rgba(248, 246, 241, 0.9);
+  color: var(--sage-dark);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.about-story-copy {
+  max-width: 680px;
+  padding: 54px 0 42px;
+}
+.about-story-copy h2,
+.about-footer-cta h2 {
+  margin: 10px 0 16px;
+  color: var(--ink);
+  font: var(--display-md) / 1.12 var(--serif);
+  letter-spacing: -0.04em;
+}
+.about-story-copy > p:last-child {
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.75;
+}
+.about-principles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.about-principles article {
+  min-height: 220px;
+  padding: 26px 24px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+.about-principles svg {
+  color: var(--sage-dark);
+}
+.about-principles h2 {
+  margin: 32px 0 10px;
+  color: var(--ink);
+  font: 24px/1.15 var(--serif);
+}
+.about-principles p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+.about-footer-cta {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 56px;
+  padding: 30px 0 4px;
+  border-top: 1px solid var(--line);
+}
+.about-footer-cta h2 {
+  max-width: 520px;
+  margin-bottom: 0;
+}
+.about-footer-cta .button {
+  flex: 0 0 auto;
+  color: white;
+  background: var(--sage-dark);
+}
+@media (max-width: 640px) {
+  .about-hero {
+    display: block;
+    padding-bottom: 36px;
+  }
+  .about-hero-image {
+    margin-top: 28px;
+  }
+  .about-story-copy {
+    padding: 38px 0 30px;
+  }
+  .about-principles {
+    grid-template-columns: 1fr;
+  }
+  .about-principles article {
+    min-height: auto;
+  }
+  .about-footer-cta {
+    display: block;
+    margin-top: 38px;
+  }
+  .about-footer-cta .button {
+    margin-top: 24px;
+  }
+}
+
+/* Legal and policy pages */
+.cms-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 52px 40px 76px;
+}
+.cms-page-header {
+  max-width: 900px;
+  padding-bottom: 34px;
+  border-bottom: 1px solid var(--line);
+}
+.cms-page-header h1 {
+  margin: 12px 0 14px;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(38px, 4.4vw, 60px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+.cms-page-header p {
+  max-width: 680px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.55;
+}
+.cms-page-layout {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 780px);
+  gap: 64px;
+  padding-top: 34px;
+}
+.cms-page-nav {
+  position: sticky;
+  top: 28px;
+  align-self: start;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.cms-page-nav span {
+  color: var(--sage-dark);
+  font-weight: 600;
+}
+.cms-page-nav ol {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.cms-page-nav a {
+  color: var(--muted);
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-transform: none;
+}
+.cms-page-nav a:hover,
+.cms-page-nav a:focus-visible {
+  color: var(--sage-dark);
+}
+.cms-page-content {
+  min-width: 0;
+}
+.cms-page-content section {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 18px;
+  padding: 26px 0 30px;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 24px;
+}
+.cms-section-number {
+  padding-top: 4px;
+  color: #839287;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+}
+.cms-page-content h2 {
+  margin: 0 0 9px;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 25px;
+  letter-spacing: -0.02em;
+}
+.cms-page-content p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.72;
+  white-space: pre-line;
+}
+.cms-state {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 80px 32px;
+  color: var(--muted);
+}
+.scroll-to-top {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 50;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  background: var(--sage-dark);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(32, 36, 31, 0.2);
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    background 180ms ease;
+}
+.scroll-to-top:hover,
+.scroll-to-top:focus-visible {
+  background: var(--ink);
+  transform: translateY(-3px);
+}
+.scroll-to-top:focus-visible {
+  outline: 2px solid var(--sage);
+  outline-offset: 3px;
+}
+@media (max-width: 640px) {
+  .scroll-to-top {
+    right: 16px;
+    bottom: 16px;
+    width: 40px;
+    height: 40px;
+  }
+  .cms-page {
+    padding: 38px 20px 60px;
+  }
+  .cms-page-header h1 {
+    font-size: 40px;
+  }
+  .cms-page-layout {
+    display: block;
+    padding-top: 22px;
+  }
+  .cms-page-nav {
+    position: static;
+    padding-bottom: 8px;
+  }
+  .cms-page-nav ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+  }
+  .cms-page-content section {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 10px;
+  }
+}
 * {
   box-sizing: border-box;
 }
@@ -681,6 +979,10 @@ input:focus-visible {
 }
 .contact-page h1 {
   max-width: 760px;
+}
+.contact-page > h1:not(.contact-title-controlled),
+.contact-intro-fallback {
+  display: none;
 }
 .contact-page {
   width: min(1440px, calc(100% - 96px));

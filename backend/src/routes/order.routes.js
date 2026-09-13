@@ -8,7 +8,9 @@ import {
   customerInvoice,
   customerOrders,
 } from "../controllers/order.controller.js";
+import { trackOrder } from "../controllers/order.controller.js";
 const router = Router();
+router.post("/track-order", trackOrder);
 router.post(
   "/orders",
   rateLimit({
