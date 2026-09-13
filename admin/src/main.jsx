@@ -49,6 +49,20 @@ const request = async (path, opt = {}) => {
     throw { status: r.status, code: p.error?.code, message: p.error?.message };
   return p;
 };
+// StrictMode mounts effects twice in development. Share refresh rotation so
+// concurrent callers cannot invalidate each other's one-time refresh cookie.
+let refreshRequest;
+const refreshSession = () => {
+  if (!refreshRequest) {
+    refreshRequest = request("/admin/auth/refresh", { method: "POST" }).finally(
+      () => {
+        refreshRequest = null;
+      },
+    );
+  }
+  return refreshRequest;
+};
+
 function Provider({ children }) {
   const [admin, setAdmin] = useState(null),
     [token, setToken] = useState(null),
@@ -60,7 +74,7 @@ function Provider({ children }) {
     return r.data;
   };
   useEffect(() => {
-    request("/admin/auth/refresh", { method: "POST" })
+    refreshSession()
       .then(apply)
       .catch(() => setStatus("unauthenticated"));
   }, []);

@@ -219,19 +219,32 @@ export const BrandsPage = () => <Manager type="brands" />;
 export const CategoriesPage = () => <Manager type="categories" />;
 export function ProductsPage() {
   const { authFetch } = useAuth();
+  const [deleted, setDeleted] = useState(false);
+  const [error, setError] = useState("");
   const [rows, setRows] = useState([]),
     [q, setQ] = useState("");
   useEffect(() => {
-    authFetch(`/admin/products?q=${encodeURIComponent(q)}`)
+    authFetch(`/admin/products?q=${encodeURIComponent(q)}&deleted=${deleted}`)
       .then((r) => setRows(r.data))
-      .catch(() => setRows([]));
-  }, [q]);
+      .catch((caught) =>
+        setError(caught.message || "Unable to load products."),
+      );
+  }, [q, deleted]);
   return (
     <ProtectedCatalog>
       <div className="page-head">
         <div>
           <h1>Products</h1>
           <p>Manage products and explicit sellable SKUs.</p>
+          <label>
+            <input
+              type="checkbox"
+              checked={deleted}
+              onChange={(event) => setDeleted(event.target.checked)}
+            />
+            Show archived products
+          </label>
+          {error && <p role="alert">{error}</p>}
         </div>
         <a href="/catalog/products/new">
           <button>Add product</button>

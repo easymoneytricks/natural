@@ -15,7 +15,11 @@ const fail = (s, c, m) => {
   throw new AuthError(s, c, m);
 };
 export async function list(pool, q = {}) {
-  const where = [q.deleted === "true" ? "p.deleted_at IS NOT NULL" : "p.deleted_at IS NULL"],
+  const where = [
+      q.deleted === "true"
+        ? "p.deleted_at IS NOT NULL"
+        : "p.deleted_at IS NULL",
+    ],
     args = [];
   if (q.search) {
     where.push("(p.name LIKE ? OR p.slug LIKE ?)");
@@ -76,9 +80,16 @@ export async function detail(pool, id) {
     [id],
   );
   const [attrs] = await pool.execute(
-    'SELECT pa.attribute_id,pa.sort_order,pa.is_required,a.name,(SELECT JSON_ARRAYAGG(JSON_OBJECT("id",pav.attribute_value_id,"sortOrder",pav.sort_order)) FROM product_attribute_values pav WHERE pav.product_id=pa.product_id AND pav.attribute_id=pa.attribute_id) values_json FROM product_attributes pa JOIN attributes a ON a.id=pa.attribute_id WHERE pa.product_id=? ORDER BY pa.sort_order',
+    "SELECT pa.attribute_id,pa.sort_order,pa.is_required,a.name FROM product_attributes pa JOIN attributes a ON a.id=pa.attribute_id WHERE pa.product_id=? ORDER BY pa.sort_order",
     [id],
   );
+  for (const attribute of attrs) {
+    const [values] = await pool.execute(
+      "SELECT attribute_value_id AS id,sort_order AS sortOrder FROM product_attribute_values WHERE product_id=? AND attribute_id=? ORDER BY sort_order,attribute_value_id",
+      [id, attribute.attribute_id],
+    );
+    attribute.values = values;
+  }
   const [skus] = await pool.execute(
     "SELECT s.*,COALESCE(i.quantity_on_hand,0) on_hand,COALESCE(i.reserved_quantity,0) reserved FROM product_skus s LEFT JOIN inventory i ON i.sku_id=s.id WHERE s.product_id=? ORDER BY s.sort_order,s.id",
     [id],
@@ -103,18 +114,14 @@ export async function detail(pool, id) {
     benefits,
     ingredients,
     media,
-    attributes: attrs.map((a) => ({
-      ...a,
-      values:
-        typeof a.values_json === "string"
-          ? JSON.parse(a.values_json || "[]")
-          : a.values_json || [],
-    })),
+    attributes: attrs,
     skus,
   };
 }
 export async function save(pool, input, id, adminId, req) {
-  return productTransaction(pool, id, (connection) => saveProduct(connection, input, id, adminId, req));
+  return productTransaction(pool, id, (connection) =>
+    saveProduct(connection, input, id, adminId, req),
+  );
 }
 
 async function saveProduct(pool, input, id, adminId, req) {
@@ -124,7 +131,12 @@ async function saveProduct(pool, input, id, adminId, req) {
     fail(400, "VALIDATION_ERROR", "Name and slug are required.");
   const price = Number(input.basePrice || 0),
     mrp = Number(input.baseMrp || 0);
-  if (!Number.isFinite(price) || !Number.isFinite(mrp) || price < 0 || mrp < price)
+  if (
+    !Number.isFinite(price) ||
+    !Number.isFinite(mrp) ||
+    price < 0 ||
+    mrp < price
+  )
     fail(400, "INVALID_PRICE", "Base price/MRP is invalid.");
   const vals = [
     input.brandId || null,
@@ -196,16 +208,37 @@ export async function sku(pool, productId, input, skuId, adminId, req) {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-    const [[product]] = await conn.execute("SELECT id,deleted_at FROM products WHERE id=? FOR UPDATE", [productId]);
-    if (!product || product.deleted_at) fail(404, "PRODUCT_NOT_FOUND", "Restore the product before editing SKUs.");
+    const [[product]] = await conn.execute(
+      "SELECT id,deleted_at FROM products WHERE id=? FOR UPDATE",
+      [productId],
+    );
+    if (!product || product.deleted_at)
+      fail(
+        404,
+        "PRODUCT_NOT_FOUND",
+        "Restore the product before editing SKUs.",
+      );
     const assignments = (input.attributes || []).map((a) => ({
       attributeId: Number(a.attributeId),
       attributeValueId: Number(a.valueId ?? a.attributeValueId),
     }));
     let combination;
-    try { combination = await validateSkuAttributes(conn, productId, assignments); }
-    catch (error) { fail(400, "INVALID_SKU_ATTRIBUTES", error.message); }
-    if (input.weightGrams !== "" && input.weightGrams != null && (!Number.isInteger(Number(input.weightGrams)) || Number(input.weightGrams) < 0)) fail(400, "INVALID_WEIGHT", "Weight must be a non-negative whole number.");
+    try {
+      combination = await validateSkuAttributes(conn, productId, assignments);
+    } catch (error) {
+      fail(400, "INVALID_SKU_ATTRIBUTES", error.message);
+    }
+    if (
+      input.weightGrams !== "" &&
+      input.weightGrams != null &&
+      (!Number.isInteger(Number(input.weightGrams)) ||
+        Number(input.weightGrams) < 0)
+    )
+      fail(
+        400,
+        "INVALID_WEIGHT",
+        "Weight must be a non-negative whole number.",
+      );
     if (!String(input.sku || "").trim())
       fail(400, "INVALID_SKU", "SKU code is required.");
     if (
@@ -349,7 +382,7 @@ export async function removeSku(pool, productId, skuId, adminId, req) {
 export async function restoreSku(pool, productId, skuId, adminId, req) {
   try {
     const [result] = await pool.execute(
-      "UPDATE product_skus SET deleted_at=NULL, is_active=1 WHERE id=? AND product_id=? AND deleted_at IS NOT NULL",
+      "UPDATE product_skus SET deleted_at=NULL, is_active=0 WHERE id=? AND product_id=? AND deleted_at IS NOT NULL",
       [skuId, productId],
     );
     if (!result.affectedRows)

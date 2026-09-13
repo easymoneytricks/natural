@@ -1,4 +1,24 @@
 /* Shared controls apply to every administration route, including page actions. */
+.product-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.product-fields > .card {
+  margin-bottom: 24px;
+}
+.confirm-dialog {
+  width: min(480px, calc(100vw - 32px));
+  padding: 28px;
+  border: 1px solid #d8e0d9;
+  border-radius: 18px;
+  box-shadow: 0 24px 80px #0003;
+}
+.confirm-dialog::backdrop {
+  background: #12261bb3;
+  backdrop-filter: blur(3px);
+}
 .shell button,
 .login button {
   display: inline-flex;

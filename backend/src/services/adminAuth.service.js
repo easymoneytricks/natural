@@ -90,14 +90,14 @@ export async function refreshAdmin(pool, raw) {
   try {
     await c.beginTransaction();
     const [rows] = await c.execute(
-      'SELECT s.*,u.* FROM admin_sessions s JOIN admin_users u ON u.id=s.admin_user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>NOW() AND u.status="active" AND u.deleted_at IS NULL FOR UPDATE',
+      'SELECT s.* FROM admin_sessions s JOIN admin_users u ON u.id=s.admin_user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>NOW() AND u.status="active" AND u.deleted_at IS NULL FOR UPDATE',
       [hashAdminRefreshToken(raw)],
     );
     if (!rows[0])
       throw new AuthError(401, "SESSION_EXPIRED", "Your session has expired.");
     const next = createAdminRefreshToken();
     await c.execute(
-      "UPDATE admin_sessions SET token_hash=?,last_used_at=NOW() WHERE id=?",
+      "UPDATE admin_sessions SET token_hash=?,last_used_at=NOW(),expires_at=expires_at WHERE id=?",
       [hashAdminRefreshToken(next), rows[0].id],
     );
     await c.commit();

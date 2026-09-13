@@ -52,7 +52,7 @@ Commit: `40e2e8b`
 | 22 | Admin Premium UI System | 🟡 PARTIAL | ~65% | `admin/styles.css`, shell, shared card/table/form styles | No reusable component layer; several pages remain sparse/list-only |
 | 23 | Admin Brands | ✅ COMPLETE | ~85% | `adminCatalog.routes.js`, service/controller, `catalog.jsx`, media service | Deleted-record filtering/detail UX limited |
 | 24 | Admin Categories | ✅ COMPLETE | ~80% | hierarchy validation/cycle checks and Admin page | Full hierarchy editor and deleted-state UI limited |
-| 25 | Admin Products | 🟡 PARTIAL | ~85% | `adminProduct.service.js`, `admin/productEditor.jsx`, product routes, attribute/media endpoints, real Product Editor routes | SKU edit/delete controls, media primary/reorder/remove controls, and complete end-to-end editor QA remain |
+| 25 | Admin Products | 🟡 PARTIAL | Gate pending | Product/content transactions, allowed values, explicit SKU editor, media controls, archive/restore UI and seven passing local database test groups | Authenticated browser create/edit/reload/gallery/lifecycle/storefront gate remains; see 2026-09-13 evidence below |
 | 26 | Admin Inventory | 🟡 PARTIAL | ~80% | Admin inventory service/routes, `/inventory`, `/inventory/:skuId`, adjustment/correction UI, movement history | List filters/actions and idempotent adjustment key remain incomplete |
 | 27 | Admin Orders | 🟡 PARTIAL | ~55% | `adminOrder.service.js`, routes, migration `013` | Orders list/detail UI not implemented |
 | 28 | Admin Customers | 🟡 PARTIAL | ~60% | customer Admin service/routes and `admin/customer.jsx` | Detail/status controls and richer activity UI incomplete |
@@ -146,13 +146,13 @@ The current `PROGRESS.md` materially overstates completeness in a few broad “C
 
 ### Admin Product / Explicit SKU lifecycle
 
-Status: source implementation complete for this pass; live authenticated QA remains open.
+Historical status (superseded by the 2026-09-13 evidence below): live authenticated QA remained open.
 
 - The Product Editor uses real attributes and allowed values, supports editing existing SKU combinations, and keeps variant creation explicit.
 - Duplicate SKU codes and duplicate product/attribute combinations remain protected by database unique keys and existing conflict handling.
 - SKU deletion is a soft delete: `deleted_at` is set and `is_active` is disabled. Inventory rows, SKU attribute links, and historical order references are retained.
 - Safe deletion blocks when reserved inventory is greater than zero and returns `SKU_HAS_RESERVED_STOCK`.
-- Restore clears `deleted_at`, reactivates the SKU, and reports `SKU_CONFLICT` when a live code or combination now occupies the unique key.
+- Restore now clears `deleted_at` but leaves the SKU inactive for review; the earlier reactivation description is superseded.
 - Protected routes are available for `DELETE /admin/products/:productId/skus/:skuId` and `POST /admin/products/:productId/skus/:skuId/restore`.
 - Admin product detail includes deleted SKUs for recovery; public catalog/cart queries exclude `deleted_at IS NULL` records.
 
@@ -178,3 +178,36 @@ The media upload response now includes both `path` and `file_path`, matching the
 The Product Editor now exposes gallery controls for alt text, sort order, primary-image selection, and safe removal, with refresh-after-save behavior so the persisted media state is visible immediately.
 
 Inventory follow-up: `admin/src/inventoryPage.jsx` now provides URL-backed search, stock-status and tracking filters, summary metrics, and direct links to SKU adjustment/movement detail. Existing adjustment, correction, reorder-level, reservation, and movement APIs remain unchanged.
+
+## Product Completion Pass 1 — 2026-09-13 evidence
+
+Module 25 remains PARTIAL until the authenticated browser completion gate passes. No other module is declared complete by this pass.
+
+### Implemented
+
+- Product, categories, benefits, ingredients and allowed attribute values save in one transaction. Invalid changes that would invalidate existing nondeleted SKU combinations roll back the full save.
+- Explicit SKU creation and editing include code, title, price, MRP, barcode, weight, status, tracking/backorder controls, allowed attribute selections and existing gallery image selection. No Cartesian combinations are generated.
+- Gallery supports multiple uploads, thumbnails, persisted alt text/order/primary selection, soft removal and refreshed detail hydration. Uploads have busy/error handling and the file input resets for retry.
+- Product and SKU archive/restore use confirmation dialogs. Reserved SKU inventory blocks SKU deletion. Restored SKUs remain inactive; restored products remain drafts.
+- Inventory quantities are read-only in the editor, with permission-gated inventory links. Active products expose the correct `/product/:slug` storefront link.
+- Removed the unsupported MariaDB `JSON_ARRAYAGG` dependency from product detail retrieval.
+
+### Executed verification
+
+`node scripts/verify-product-completion.js` from `backend` passed all seven groups against local MariaDB on 2026-09-13:
+
+1. Atomic product/content/category/attribute persistence without automatic SKU generation.
+2. Explicit SKU creation, duplicate code/combination rejection and invalid assignment rejection.
+3. Exact inventory-row invariance during product/SKU edits, benefit order persistence, existing out-of-stock SKU retention and absent nonexistent combinations.
+4. Full rollback of invalid product attribute changes.
+5. Multiple real uploads, alt/order/primary persistence, SKU image assignment, invalid image rejection, soft removal and public gallery payload.
+6. Reserved-stock deletion rejection, soft deletion, inactive restoration and explicit reactivation.
+7. Product archive/restore visibility and retained SKU/inventory records.
+
+Test database fixtures were rolled back and generated test upload files cleaned up. These tests exercise services and public catalog payloads, not browser clicks or a complete HTTP/RBAC suite. They do not prove preservation of a seeded historical order snapshot.
+
+`npm run build` passed for both storefront and admin. Changed source files were formatted with Prettier.
+
+### Remaining completion gate and immediate dependency
+
+The browser reached `http://localhost:5174/catalog/products` and displayed the admin login screen. An authenticated admin session is needed to verify actual create/edit/reload, gallery upload/order/primary/remove, duplicate errors, lifecycle dialogs and storefront preview interactions. The user was asked to sign in directly without sharing a password. Historical-order snapshot preservation also still needs explicit fixture evidence. Builds and database service checks are not substitutes for this gate.

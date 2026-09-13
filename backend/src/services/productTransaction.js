@@ -10,7 +10,11 @@ export async function productTransaction(pool, productId, work) {
         [productId],
       );
       if (!product || product.deleted_at) {
-        throw new AuthError(404, "PRODUCT_NOT_FOUND", "Active product record not found. Restore it before editing.");
+        throw new AuthError(
+          404,
+          "PRODUCT_NOT_FOUND",
+          "Active product record not found. Restore it before editing.",
+        );
       }
     }
     const result = await work(connection);
