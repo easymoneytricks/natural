@@ -8,7 +8,12 @@ import {
 import rateLimit from "express-rate-limit";
 
 export const trackOrder = [
-  rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-7", legacyHeaders: false }),
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 20,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+  }),
   async (req, res, next) => {
     try {
       res.json({ data: await trackPublicOrder(pool, req.body || {}) });

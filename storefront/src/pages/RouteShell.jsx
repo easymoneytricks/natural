@@ -4,6 +4,7 @@ import {
   Leaf,
   Mail,
   MapPin,
+  PackageSearch,
   Phone,
   ShieldCheck,
 } from "lucide-react";
@@ -129,6 +130,7 @@ const content = {
 export function RouteShell({ title }) {
   if (title === "contact") return <ContactPage />;
   if (title === "about") return <AboutPage />;
+  if (title === "track-order") return <TrackOrderPage />;
   const page = content[title] || {
     eyebrow: "Natural Beauty",
     title: title.replaceAll("-", " "),
@@ -152,6 +154,145 @@ export function RouteShell({ title }) {
             <p>{text}</p>
           </article>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function TrackOrderPage() {
+  const [form, setForm] = useState({
+    orderNumber: "",
+    trackingId: "",
+    email: "",
+  });
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const submit = async (event) => {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    setResult(null);
+    try {
+      const response = await fetch(
+        `${(import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1").replace(/\/$/, "")}/track-order`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        },
+      );
+      const payload = await response.json();
+      if (!response.ok)
+        throw new Error(
+          payload.error?.message || "We could not find that order.",
+        );
+      setResult(payload.data);
+    } catch (caught) {
+      setError(caught.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <section className="route-shell track-order-page container">
+      <div className="track-order-hero">
+        <div>
+          <p className="eyebrow">Order support</p>
+          <h1>Follow your order, simply.</h1>
+          <p className="route-intro">
+            Enter the order number or courier tracking ID along with the email
+            used at checkout. No account login is needed.
+          </p>
+        </div>
+        <div className="track-order-icon">
+          <PackageSearch size={42} strokeWidth={1.2} />
+        </div>
+      </div>
+      <div className="track-order-layout">
+        <form className="track-order-form" onSubmit={submit}>
+          <h2>Find your order</h2>
+          <p>
+            Use either your Natural Beauty order number or the tracking ID
+            shared by the courier.
+          </p>
+          <label>
+            Order number <span>(optional if tracking ID is provided)</span>
+            <input
+              value={form.orderNumber}
+              onChange={(event) =>
+                setForm({ ...form, orderNumber: event.target.value })
+              }
+              placeholder="NB-2026-0000"
+            />
+          </label>
+          <label>
+            Courier tracking ID <span>(optional)</span>
+            <input
+              value={form.trackingId}
+              onChange={(event) =>
+                setForm({ ...form, trackingId: event.target.value })
+              }
+              placeholder="Tracking ID"
+            />
+          </label>
+          <label>
+            Email used at checkout
+            <input
+              required
+              type="email"
+              value={form.email}
+              onChange={(event) =>
+                setForm({ ...form, email: event.target.value })
+              }
+              placeholder="you@example.com"
+            />
+          </label>
+          <button className="button" type="submit" disabled={loading}>
+            {loading ? "Finding order…" : "Track order"}{" "}
+            <ArrowRight size={15} />
+          </button>
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+        </form>
+        <div className="track-order-result" aria-live="polite">
+          {result ? (
+            <>
+              <p className="eyebrow">Order {result.orderNumber}</p>
+              <h2>{result.status.replaceAll("_", " ")}</h2>
+              <p>
+                Placed {new Date(result.placedAt).toLocaleDateString("en-IN")}
+              </p>
+              {result.trackingId && (
+                <p>
+                  <strong>Tracking ID:</strong> {result.trackingId}
+                </p>
+              )}
+              <div className="track-timeline">
+                {(result.timeline || []).map((item) => (
+                  <div key={`${item.status}-${item.createdAt}`}>
+                    <span>{item.status.replaceAll("_", " ")}</span>
+                    <small>
+                      {new Date(item.createdAt).toLocaleDateString("en-IN")}
+                    </small>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <PackageSearch size={28} />
+              <h2>Your delivery updates will appear here.</h2>
+              <p>
+                We’ll show the latest order status and tracking details after
+                you submit the form.
+              </p>
+            </>
+          )}
+        </div>
       </div>
     </section>
   );
