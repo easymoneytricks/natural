@@ -5,8 +5,9 @@ const API = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1"
 ).replace(/\/$/, "");
 
-export function CmsPage() {
-  const { slug } = useParams();
+export function CmsPage({ slug: routeSlug }) {
+  const { slug: paramSlug } = useParams();
+  const slug = routeSlug || paramSlug;
   const [page, setPage] = useState(null);
   const [state, setState] = useState("loading");
   useEffect(() => {

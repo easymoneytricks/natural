@@ -10,6 +10,10 @@ import {
   register,
   verifyEmail,
   resendVerification,
+  forgotPassword,
+  resetPasswordAction,
+  exportAccount,
+  deleteAccount,
 } from "../controllers/auth.controller.js";
 import { requireCustomerAuth } from "../middleware/customerAuth.js";
 
@@ -32,10 +36,14 @@ router.use(cookieParser());
 router.post("/register", sensitiveLimit, register);
 router.post("/verify-email", sensitiveLimit, verifyEmail);
 router.post("/resend-verification", sensitiveLimit, resendVerification);
+router.post("/forgot-password", sensitiveLimit, forgotPassword);
+router.post("/reset-password", sensitiveLimit, resetPasswordAction);
 router.post("/login", sensitiveLimit, login);
 router.post("/refresh", sensitiveLimit, refresh);
 router.post("/logout", logout);
 router.post("/logout-all", requireCustomerAuth, logoutAll);
 router.get("/me", requireCustomerAuth, me);
+router.get("/account/export", requireCustomerAuth, exportAccount);
+router.delete("/account", requireCustomerAuth, deleteAccount);
 
 export default router;

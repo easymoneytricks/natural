@@ -126,6 +126,12 @@ export function orderStatusEmail({ order, recipient, name, status, note }) {
     shipped: "Your order has shipped",
     delivered: "Your order has arrived",
     cancelled: "Your order has been cancelled",
+    return_requested: "We received your return request",
+    return_approved: "Your return request is approved",
+    return_rejected: "Your return request needs attention",
+    return_received: "Your returned order was received",
+    return_refunded: "Your refund has been initiated",
+    return_none: "Your return record was updated",
   };
   const number = order.orderNumber || order.order_number;
   const title = titles[status] || "Your order status was updated";
@@ -208,6 +214,23 @@ export function emailVerificationEmail({ recipient, code }) {
       eyebrow: "Welcome to Natural Beauty",
       title: "Verify your email",
       preview: "Your Natural Beauty verification code is ready.",
+      body,
+    }),
+  };
+}
+
+export function passwordResetEmail({ recipient, token }) {
+  const link = `${process.env.STOREFRONT_URL || "http://localhost:5173"}/reset-password?token=${encodeURIComponent(token)}`;
+  const body = `${paragraph("We received a request to reset your Natural Beauty password.")}${paragraph("This secure link expires in 30 minutes and can only be used once.")}${button("Choose a new password", link)}${paragraph("If you did not request this, you can safely ignore this email.")}`;
+  return {
+    eventType: "customer.password_reset",
+    to: recipient,
+    subject: "Reset your Natural Beauty password",
+    text: `Reset your password within 30 minutes: ${link}`,
+    html: shell({
+      eyebrow: "Account recovery",
+      title: "Choose a new password",
+      preview: "Your secure password reset link is ready.",
       body,
     }),
   };

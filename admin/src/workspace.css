@@ -1084,6 +1084,17 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
+
+.invoice-button {
+  margin-left: auto;
+}
+
+.order-snapshot-note {
+  margin: -0.25rem 0 1rem;
+  color: var(--muted, #6f7d75);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
 .order-detail-card,
 .order-action-card {
   display: grid;

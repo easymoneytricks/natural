@@ -23,6 +23,7 @@ const verificationHash = (code) =>
   crypto.createHash("sha256").update(String(code)).digest("hex");
 const createVerificationCode = () =>
   String(crypto.randomInt(0, 1000000)).padStart(6, "0");
+const createResetToken = () => crypto.randomBytes(48).toString("hex");
 
 export function normalizeRegistration(input = {}) {
   const firstName = String(input.firstName || "").trim();
@@ -373,4 +374,144 @@ export async function getActiveCustomer(pool, customerId) {
     [customerId],
   );
   return rows[0] || null;
+}
+
+export async function requestPasswordReset(pool, email) {
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+  if (!emailPattern.test(normalizedEmail))
+    throw new AuthError(
+      400,
+      "VALIDATION_ERROR",
+      "Enter a valid email address.",
+    );
+  const [[customer]] = await pool.execute(
+    "SELECT id,email FROM customers WHERE email=? AND deleted_at IS NULL LIMIT 1",
+    [normalizedEmail],
+  );
+  if (!customer) return null;
+  const rawToken = createResetToken();
+  await pool.execute(
+    "UPDATE customer_password_resets SET consumed_at=NOW() WHERE customer_id=? AND consumed_at IS NULL",
+    [customer.id],
+  );
+  await pool.execute(
+    "INSERT INTO customer_password_resets(customer_id,token_hash,expires_at) VALUES(?,?,DATE_ADD(NOW(), INTERVAL 30 MINUTE))",
+    [customer.id, verificationHash(rawToken)],
+  );
+  return { email: customer.email, token: rawToken };
+}
+
+export async function resetPassword(pool, token, password) {
+  const rawToken = String(token || "").trim();
+  const nextPassword = String(password || "");
+  if (!rawToken || !passwordPattern.test(nextPassword))
+    throw new AuthError(
+      400,
+      "VALIDATION_ERROR",
+      "Password must be 8-128 characters and include uppercase, lowercase and a number.",
+    );
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [[reset]] = await connection.execute(
+      `SELECT r.id,r.customer_id FROM customer_password_resets r
+       JOIN customers c ON c.id=r.customer_id
+       WHERE r.token_hash=? AND r.consumed_at IS NULL AND r.expires_at>NOW()
+       AND c.status='active' AND c.deleted_at IS NULL FOR UPDATE`,
+      [verificationHash(rawToken)],
+    );
+    if (!reset)
+      throw new AuthError(
+        400,
+        "PASSWORD_RESET_INVALID",
+        "This reset link is invalid or expired.",
+      );
+    await connection.execute(
+      "UPDATE customers SET password_hash=? WHERE id=?",
+      [await hashPassword(nextPassword), reset.customer_id],
+    );
+    await connection.execute(
+      "UPDATE customer_password_resets SET consumed_at=NOW() WHERE id=?",
+      [reset.id],
+    );
+    await connection.execute(
+      "UPDATE customer_sessions SET revoked_at=COALESCE(revoked_at,NOW()) WHERE customer_id=? AND revoked_at IS NULL",
+      [reset.customer_id],
+    );
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+export async function exportCustomerData(pool, customerId) {
+  const [[customer]] = await pool.execute(
+    "SELECT id,first_name,last_name,email,phone,status,email_verified_at,created_at FROM customers WHERE id=? AND deleted_at IS NULL",
+    [customerId],
+  );
+  if (!customer)
+    throw new AuthError(404, "ACCOUNT_NOT_FOUND", "Account not found.");
+  const [addresses] = await pool.execute(
+    "SELECT label,first_name,last_name,phone,address_line_1,address_line_2,landmark,city,state,postal_code,country_code,address_type,is_default,created_at,updated_at FROM customer_addresses WHERE customer_id=? AND deleted_at IS NULL",
+    [customerId],
+  );
+  const [orders] = await pool.execute(
+    "SELECT order_number,status,payment_status,payment_method,grand_total,placed_at FROM orders WHERE customer_id=? ORDER BY placed_at DESC",
+    [customerId],
+  );
+  const [wishlist] = await pool.execute(
+    "SELECT product_id,created_at FROM customer_wishlist_items WHERE customer_id=? ORDER BY created_at DESC",
+    [customerId],
+  );
+  const [cart] = await pool.execute(
+    "SELECT ci.sku_id,ci.quantity,ci.created_at,ci.updated_at FROM customer_cart_items ci JOIN customer_carts cc ON cc.id=ci.cart_id WHERE cc.customer_id=? ORDER BY ci.created_at DESC",
+    [customerId],
+  );
+  return {
+    exportedAt: new Date().toISOString(),
+    customer,
+    addresses,
+    orders,
+    wishlist,
+    cart,
+  };
+}
+
+export async function deleteCustomerAccount(pool, customerId, password) {
+  const [[account]] = await pool.execute(
+    "SELECT password_hash FROM customers WHERE id=? AND deleted_at IS NULL",
+    [customerId],
+  );
+  if (
+    !account ||
+    !(await comparePassword(String(password || ""), account.password_hash))
+  )
+    throw new AuthError(
+      401,
+      "INVALID_CREDENTIALS",
+      "Your password is incorrect.",
+    );
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.execute(
+      "UPDATE customer_sessions SET revoked_at=COALESCE(revoked_at,NOW()) WHERE customer_id=?",
+      [customerId],
+    );
+    await connection.execute(
+      "UPDATE customers SET status='disabled',deleted_at=NOW() WHERE id=? AND deleted_at IS NULL",
+      [customerId],
+    );
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }

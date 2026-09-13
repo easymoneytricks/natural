@@ -4,7 +4,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useWishlist } from "../context/PreferenceContext";
 import {
+  requestPasswordReset,
   resendCustomerVerification,
+  resetCustomerPassword,
   verifyCustomerEmail,
 } from "../services/authApi";
 import "./AuthPages.css";
@@ -394,6 +396,8 @@ export function VerifyEmail() {
 export function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   return (
     <AuthLayout
       eyebrow="Account recovery"
@@ -404,7 +408,14 @@ export function ForgotPassword() {
         className="auth-form"
         onSubmit={(event) => {
           event.preventDefault();
-          if (validEmail(email)) setSent(true);
+          if (!validEmail(email)) return;
+          setLoading(true);
+          requestPasswordReset(email)
+            .then(() => setSent(true))
+            .catch(() =>
+              setError("We could not send the reset email. Please try again."),
+            )
+            .finally(() => setLoading(false));
         }}
       >
         <TextField
@@ -419,8 +430,13 @@ export function ForgotPassword() {
             sent.
           </p>
         )}
-        <button className="button" type="submit">
-          Send reset link
+        {error && (
+          <p className="field-error" role="alert">
+            {error}
+          </p>
+        )}
+        <button className="button" type="submit" disabled={loading}>
+          {loading ? "Sending..." : "Send reset link"}
         </button>
         <p className="auth-switch">
           <Link to="/login">Return to sign in</Link>
@@ -430,15 +446,65 @@ export function ForgotPassword() {
   );
 }
 export function ResetPassword() {
+  const query = new URLSearchParams(window.location.search);
+  const [token] = useState(query.get("token") || "");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [state, setState] = useState("idle");
+  const [error, setError] = useState("");
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!token || !validPassword(password) || password !== confirm) {
+      setError("Use a strong matching password and a valid reset link.");
+      return;
+    }
+    setState("loading");
+    try {
+      await resetCustomerPassword(token, password);
+      setState("done");
+    } catch {
+      setState("idle");
+      setError("This reset link is invalid or expired.");
+    }
+  };
   return (
     <AuthLayout
       eyebrow="Account recovery"
       heading="Password reset link required."
       copy="Use the secure link from your account-recovery email to choose a new password."
     >
-      <Link className="button" to="/forgot-password">
-        Request a reset link <ArrowRight size={14} />
-      </Link>
+      {state === "done" ? (
+        <p className="auth-success">
+          Password updated. <Link to="/login">Sign in</Link>
+        </p>
+      ) : token ? (
+        <form className="auth-form" onSubmit={submit}>
+          <TextField
+            label="New password"
+            value={password}
+            onChange={setPassword}
+            type="password"
+          />
+          <TextField
+            label="Confirm password"
+            value={confirm}
+            onChange={setConfirm}
+            type="password"
+          />
+          {error && (
+            <p className="field-error" role="alert">
+              {error}
+            </p>
+          )}
+          <button className="button" disabled={state === "loading"}>
+            {state === "loading" ? "Updating..." : "Update password"}
+          </button>
+        </form>
+      ) : (
+        <Link className="button" to="/forgot-password">
+          Request a reset link <ArrowRight size={14} />
+        </Link>
+      )}
     </AuthLayout>
   );
 }

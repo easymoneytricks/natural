@@ -19,7 +19,20 @@ const defaults = {
     processing_days: "1-2",
     delivery_days: "3-5",
   },
-  tax: { default_rate: "18", tax_label: "GST", tax_registration: "" },
+  tax: {
+    enabled: "false",
+    default_rate: "18",
+    tax_label: "GST",
+    pricing_mode: "exclusive",
+    seller_state: "Karnataka",
+    seller_gstin: "",
+    seller_legal_name: "Natural Beauty",
+    seller_address: "",
+    seller_state_code: "29",
+    reverse_charge: "false",
+    hsn_sac: "",
+    invoice_note: "Prices and taxes are shown as configured at checkout.",
+  },
   homepage: {
     hero_eyebrow: "Botanical skincare · Modern science",
     hero_title: "Healthy skin, beautifully simple.",
@@ -330,6 +343,18 @@ export function SettingsPage() {
               setState={setState}
             />
             <Field
+              label="Apply tax at checkout"
+              group="tax"
+              name="enabled"
+              state={state}
+              setState={setState}
+              options={[
+                ["false", "Disabled"],
+                ["true", "Enabled"],
+              ]}
+              help="Keep disabled until your GST registration, rates and invoice review are approved."
+            />
+            <Field
               label="Default tax rate (%)"
               group="tax"
               name="default_rate"
@@ -345,9 +370,72 @@ export function SettingsPage() {
               setState={setState}
             />
             <Field
-              label="Tax registration number"
+              label="Seller GSTIN"
               group="tax"
-              name="tax_registration"
+              name="seller_gstin"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Legal business name"
+              group="tax"
+              name="seller_legal_name"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Registered business address"
+              group="tax"
+              name="seller_address"
+              type="textarea"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Seller state code"
+              group="tax"
+              name="seller_state_code"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Reverse charge"
+              group="tax"
+              name="reverse_charge"
+              state={state}
+              setState={setState}
+              options={[
+                ["false", "No"],
+                ["true", "Yes"],
+              ]}
+            />
+            <Field
+              label="Tax pricing mode"
+              group="tax"
+              name="pricing_mode"
+              state={state}
+              setState={setState}
+              options={[["exclusive", "Tax added at checkout"]]}
+            />
+            <Field
+              label="Seller state"
+              group="tax"
+              name="seller_state"
+              state={state}
+              setState={setState}
+              help="Used to split intra-state GST into CGST and SGST; other states use IGST."
+            />
+            <Field
+              label="HSN / SAC code"
+              group="tax"
+              name="hsn_sac"
+              state={state}
+              setState={setState}
+            />
+            <Field
+              label="Invoice note"
+              group="tax"
+              name="invoice_note"
               state={state}
               setState={setState}
             />

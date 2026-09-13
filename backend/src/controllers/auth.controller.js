@@ -9,8 +9,16 @@ import {
   publicCustomer,
   verifyCustomerEmail,
   createCustomerEmailVerification,
+  requestPasswordReset,
+  resetPassword,
+  exportCustomerData,
+  deleteCustomerAccount,
 } from "../services/auth.service.js";
-import { emailVerificationEmail, sendEmail } from "../services/mail.service.js";
+import {
+  emailVerificationEmail,
+  passwordResetEmail,
+  sendEmail,
+} from "../services/mail.service.js";
 import { refreshCookieOptions } from "../utils/tokens.js";
 import { verifyRecaptcha } from "../services/recaptcha.service.js";
 
@@ -128,4 +136,41 @@ export async function logoutAll(req, res, next) {
 
 export async function me(req, res) {
   res.json({ data: { customer: publicCustomer(req.customer) } });
+}
+
+export async function forgotPassword(req, res, next) {
+  try {
+    const result = await requestPasswordReset(pool, req.body?.email);
+    if (result) await sendEmail(passwordResetEmail(result));
+    res.status(202).json({ data: { accepted: true } });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function resetPasswordAction(req, res, next) {
+  try {
+    await resetPassword(pool, req.body?.token, req.body?.password);
+    res.json({ data: { reset: true } });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function exportAccount(req, res, next) {
+  try {
+    res.json({ data: await exportCustomerData(pool, req.customer.id) });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteAccount(req, res, next) {
+  try {
+    await deleteCustomerAccount(pool, req.customer.id, req.body?.password);
+    clearRefreshCookie(res);
+    res.json({ data: { deleted: true } });
+  } catch (error) {
+    next(error);
+  }
 }

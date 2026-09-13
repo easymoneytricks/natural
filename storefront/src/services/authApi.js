@@ -33,6 +33,16 @@ export const resendCustomerVerification = (email) =>
     "/auth/resend-verification",
     authOptions({ method: "POST", body: { email } }),
   );
+export const requestPasswordReset = (email) =>
+  apiRequest(
+    "/auth/forgot-password",
+    authOptions({ method: "POST", body: { email } }),
+  );
+export const resetCustomerPassword = (token, password) =>
+  apiRequest(
+    "/auth/reset-password",
+    authOptions({ method: "POST", body: { token, password } }),
+  );
 export const refreshSession = () =>
   apiRequest("/auth/refresh", authOptions({ method: "POST" }));
 export const getCurrentCustomer = (accessToken) =>
@@ -60,6 +70,9 @@ export const deleteAddress = (authFetch, id) =>
   authFetch(`/customer/addresses/${id}`, { method: "DELETE" });
 export const setDefaultAddress = (authFetch, id) =>
   authFetch(`/customer/addresses/${id}/default`, { method: "POST" });
+export const exportAccount = (authFetch) => authFetch("/auth/account/export");
+export const deleteAccount = (authFetch, password) =>
+  authFetch("/auth/account", { method: "DELETE", body: { password } });
 
 export function authErrorMessage(
   error,
@@ -79,6 +92,8 @@ export function authErrorMessage(
     return "That code is invalid or expired. Check the email and try again.";
   if (error?.code === "EMAIL_OTP_ATTEMPTS_EXCEEDED")
     return "Too many incorrect codes. Request a new verification code.";
+  if (error?.code === "PASSWORD_RESET_INVALID")
+    return "This password reset link is invalid or has expired.";
   if (error?.code === "RECAPTCHA_REQUIRED")
     return "Please complete the security verification.";
   if (

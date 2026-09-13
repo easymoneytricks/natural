@@ -17,6 +17,7 @@ import { getProductBySlug, getProducts } from "../services/catalogApi";
 import { useCompare, useWishlist } from "../context/PreferenceContext";
 import { useAuth } from "../context/AuthContext";
 import "./ProductDetail.css";
+import { SeoMeta, StructuredData } from "../components/SeoMeta";
 
 const money = (value) => `₹${value.toLocaleString("en-IN")}`;
 const slugify = (value) => value.toUpperCase().replace(/[^A-Z0-9]+/g, "-");
@@ -75,6 +76,10 @@ export function ProductDetail() {
     getProductBySlug(slug, { signal: controller.signal })
       .then((apiProduct) => {
         if (controller.signal.aborted) return;
+        if (apiProduct.slug && apiProduct.slug !== slug) {
+          navigate(`/product/${apiProduct.slug}`, { replace: true });
+          return;
+        }
         setProduct(apiProduct);
         setDetail({
           ...apiProduct,
@@ -100,7 +105,7 @@ export function ProductDetail() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [slug]);
+  }, [navigate, slug]);
   const variants = useMemo(
     () => (product ? makeVariants(product, detail) : []),
     [product, detail],
@@ -275,6 +280,36 @@ export function ProductDetail() {
   };
   return (
     <>
+      {product && (
+        <>
+          <SeoMeta
+            title={product.name}
+            description={product.shortDescription || product.description}
+            image={product.image}
+            type="product"
+          />
+          <StructuredData
+            data={{
+              "@context": "https://schema.org",
+              "@type": "Product",
+              name: product.name,
+              description: product.shortDescription || product.description,
+              image: product.gallery?.map((item) => item.src || item) || [
+                product.image,
+              ],
+              sku: detail?.skus?.[0]?.sku,
+              offers: {
+                "@type": "AggregateOffer",
+                priceCurrency: "INR",
+                lowPrice: product.price,
+                highPrice: product.price,
+                availability: "https://schema.org/InStock",
+                url: `${window.location.origin}/product/${product.slug}`,
+              },
+            }}
+          />
+        </>
+      )}
       <main className="product-detail container">
         <p className="breadcrumb">
           <Link to="/">Home</Link> <span>/</span> <Link to="/shop">Shop</Link>{" "}

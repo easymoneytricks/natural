@@ -113,9 +113,30 @@ function Provider({ children }) {
       request(path, {
         ...opt,
         headers: { ...(opt.headers || {}), Authorization: `Bearer ${token}` },
+      }),
+    authDownload = async (path) => {
+      const response = await fetch(`${API}${path}`, {
+        credentials: "include",
+        headers: {
+          Accept: "application/pdf",
+          Authorization: `Bearer ${token}`,
+        },
       });
+      if (!response.ok) {
+        let payload = {};
+        try {
+          payload = await response.json();
+        } catch {
+          // Keep the HTTP status as the useful fallback for non-JSON errors.
+        }
+        throw new Error(payload.error?.message || "Unable to download file.");
+      }
+      return response.blob();
+    };
   return (
-    <C.Provider value={{ admin, status, login, logout, authFetch }}>
+    <C.Provider
+      value={{ admin, status, login, logout, authFetch, authDownload }}
+    >
       {children}
     </C.Provider>
   );

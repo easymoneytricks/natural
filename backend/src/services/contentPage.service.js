@@ -83,7 +83,25 @@ export async function save(pool, input, id, adminId, req) {
     ? input.status
     : "draft";
   try {
-    if (id)
+    if (id) {
+      const [[previous]] = await pool.execute(
+        "SELECT slug,title,intro,content_json,seo_title,seo_description,status FROM content_pages WHERE id=?",
+        [id],
+      );
+      if (previous)
+        await pool.execute(
+          "INSERT INTO content_page_versions(page_id,slug,title,intro,content_json,seo_title,seo_description,status) VALUES(?,?,?,?,?,?,?,?)",
+          [
+            id,
+            previous.slug,
+            previous.title,
+            previous.intro,
+            previous.content_json,
+            previous.seo_title,
+            previous.seo_description,
+            previous.status,
+          ],
+        );
       await pool.execute(
         "UPDATE content_pages SET slug=?,title=?,eyebrow=?,intro=?,content_json=?,seo_title=?,seo_description=?,status=?,published_at=IF(?='published',COALESCE(published_at,NOW()),NULL) WHERE id=?",
         [
@@ -99,7 +117,7 @@ export async function save(pool, input, id, adminId, req) {
           id,
         ],
       );
-    else
+    } else
       await pool.execute(
         "INSERT INTO content_pages(slug,title,eyebrow,intro,content_json,seo_title,seo_description,status,published_at) VALUES(?,?,?,?,?,?,?,?,IF(?='published',NOW(),NULL))",
         [

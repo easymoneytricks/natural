@@ -162,11 +162,20 @@ async function saveProduct(pool, input, id, adminId, req) {
   try {
     let pid = id;
     if (id) {
+      const [[previous]] = await pool.execute(
+        "SELECT slug FROM products WHERE id=? AND deleted_at IS NULL FOR UPDATE",
+        [id],
+      );
       const [r] = await pool.execute(
         "UPDATE products SET brand_id=?,name=?,slug=?,short_description=?,description=?,ingredients_text=?,how_to_use=?,texture=?,usage_time=?,status=?,product_type=?,base_price=?,base_mrp=?,featured=?,best_seller=?,new_arrival=?,is_active=?,seo_title=?,seo_description=? WHERE id=? AND deleted_at IS NULL",
         [...vals, id],
       );
       if (!r.affectedRows) fail(404, "PRODUCT_NOT_FOUND", "Product not found.");
+      if (previous && previous.slug !== slug)
+        await pool.execute(
+          "INSERT IGNORE INTO product_slug_redirects(old_slug,product_id) VALUES(?,?)",
+          [previous.slug, id],
+        );
     } else {
       const [r] = await pool.execute(
         "INSERT INTO products (brand_id,name,slug,short_description,description,ingredients_text,how_to_use,texture,usage_time,status,product_type,base_price,base_mrp,featured,best_seller,new_arrival,is_active,seo_title,seo_description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",

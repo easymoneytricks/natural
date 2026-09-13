@@ -76,6 +76,10 @@ export async function detail(pool, number) {
       paymentStatus: o.payment_status,
       paymentMethod: o.payment_method,
       currency: o.currency,
+      cancellationReason: o.cancellation_reason,
+      returnStatus: o.return_status,
+      refundAmount: Number(o.refund_amount || 0),
+      refundReason: o.refund_reason,
     },
     customer: {
       id: o.customer_id,
@@ -93,6 +97,22 @@ export async function detail(pool, number) {
       couponCode: o.coupon_code,
       couponDiscount: Number(o.coupon_discount),
       shipping: Number(o.shipping_amount),
+      tax: {
+        amount: Number(o.tax_amount || 0),
+        rate: Number(o.tax_rate || 0),
+        label: o.tax_label,
+        type: o.tax_type,
+        cgst: Number(o.tax_cgst || 0),
+        sgst: Number(o.tax_sgst || 0),
+        igst: Number(o.tax_igst || 0),
+        hsnSac: o.hsn_sac,
+        sellerGstin: o.seller_gstin,
+        sellerLegalName: o.seller_legal_name,
+        sellerAddress: o.seller_address,
+        sellerStateCode: o.seller_state_code,
+        placeOfSupply: o.place_of_supply,
+        reverseCharge: Boolean(o.reverse_charge),
+      },
       giftCardApplied: Number(o.gift_card_amount),
       grandTotal: Number(o.grand_total),
     },
@@ -131,6 +151,8 @@ export async function updateStatus(pool, number, next, note, adminId, req) {
         `Cannot move an order from ${o.status} to ${next}.`,
       );
     if (next === "cancelled") {
+      if (!String(note || "").trim())
+        fail(400, "VALIDATION_ERROR", "A cancellation reason is required.");
       await releaseOrderReservations(
         pool,
         o.id,
@@ -147,8 +169,16 @@ export async function updateStatus(pool, number, next, note, adminId, req) {
       ]);
     }
     await conn.execute(
-      'UPDATE orders SET status=?,cancelled_at=IF(?="cancelled",NOW(),cancelled_at),shipped_at=IF(?="shipped",NOW(),shipped_at),delivered_at=IF(?="delivered",NOW(),delivered_at) WHERE id=?',
-      [next, next, next, next, o.id],
+      'UPDATE orders SET status=?,cancellation_reason=IF(?="cancelled",?,cancellation_reason),cancelled_at=IF(?="cancelled",NOW(),cancelled_at),shipped_at=IF(?="shipped",NOW(),shipped_at),delivered_at=IF(?="delivered",NOW(),delivered_at) WHERE id=?',
+      [
+        next,
+        next,
+        next === "cancelled" ? note.trim() : null,
+        next,
+        next,
+        next,
+        o.id,
+      ],
     );
     await conn.execute(
       "INSERT INTO order_status_history(order_id,status,note) VALUES(?,?,?)",
@@ -191,4 +221,43 @@ export async function summary(pool) {
     "SELECT status,COUNT(*) count FROM orders GROUP BY status",
   );
   return Object.fromEntries(rows.map((r) => [r.status, Number(r.count)]));
+}
+
+export async function updateReturn(
+  pool,
+  number,
+  returnStatus,
+  refundAmount,
+  reason,
+  adminId,
+  req,
+) {
+  const allowedStatuses = [
+    "none",
+    "requested",
+    "approved",
+    "rejected",
+    "received",
+    "refunded",
+  ];
+  if (!allowedStatuses.includes(returnStatus))
+    fail(400, "VALIDATION_ERROR", "Invalid return status.");
+  const amount = Number(refundAmount || 0);
+  if (!Number.isFinite(amount) || amount < 0)
+    fail(400, "VALIDATION_ERROR", "Refund amount must be zero or greater.");
+  if (returnStatus !== "none" && !String(reason || "").trim())
+    fail(400, "VALIDATION_ERROR", "A return or refund reason is required.");
+  const [[order]] = await pool.execute(
+    "SELECT id,grand_total FROM orders WHERE order_number=?",
+    [number],
+  );
+  if (!order) fail(404, "ORDER_NOT_FOUND", "Order not found.");
+  if (amount > Number(order.grand_total))
+    fail(400, "VALIDATION_ERROR", "Refund cannot exceed the order total.");
+  await pool.execute(
+    "UPDATE orders SET return_status=?,refund_amount=?,refund_reason=? WHERE id=?",
+    [returnStatus, amount, String(reason || "").trim() || null, order.id],
+  );
+  await audit(pool, adminId, "order.return_updated", "orders", order.id, req);
+  return detail(pool, number);
 }

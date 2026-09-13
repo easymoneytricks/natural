@@ -97,6 +97,7 @@ export async function placeCodOrder(pool, input = {}, customer) {
     shippingMethod: input.shippingMethod,
     couponCode: input.couponCode,
     giftCardCode: input.giftCardCode,
+    shippingAddress: address,
   });
   if (!calculated.checkoutReady)
     throw new AuthError(
@@ -150,7 +151,7 @@ export async function placeCodOrder(pool, input = {}, customer) {
     }
     const p = calculated.pricing;
     const [created] = await connection.execute(
-      `INSERT INTO orders (order_number,idempotency_key,request_fingerprint,customer_id,customer_email,customer_phone,status,payment_method,payment_status,items_subtotal,mrp_total,product_discount,coupon_discount,shipping_amount,gift_card_amount,grand_total,coupon_code,shipping_method_code,shipping_method_name,shipping_estimated_days_min,shipping_estimated_days_max,customer_note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO orders (order_number,idempotency_key,request_fingerprint,customer_id,customer_email,customer_phone,status,payment_method,payment_status,items_subtotal,mrp_total,product_discount,coupon_discount,shipping_amount,tax_amount,tax_rate,tax_label,tax_type,tax_cgst,tax_sgst,tax_igst,hsn_sac,seller_gstin,seller_legal_name,seller_address,seller_state_code,place_of_supply,reverse_charge,gift_card_amount,grand_total,coupon_code,shipping_method_code,shipping_method_name,shipping_estimated_days_min,shipping_estimated_days_max,customer_note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         orderNumber(),
         input.idempotencyKey,
@@ -166,6 +167,20 @@ export async function placeCodOrder(pool, input = {}, customer) {
         p.productDiscount,
         p.coupon?.discount || 0,
         p.shipping.fee,
+        p.tax?.amount || 0,
+        p.tax?.rate || 0,
+        p.tax?.label || null,
+        p.tax?.type || "none",
+        p.tax?.cgst || 0,
+        p.tax?.sgst || 0,
+        p.tax?.igst || 0,
+        p.tax?.hsnSac || null,
+        p.tax?.sellerGstin || null,
+        p.tax?.sellerLegalName || null,
+        p.tax?.sellerAddress || null,
+        p.tax?.sellerStateCode || null,
+        p.tax?.placeOfSupply || address.state,
+        p.tax?.reverseCharge ? 1 : 0,
         p.giftCard?.applied || 0,
         p.payableTotal,
         p.coupon?.code || null,
@@ -356,6 +371,22 @@ export async function getOrder(pool, id, customerId) {
       subtotal: Number(order.items_subtotal),
       couponDiscount: Number(order.coupon_discount),
       shipping: Number(order.shipping_amount),
+      tax: {
+        amount: Number(order.tax_amount || 0),
+        rate: Number(order.tax_rate || 0),
+        label: order.tax_label,
+        type: order.tax_type,
+        cgst: Number(order.tax_cgst || 0),
+        sgst: Number(order.tax_sgst || 0),
+        igst: Number(order.tax_igst || 0),
+        hsnSac: order.hsn_sac,
+        sellerGstin: order.seller_gstin,
+        sellerLegalName: order.seller_legal_name,
+        sellerAddress: order.seller_address,
+        sellerStateCode: order.seller_state_code,
+        placeOfSupply: order.place_of_supply,
+        reverseCharge: Boolean(order.reverse_charge),
+      },
       giftCardApplied: Number(order.gift_card_amount),
       total: Number(order.grand_total),
     },

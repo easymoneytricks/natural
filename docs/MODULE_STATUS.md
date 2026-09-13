@@ -372,3 +372,62 @@ The earlier historical sections above intentionally preserve prior evidence. For
 - Inventory list and SKU detail now label on-hand, reserved and available-to-sell quantities clearly; available stock remains calculated as on-hand minus reserved.
 - Added migration `024_inventory_adjustment_idempotency.sql` and applied it to the local MariaDB database.
 - Validation passed: `npm run format:check`, `npm run build:admin`, `npm run build:storefront`, `npm run migrate:status` and `git diff --check`.
+
+## Admin product completion gate - 2026-09-14
+
+- The local MariaDB Super Admin role now receives `catalog.manage` through migration `025_grant_catalog_management.sql`; this fixes the editor appearing read-only when only `catalog.view` was assigned.
+- Browser verification covered the product list, existing product editor and new product workspace. Edit controls, Save product, allowed-value attributes, Explicit SKUs, Gallery and View storefront controls rendered enabled for the Super Admin session.
+- The rollback-based completion suite passed all nine persistence groups: create/edit/reload, allowed values, explicit SKU duplicate and invalid-assignment rejection, gallery upload/order/primary/remove, reserved-stock safe deletion, SKU restore, product archive/restore and public storefront gallery/SKU payload.
+- No production transaction data was changed by the completion suite; its fixtures were rolled back.
+
+## Admin order operations - 2026-09-14
+
+- Added migration `026_order_operations.sql` for cancellation reason, return lifecycle (`none`, `requested`, `approved`, `rejected`, `received`, `refunded`), refund amount and refund reason.
+- Admin order detail now persists and displays courier/tracking data, requires a cancellation reason, and sends the existing customer order-update email after status changes and return/refund changes.
+- Added authenticated PDF invoice download with immutable order-item snapshots (product name, SKU, quantity, line price and image snapshot remain sourced from `order_items`).
+- Added the same per-order invoice experience to the storefront account: `GET /customer/orders/:orderNumber/invoice` is bearer-authenticated and customer-scoped, with a polished PDF download button on both the order list and order detail.
+- Added return/refund controls and an after-sale record in the order detail workspace, with validation that refund totals cannot exceed the order total.
+- Validation passed: migration application, Node syntax checks and `npm run build --workspace natural-beauty-admin`.
+- Remaining release gate: connect refund state changes to the configured payment provider's refund API and rehearse customer/admin delivery with production SMTP credentials.
+
+## Customer account integrity - 2026-09-14
+
+- Account overview uses authenticated customer order, address, rewards and wishlist APIs; no dashboard demo records are used.
+- Added one-time password reset tokens hashed at rest, 30-minute expiry, single-use consumption and session revocation after reset.
+- Added authenticated account data export (JSON) and password-confirmed soft deletion that disables the customer and revokes every active session.
+- Address validation now enforces phone, Indian PIN and two-letter country-code formats on create and update operations.
+- Added transactional password-reset email template and API wiring.
+- Validation passed: migration application, `npm run format:check` and `npm run build`.
+
+## Tax and compliance foundation - 2026-09-14
+
+- Migrations `030_tax_compliance_snapshots.sql`, `031_tax_invoice_parties.sql` and `032_tax_setting_defaults.sql` add order-level tax amount, rate, label, GST type, CGST, SGST, IGST, HSN/SAC, supplier identity/address, place of supply and seller GSTIN snapshots so historical invoices do not change when settings change.
+- Checkout quote/order pricing now reads Admin Settings tax configuration, supports explicit enable/disable, seller-state split (CGST/SGST versus IGST), and includes tax in the server-authoritative payable total.
+- Admin Settings exposes tax enablement, rate, pricing mode, seller state, GSTIN, HSN/SAC and invoice note. Tax remains disabled by default until tax-advisor/business-owner sign-off.
+- Privacy/terms CMS copy now documents necessary cookies, optional consent, retention rationale and the PCI/payment-provider boundary. Refund and cancellation policies remain editable CMS records.
+- Customer and admin invoice PDFs include configured tax totals and GST breakdown.
+- Remaining gate: business owner/tax advisor must confirm registration, HSN/SAC, rates, place-of-supply, retention periods, refund wording and launch jurisdiction before production enablement.
+
+## SEO completion - 2026-09-14
+
+- Added route-aware canonical links, title/description metadata, robots directives and Open Graph/Twitter metadata with configurable site URL and social image support.
+- Added Product JSON-LD on product detail pages and CollectionPage/ItemList JSON-LD on catalog pages.
+- Added database-backed `/sitemap.xml` covering active products, categories and published CMS pages, plus `/robots.txt` with private route disallows.
+- Added `product_slug_redirects` migration and redirect persistence when an admin changes a product slug; storefront follows the canonical slug.
+- Validation passed: migration application, sitemap/robots HTTP smoke checks, frontend build and format checks.
+
+## Pages and legal CMS migration - 2026-09-14
+
+- Seeded full Privacy, Terms & Conditions, Shipping, Returns & Exchanges, Refund and Cancellation policy records as published CMS pages.
+- Legacy storefront policy URLs now load their CMS record instead of source-only fallback copy.
+- Added `content_page_versions` and snapshot the previous published/draft payload before every admin edit, preserving content, SEO fields and status history.
+- Migration `029_content_page_versions.sql` applied and `seed:legal-pages` completed successfully.
+- Browser verification confirmed `/privacy` renders the CMS title, intro and five detailed policy sections with shared navigation/footer.
+
+## Media security - 2026-09-14
+
+- All managed image uploads now validate JPEG/PNG/WebP magic bytes instead of trusting the browser MIME type, decode dimensions, enforce 8000×8000 and 40-megapixel limits, and keep random UUID filenames.
+- Added optional provider/antivirus scan hook through `MEDIA_SCAN_COMMAND`; when configured, uploads are scanned from a temporary file before storage.
+- Added `npm --workspace natural-beauty-api run media:orphans` orphan report. It is dry-run by default and supports `--delete` only after review; order-item image snapshots are treated as referenced and retained.
+- Originals remain private to the managed storage root and only the configured `/uploads` public derivative path is served; no user-controlled filename is used in a filesystem path.
+- Fixed Admin Media Library request path to `/admin/media`; authenticated asset listing now loads instead of returning `API route not found`.

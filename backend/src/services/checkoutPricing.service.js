@@ -74,6 +74,36 @@ function line(row) {
         : null,
   };
 }
+async function readTaxSettings(pool) {
+  const [rows] = await pool.execute(
+    "SELECT setting_key,value_json FROM store_settings WHERE setting_group='tax'",
+  );
+  const values = rows.reduce((result, row) => {
+    try {
+      result[row.setting_key] = JSON.parse(row.value_json);
+    } catch {
+      result[row.setting_key] = row.value_json;
+    }
+    return result;
+  }, {});
+  return {
+    enabled: values.enabled === true || values.enabled === "true",
+    rate: Math.max(0, Math.min(100, Number(values.default_rate || 0))),
+    label: String(values.tax_label || "GST").trim() || "GST",
+    sellerState: String(values.seller_state || "")
+      .trim()
+      .toLowerCase(),
+    hsnSac: String(values.hsn_sac || "").trim(),
+    sellerGstin: String(values.seller_gstin || "").trim(),
+    sellerLegalName: String(
+      values.seller_legal_name || "Natural Beauty",
+    ).trim(),
+    sellerAddress: String(values.seller_address || "").trim(),
+    sellerStateCode: String(values.seller_state_code || "").trim(),
+    reverseCharge:
+      values.reverse_charge === true || values.reverse_charge === "true",
+  };
+}
 export async function shippingMethods(pool) {
   const [rows] = await pool.execute(
     "SELECT code,name,description,fee,free_shipping_threshold,estimated_days_min,estimated_days_max FROM shipping_methods WHERE is_active=1 ORDER BY sort_order,id",
@@ -99,6 +129,7 @@ export async function quote(
     shippingMethod = "STANDARD",
     couponCode,
     giftCardCode,
+    shippingAddress,
   } = {},
 ) {
   const cart = customerId ? await getCart(pool, customerId) : null;
@@ -190,6 +221,20 @@ export async function quote(
     : 0;
   const couponDiscount = paise(coupon?.discount);
   const beforeGift = Math.max(0, subtotal - couponDiscount + shipping);
+  const taxSettings = await readTaxSettings(pool);
+  const taxable = Math.max(0, subtotal - couponDiscount + shipping);
+  const taxAmount = taxSettings.enabled
+    ? Math.round((taxable * taxSettings.rate) / 100)
+    : 0;
+  const sameState =
+    taxSettings.sellerState &&
+    String(shippingAddress?.state || "")
+      .trim()
+      .toLowerCase() === taxSettings.sellerState;
+  const taxType = !taxAmount ? "none" : sameState ? "cgst_sgst" : "igst";
+  const cgst = taxType === "cgst_sgst" ? Math.round(taxAmount / 2) : 0;
+  const sgst = taxType === "cgst_sgst" ? taxAmount - cgst : 0;
+  const igst = taxType === "igst" ? taxAmount : 0;
   let giftCard = null;
   if (giftCardCode) {
     const [rows] = await pool.execute(
@@ -216,7 +261,10 @@ export async function quote(
         message: "This gift card has expired.",
       });
     else {
-      const applied = Math.min(paise(card.current_balance), beforeGift);
+      const applied = Math.min(
+        paise(card.current_balance),
+        beforeGift + taxAmount,
+      );
       giftCard = {
         last4: card.code_last4,
         availableBalance: Number(card.current_balance),
@@ -238,7 +286,24 @@ export async function quote(
         freeShippingApplied: shipping === 0,
       },
       giftCard: giftCard ? { ...giftCard } : null,
-      payableTotal: rupees(Math.max(0, beforeGift - giftApplied)),
+      tax: {
+        enabled: taxSettings.enabled,
+        label: taxSettings.label,
+        rate: taxSettings.rate,
+        type: taxType,
+        amount: rupees(taxAmount),
+        cgst: rupees(cgst),
+        sgst: rupees(sgst),
+        igst: rupees(igst),
+        hsnSac: taxSettings.hsnSac,
+        sellerGstin: taxSettings.sellerGstin,
+        sellerLegalName: taxSettings.sellerLegalName,
+        sellerAddress: taxSettings.sellerAddress,
+        sellerStateCode: taxSettings.sellerStateCode,
+        placeOfSupply: shippingAddress?.state || "",
+        reverseCharge: taxSettings.reverseCharge,
+      },
+      payableTotal: rupees(Math.max(0, beforeGift + taxAmount - giftApplied)),
     },
     checkoutReady: !issues.length && lines.length > 0,
     issues,

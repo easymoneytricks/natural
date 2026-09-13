@@ -13,4 +13,6 @@ r.get("/orders/summary", v, c.summary);
 r.get("/orders/:orderNumber", v, c.detail);
 r.patch("/orders/:orderNumber/status", m, c.status);
 r.patch("/orders/:orderNumber/shipping", m, c.shipping);
+r.patch("/orders/:orderNumber/return", m, c.returnState);
+r.get("/orders/:orderNumber/invoice", v, c.invoice);
 export default r;

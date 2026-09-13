@@ -37,12 +37,15 @@ function StatusPill({ status }) {
 }
 
 function OrderDetail({ orderNumber, onClose, onUpdated }) {
-  const { authFetch } = useAuth();
+  const { authFetch, authDownload } = useAuth();
   const [detail, setDetail] = useState(null);
   const [status, setStatus] = useState("");
   const [note, setNote] = useState("");
   const [courier, setCourier] = useState("");
   const [trackingId, setTrackingId] = useState("");
+  const [returnStatus, setReturnStatus] = useState("none");
+  const [refundAmount, setRefundAmount] = useState("");
+  const [returnReason, setReturnReason] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -55,6 +58,13 @@ function OrderDetail({ orderNumber, onClose, onUpdated }) {
       setStatus(response.data.order.status);
       setCourier(response.data.shipping?.courier || "");
       setTrackingId(response.data.shipping?.trackingId || "");
+      setReturnStatus(response.data.order.returnStatus || "none");
+      setRefundAmount(response.data.order.refundAmount || "");
+      setReturnReason(
+        response.data.order.refundReason ||
+          response.data.order.cancellationReason ||
+          "",
+      );
     } catch (caught) {
       setError(caught.message || "Unable to load order details.");
     }
@@ -110,6 +120,48 @@ function OrderDetail({ orderNumber, onClose, onUpdated }) {
     }
   };
 
+  const updateReturn = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      await authFetch(
+        `/admin/orders/${encodeURIComponent(orderNumber)}/return`,
+        {
+          method: "PATCH",
+          body: {
+            returnStatus,
+            refundAmount: Number(refundAmount || 0),
+            reason: returnReason.trim() || null,
+          },
+        },
+      );
+      await load();
+      onUpdated();
+    } catch (caught) {
+      setError(caught.message || "Unable to update return or refund state.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const downloadInvoice = async () => {
+    setError("");
+    try {
+      const blob = await authDownload(
+        `/admin/orders/${encodeURIComponent(orderNumber)}/invoice`,
+      );
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${orderNumber}-invoice.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (caught) {
+      setError(caught.message || "Unable to download invoice.");
+    }
+  };
+
   return (
     <div
       className="order-modal-backdrop"
@@ -133,6 +185,13 @@ function OrderDetail({ orderNumber, onClose, onUpdated }) {
             aria-label="Close order details"
           >
             <X size={18} />
+          </button>
+          <button
+            className="button-secondary invoice-button"
+            type="button"
+            onClick={downloadInvoice}
+          >
+            Download invoice
           </button>
         </header>
         {error && (
@@ -196,7 +255,11 @@ function OrderDetail({ orderNumber, onClose, onUpdated }) {
                 <input
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
-                  placeholder="Optional timeline note"
+                  placeholder={
+                    status === "cancelled"
+                      ? "Cancellation reason (required)"
+                      : "Optional timeline note"
+                  }
                   disabled={saving}
                 />
                 <button
@@ -204,7 +267,8 @@ function OrderDetail({ orderNumber, onClose, onUpdated }) {
                   disabled={
                     saving ||
                     status === detail.order.status ||
-                    !transitions[detail.order.status]?.length
+                    !transitions[detail.order.status]?.length ||
+                    (status === "cancelled" && !note.trim())
                   }
                 >
                   {saving && <LoaderCircle className="spin" size={15} />} Update
@@ -232,11 +296,57 @@ function OrderDetail({ orderNumber, onClose, onUpdated }) {
                   Save shipping
                 </button>
               </form>
+              <form className="order-action-card" onSubmit={updateReturn}>
+                <div className="action-card-heading">
+                  <PackageCheck size={17} />
+                  <b>Returns &amp; refunds</b>
+                </div>
+                <select
+                  value={returnStatus}
+                  onChange={(event) => setReturnStatus(event.target.value)}
+                  disabled={saving}
+                >
+                  {[
+                    "none",
+                    "requested",
+                    "approved",
+                    "rejected",
+                    "received",
+                    "refunded",
+                  ].map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={refundAmount}
+                  onChange={(event) => setRefundAmount(event.target.value)}
+                  placeholder="Refund amount"
+                  disabled={saving}
+                />
+                <input
+                  value={returnReason}
+                  onChange={(event) => setReturnReason(event.target.value)}
+                  placeholder="Reason for return or refund"
+                  disabled={saving}
+                />
+                <button type="submit" disabled={saving}>
+                  Save return state
+                </button>
+              </form>
             </div>
             <div className="order-detail-columns">
               <div>
                 <section className="order-section">
                   <h3>Items</h3>
+                  <p className="order-snapshot-note">
+                    Immutable order snapshot · names, SKU codes, prices and
+                    images are preserved exactly as purchased.
+                  </p>
                   {detail.items.map((item) => (
                     <div className="order-line-item" key={item.id}>
                       <div>
@@ -320,6 +430,26 @@ function OrderDetail({ orderNumber, onClose, onUpdated }) {
                     <b>{money(detail.pricing.grandTotal)}</b>
                   </div>
                 </section>
+                {(detail.order.cancellationReason ||
+                  detail.order.returnStatus !== "none") && (
+                  <section className="order-section">
+                    <h3>After-sale record</h3>
+                    {detail.order.cancellationReason && (
+                      <p>
+                        <b>Cancellation:</b> {detail.order.cancellationReason}
+                      </p>
+                    )}
+                    {detail.order.returnStatus !== "none" && (
+                      <p>
+                        <b>Return:</b> {detail.order.returnStatus} · Refund{" "}
+                        {money(detail.order.refundAmount)}
+                        {detail.order.refundReason
+                          ? ` · ${detail.order.refundReason}`
+                          : ""}
+                      </p>
+                    )}
+                  </section>
+                )}
               </div>
             </div>
           </div>

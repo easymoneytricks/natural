@@ -62,6 +62,14 @@ const normalize = (input = {}, partial = false) => {
       "VALIDATION_ERROR",
       "Please provide a valid 6-digit PIN code.",
     );
+  if (partial && out.countryCode && !/^[A-Z]{2}$/.test(out.countryCode))
+    throw new AuthError(
+      400,
+      "VALIDATION_ERROR",
+      "Please provide a valid two-letter country code.",
+    );
+  if (partial && out.addressLine1 !== undefined && !out.addressLine1)
+    throw new AuthError(400, "VALIDATION_ERROR", "Address line is required.");
   return out;
 };
 

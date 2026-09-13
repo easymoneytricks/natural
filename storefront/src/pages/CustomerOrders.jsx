@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowDownToLine, ArrowRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import "./AccountDashboard.css";
 function Guard({ children }) {
@@ -51,13 +51,30 @@ function Shell({ children }) {
   );
 }
 export function CustomerOrders() {
-  const { authFetch } = useAuth();
+  const { authFetch, authDownload } = useAuth();
   const [orders, setOrders] = useState(null);
+  const [downloading, setDownloading] = useState(null);
   useEffect(() => {
     authFetch("/customer/orders")
       .then((r) => setOrders(r.data || []))
       .catch(() => setOrders([]));
   }, [authFetch]);
+  const downloadInvoice = async (orderNumber) => {
+    setDownloading(orderNumber);
+    try {
+      const blob = await authDownload(
+        `/customer/orders/${orderNumber}/invoice`,
+      );
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${orderNumber}-invoice.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(null);
+    }
+  };
   return (
     <Guard>
       <Shell>
@@ -80,6 +97,15 @@ export function CustomerOrders() {
                 <Link to={`/account/orders/${order.orderNumber}`}>
                   View details <ArrowRight size={13} />
                 </Link>
+                <button
+                  className="text-button"
+                  type="button"
+                  disabled={downloading === order.orderNumber}
+                  onClick={() => downloadInvoice(order.orderNumber)}
+                >
+                  <ArrowDownToLine size={13} />
+                  {downloading === order.orderNumber ? "Preparing…" : "Invoice"}
+                </button>
               </article>
             ))}
           </div>
@@ -94,13 +120,30 @@ export function CustomerOrders() {
 }
 export function CustomerOrderDetail() {
   const { orderNumber } = useParams();
-  const { authFetch } = useAuth();
+  const { authFetch, authDownload } = useAuth();
   const [order, setOrder] = useState(null);
+  const [downloading, setDownloading] = useState(false);
   useEffect(() => {
     authFetch(`/customer/orders/${orderNumber}`)
       .then((r) => setOrder(r.data.order))
       .catch(() => setOrder(false));
   }, [authFetch, orderNumber]);
+  const downloadInvoice = async () => {
+    setDownloading(true);
+    try {
+      const blob = await authDownload(
+        `/customer/orders/${orderNumber}/invoice`,
+      );
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${orderNumber}-invoice.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setDownloading(false);
+    }
+  };
   return (
     <Guard>
       <Shell>
@@ -118,6 +161,15 @@ export function CustomerOrderDetail() {
                 ? "Cash on delivery"
                 : order.paymentMethod}
             </p>
+            <button
+              className="button button-secondary"
+              type="button"
+              disabled={downloading}
+              onClick={downloadInvoice}
+            >
+              <ArrowDownToLine size={15} />
+              {downloading ? "Preparing invoice…" : "Download invoice PDF"}
+            </button>
             <div className="detail-items">
               {order.items.map((item) => (
                 <div key={item.sku}>

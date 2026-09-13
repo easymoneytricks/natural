@@ -14,7 +14,9 @@
     "restore:production": "node scripts/restore-production.js",
     "inventory:adjust": "node scripts/inventory-adjust.js",
     "inventory:status": "node scripts/inventory-status.js",
-    "sku:status": "node scripts/sku-status.js"
+    "sku:status": "node scripts/sku-status.js",
+    "media:orphans": "node scripts/media-orphans.js",
+    "seed:legal-pages": "node scripts/seed-legal-pages.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -24,10 +26,12 @@
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
+    "image-size": "^2.0.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.3.0",
     "mysql2": "^3.12.0",
     "nodemailer": "^10.0.9",
+    "pdfkit": "^0.20.2",
     "razorpay": "^2.9.8"
   },
   "devDependencies": {

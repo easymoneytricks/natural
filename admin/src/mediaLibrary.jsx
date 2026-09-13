@@ -22,7 +22,7 @@ export function MediaLibrary() {
   useEffect(() => {
     setLoading(true);
     setError("");
-    authFetch(`/media?q=${encodeURIComponent(query)}&type=${type}`)
+    authFetch(`/admin/media?q=${encodeURIComponent(query)}&type=${type}`)
       .then((response) => setAssets(response.data || []))
       .catch((caught) =>
         setError(caught.message || "Unable to load media library."),

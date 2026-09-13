@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ProductCard } from "../components/product/ProductCard";
 import { getCatalogFilters, getProducts } from "../services/catalogApi";
 import "./ShopIntegration.css";
+import { SeoMeta, StructuredData } from "../components/SeoMeta";
 
 const fallbackGroups = [
   {
@@ -251,6 +252,31 @@ export function Shop() {
 
   return (
     <>
+      <SeoMeta
+        title={
+          selected.category?.[0]
+            ? `${selected.category[0]} skincare`
+            : "Skincare collection"
+        }
+        description="Explore considered skincare formulas by skin type, concern and everyday ritual."
+      />
+      <StructuredData
+        data={{
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: selected.category?.[0] || "Skincare collection",
+          url: window.location.href,
+          mainEntity: {
+            "@type": "ItemList",
+            itemListElement: products.slice(0, 24).map((item, index) => ({
+              "@type": "ListItem",
+              position: index + 1,
+              url: `${window.location.origin}/product/${item.slug}`,
+              name: item.name,
+            })),
+          },
+        }}
+      />
       <section className="shop-page-header homepage-container">
         <p className="breadcrumb">
           <Link to="/">Home</Link> <span>/</span> Shop

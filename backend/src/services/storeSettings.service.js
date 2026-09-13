@@ -34,7 +34,8 @@ export async function read(pool, publicOnly = false) {
   return rows.reduce((result, row) => {
     const privateKey =
       (row.setting_group === "smtp" && row.setting_key === "password") ||
-      (row.setting_group === "recaptcha" && row.setting_key === "secret_key");
+      (row.setting_group === "recaptcha" && row.setting_key === "secret_key") ||
+      (row.setting_group === "tax" && row.setting_key === "seller_gstin");
     if (publicOnly && privateKey) return result;
     (result[row.setting_group] ||= {})[row.setting_key] = privateKey
       ? ""
@@ -94,7 +95,8 @@ export async function update(pool, input, adminId, req) {
             settingKey,
             JSON.stringify(value),
             settingGroup === "smtp" ||
-            (settingGroup === "recaptcha" && settingKey === "secret_key")
+            (settingGroup === "recaptcha" && settingKey === "secret_key") ||
+            (settingGroup === "tax" && settingKey === "seller_gstin")
               ? 0
               : 1,
             adminId,

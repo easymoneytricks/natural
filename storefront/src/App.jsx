@@ -31,6 +31,8 @@ import {
 import { CustomerOrders, CustomerOrderDetail } from "./pages/CustomerOrders";
 import { StoreSettingsProvider } from "./context/StoreSettingsContext";
 import { CmsPage } from "./pages/CmsPage";
+import { SeoMeta } from "./components/SeoMeta";
+import { useLocation } from "react-router-dom";
 
 const informationalRoutes = [
   "/about",
@@ -50,8 +52,17 @@ const informationalRoutes = [
   "/refund-policy",
   "/cancellation-policy",
 ];
+const cmsRoutes = new Set([
+  "/privacy",
+  "/terms",
+  "/shipping",
+  "/returns",
+  "/refund-policy",
+  "/cancellation-policy",
+]);
 
 export default function App() {
+  const location = useLocation();
   const [searchOpen, setSearchOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -78,6 +89,17 @@ export default function App() {
 
   return (
     <StoreSettingsProvider>
+      <SeoMeta
+        title={
+          location.pathname === "/"
+            ? "Healthy skin, beautifully simple"
+            : location.pathname.slice(1).replaceAll("/", " · ")
+        }
+        noindex={
+          location.pathname.startsWith("/account") ||
+          location.pathname === "/checkout"
+        }
+      />
       <AnnouncementBar />
       <Header
         onSearch={() => setSearchOpen(true)}
@@ -116,7 +138,13 @@ export default function App() {
             <Route
               key={path}
               path={path}
-              element={<RouteShell title={path.slice(1)} />}
+              element={
+                cmsRoutes.has(path) ? (
+                  <CmsPage slug={path.slice(1)} />
+                ) : (
+                  <RouteShell title={path.slice(1)} />
+                )
+              }
             />
           ))}
         </Routes>

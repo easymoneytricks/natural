@@ -4,6 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   authErrorMessage,
+  deleteAccount,
+  exportAccount,
   createAddress,
   deleteAddress,
   getAddresses,
@@ -102,11 +104,12 @@ function Shell({ children, active }) {
 }
 
 export function CustomerProfile() {
-  const { user, authFetch, updateUser } = useAuth();
+  const { user, authFetch, updateUser, logout } = useAuth();
   const [form, setForm] = useState(user || {});
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [accountPassword, setAccountPassword] = useState("");
   useEffect(() => setForm(user || {}), [user]);
   const submit = async (event) => {
     event.preventDefault();
@@ -126,6 +129,30 @@ export function CustomerProfile() {
       setError(internalError(requestError));
     } finally {
       setSaving(false);
+    }
+  };
+  const downloadData = async () => {
+    const result = await exportAccount(authFetch);
+    const blob = new Blob([JSON.stringify(result.data, null, 2)], {
+      type: "application/json",
+    });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "natural-beauty-account-export.json";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+  const removeAccount = async () => {
+    if (
+      !accountPassword ||
+      !window.confirm("Delete your account and revoke all sessions?")
+    )
+      return;
+    try {
+      await deleteAccount(authFetch, accountPassword);
+      await logout();
+    } catch (requestError) {
+      setError(internalError(requestError));
     }
   };
   return (
@@ -174,6 +201,28 @@ export function CustomerProfile() {
           <Link to="/reset-password" className="account-action">
             Change password
           </Link>
+          <button
+            type="button"
+            className="account-action"
+            onClick={downloadData}
+          >
+            Download my data
+          </button>
+          <label>
+            Confirm password to delete account
+            <input
+              type="password"
+              value={accountPassword}
+              onChange={(event) => setAccountPassword(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className="account-action danger"
+            onClick={removeAccount}
+          >
+            Delete account
+          </button>
         </form>
       </Shell>
     </Guard>

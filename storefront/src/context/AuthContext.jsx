@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { apiRequest } from "../lib/api";
+import { apiRequest, API_BASE_URL } from "../lib/api";
 import {
   authErrorMessage,
   getCurrentCustomer,
@@ -140,6 +140,43 @@ export function AuthProvider({ children }) {
     },
     [accessToken, refresh],
   );
+  const authDownload = useCallback(
+    async (path, options = {}) => {
+      const request = async (bearer) => {
+        const response = await fetch(`${API_BASE_URL}${path}`, {
+          ...options,
+          credentials: "include",
+          headers: {
+            Accept: "application/pdf",
+            ...(options.headers || {}),
+            Authorization: `Bearer ${bearer}`,
+          },
+        });
+        if (!response.ok) {
+          let payload = null;
+          try {
+            payload = await response.json();
+          } catch {}
+          throw {
+            status: response.status,
+            code: payload?.error?.code || "DOWNLOAD_FAILED",
+            message:
+              payload?.error?.message || "We could not download this file.",
+          };
+        }
+        return response.blob();
+      };
+      if (!accessToken) throw { status: 401, code: "UNAUTHENTICATED" };
+      try {
+        return await request(accessToken);
+      } catch (error) {
+        if (error?.status !== 401) throw error;
+        const refreshed = await refresh();
+        return request(refreshed.accessToken);
+      }
+    },
+    [accessToken, refresh],
+  );
   const updateUser = useCallback(
     (changes) =>
       setUser((current) => (current ? { ...current, ...changes } : current)),
@@ -159,6 +196,7 @@ export function AuthProvider({ children }) {
     getCurrentCustomer: () =>
       accessToken ? getCurrentCustomer(accessToken) : null,
     authFetch,
+    authDownload,
     getAccessToken: () => accessToken,
     updateUser,
     authErrorMessage,
