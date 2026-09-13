@@ -27,31 +27,31 @@ Estimated current readiness: **about 65% for a controlled staging launch; not re
 
 ## Present in this repository
 
-| Capability                        | Current evidence                                                                              | Assessment                                                                 |
-| --------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Workspace and development         | Root workspaces, dev/build/migrate/format scripts                                             | Present; production process still needs deployment proof                   |
-| Backend foundation                | Express app, MariaDB pool, migrations 001–017, health/error middleware                        | Present                                                                    |
-| Catalog data model                | Brands, categories, products, content, attributes, media and SKUs                             | Present; browser completion gates remain for some editor flows             |
-| Public catalog API                | Product/category/brand routes, filters and SKU payloads                                       | Present; live seeded runtime regression is still needed                    |
-| Storefront catalog                | Shop and PDP consume catalog services without fixture fallback                                | API-backed; browser/API outage states still need release regression        |
-| Customer auth                     | Login/register/session/token services and AuthContext                                         | Foundation present; password reset token/email flow remains                |
-| Profile and addresses             | Backend routes and account forms                                                              | API-backed; browser persistence regression remains                         |
-| Cart and wishlist                 | Guest/local state plus server customer cart/wishlist and merge flow                           | Present foundation; server quote and browser regression remain             |
-| Pricing and checkout quote        | Integer paise quote engine, shipping/coupon/gift-card inputs                                  | Present; rewards and payment finalization are incomplete                   |
-| Coupons and gift cards            | Database, validation, limits, holds/transactions and Admin UI                                 | Present foundation; reversal and browser persistence gates remain          |
-| Shipping and tax                  | Configurable settings and quote/order snapshot fields                                         | Present foundation; provider/zone/rule sophistication is limited           |
-| COD orders                        | Reservation-aware order path and Admin lifecycle services                                     | Present foundation; full E2E reconciliation is still required              |
-| Razorpay                          | SDK dependency, create/verify routes and webhook foundation                                   | Not production-complete; provider finalization is intentionally incomplete |
-| Customer orders                   | Backend order routes, account order/detail pages                                              | API-backed; fulfilment/refund and invoice release controls remain          |
-| Admin shell and RBAC              | Protected routes, staff/users, roles, permissions, audit log                                  | Present and browser-verified at route level                                |
-| Admin catalog                     | Brands, categories, products, explicit SKU/media editor                                       | Meaningful implementation; product browser gate still open                 |
-| Admin inventory                   | Inventory list, adjustment and movement detail surfaces                                       | Partially complete; idempotency and full workflow QA remain                |
-| Admin orders/customers/promotions | Orders, customer, coupon and gift-card pages plus APIs                                        | Present foundation; production browser regression remains                  |
-| Admin media                       | Upload/library and product/brand/category usage                                               | Present; deep file validation and lifecycle polish remain                  |
-| Admin settings                    | Branding, SEO, shipping, tax, SMTP fields, homepage visibility, nav/footer and store settings | Present foundation; SMTP transport/test-send not wired                     |
-| Admin Pages CMS                   | Create/edit, slug, sections, draft/published/archived, SEO, public `/pages/:slug`             | Present; legacy legal routes are still source-driven                       |
-| Contact                           | Public submission form, admin inbox, status/note workflow                                     | Present and browser-verified                                               |
-| Storefront UI                     | Header/footer, homepage, shop, PDP, cart, auth, account, contact and legal styling            | Present visually; data/runtime and accessibility regression still needed   |
+| Capability                        | Current evidence                                                                              | Assessment                                                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Workspace and development         | Root workspaces, dev/build/migrate/format scripts                                             | Present; production process still needs deployment proof                                                   |
+| Backend foundation                | Express app, MariaDB pool, migrations 001–017, health/error middleware                        | Present                                                                                                    |
+| Catalog data model                | Brands, categories, products, content, attributes, media and SKUs                             | Present; browser completion gates remain for some editor flows                                             |
+| Public catalog API                | Product/category/brand routes, filters and SKU payloads                                       | Present; live seeded runtime regression is still needed                                                    |
+| Storefront catalog                | Shop and PDP consume catalog services without fixture fallback                                | API-backed; browser/API outage states still need release regression                                        |
+| Customer auth                     | Login/register/session/token services and AuthContext                                         | Foundation present; password reset token/email flow remains                                                |
+| Profile and addresses             | Backend routes and account forms                                                              | API-backed; browser persistence regression remains                                                         |
+| Cart and wishlist                 | Guest/local state plus server customer cart/wishlist and merge flow                           | Present foundation; server quote and browser regression remain                                             |
+| Pricing and checkout quote        | Integer paise quote engine, shipping/coupon/gift-card inputs                                  | Present; rewards and payment finalization are incomplete                                                   |
+| Coupons and gift cards            | Database, validation, limits, holds/transactions and Admin UI                                 | Present foundation; reversal and browser persistence gates remain                                          |
+| Shipping and tax                  | Configurable settings and quote/order snapshot fields                                         | Present foundation; provider/zone/rule sophistication is limited                                           |
+| COD orders                        | Reservation-aware order path and Admin lifecycle services                                     | Present foundation; full E2E reconciliation is still required                                              |
+| Razorpay                          | SDK dependency, create/verify routes and webhook foundation                                   | Not production-complete; provider finalization is intentionally incomplete                                 |
+| Customer orders                   | Backend order routes, account order/detail pages                                              | API-backed; fulfilment/refund and invoice release controls remain                                          |
+| Admin shell and RBAC              | Protected routes, staff/users, roles, permissions, audit log                                  | Present and browser-verified at route level                                                                |
+| Admin catalog                     | Brands, categories, products, explicit SKU/media editor                                       | Meaningful implementation; product browser gate still open                                                 |
+| Admin inventory                   | Inventory list, adjustment and movement detail surfaces                                       | Present; idempotent adjustments, UX filters, low-stock view and CSV export implemented; staging QA remains |
+| Admin orders/customers/promotions | Orders, customer, coupon and gift-card pages plus APIs                                        | Present foundation; production browser regression remains                                                  |
+| Admin media                       | Upload/library and product/brand/category usage                                               | Present; deep file validation and lifecycle polish remain                                                  |
+| Admin settings                    | Branding, SEO, shipping, tax, SMTP fields, homepage visibility, nav/footer and store settings | Present foundation; SMTP transport/test-send not wired                                                     |
+| Admin Pages CMS                   | Create/edit, slug, sections, draft/published/archived, SEO, public `/pages/:slug`             | Present; legacy legal routes are still source-driven                                                       |
+| Contact                           | Public submission form, admin inbox, status/note workflow                                     | Present and browser-verified                                                                               |
+| Storefront UI                     | Header/footer, homepage, shop, PDP, cart, auth, account, contact and legal styling            | Present visually; data/runtime and accessibility regression still needed                                   |
 
 ## Gap register
 
@@ -62,7 +62,7 @@ Estimated current readiness: **about 65% for a controlled staging launch; not re
 3. **Complete account recovery and commerce release gates** — legacy storefront fixtures have been removed. Production mode must continue to fail clearly when APIs are unavailable instead of showing fake orders, prices or balances.
 4. **Inventory/order transaction audit** — reservation/release, cancellation atomicity, payment-failure release, duplicate requests and coupon-limit rechecks are now protected by row locks and shared transactions. Remaining release gate: run these cases in a clean staging environment with concurrent integration/E2E runners.
 5. **Production secrets and deployment** — production validation, secure cookies, CORS/HTTPS enforcement, TLS DB configuration, persistent media path, backup/restore scripts and rollback runbook are implemented. Remaining release gate: configure provider-managed secrets, durable storage, scheduled encrypted backups and a successful restore drill.
-6. **Automated critical-path tests** — add API integration and browser E2E coverage for login, catalog, cart, quote, COD, online payment callback, order confirmation, admin status update and stock release.
+6. **Automated critical-path tests** — API and browser harnesses now cover health/catalog, fail-closed login/protected routes, quote, invalid payment signatures, storefront catalog/cart navigation and the signup verification gate. An opt-in MariaDB lifecycle test covers customer cart → COD order → admin cancellation → reservation release; run it with a dedicated staging customer/admin using `RUN_MUTATING_INTEGRATION=true`. The remaining release gate is a provider-backed online-payment callback and inbox-confirmed OTP/order email run in staging.
 
 ### P1 — Must close before a serious public launch
 
@@ -150,3 +150,8 @@ Estimated current readiness: **about 65% for a controlled staging launch; not re
 - Ran `npm run seed:dev` successfully. The seed is opt-in for local development and writes the Natural Beauty brand, categories, attributes, product/SKU inventory, shipping methods, permissions, staff role, coupons, gift cards and an optional development customer to MariaDB. It does not create fake orders or fake payment settlements.
 - Ran `npm --workspace natural-beauty-api run remove:demo-data` successfully. It removed the marked QA product/category records and the opt-in `aanya@example.com` development customer without touching real order rows.
 - Production still needs a reviewed migration/backup run and real provider credentials. Seeded customer/coupon/gift-card records are development data and must not be promoted to production without business approval.
+
+## Inventory UX gap closure - 2026-09-14
+
+- The P1 Inventory UX gap is implemented: manual adjustments and physical counts require a reason and UUID idempotency key, quantity changes require confirmation, movement history supports type/date filters, inventory includes a low-stock quick view and filtered CSV export, and on-hand/reserved/available-to-sell quantities are shown separately.
+- Remaining work is staging-only concurrency and browser regression verification.

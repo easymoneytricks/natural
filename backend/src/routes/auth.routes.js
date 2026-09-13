@@ -8,6 +8,8 @@ import {
   me,
   refresh,
   register,
+  verifyEmail,
+  resendVerification,
 } from "../controllers/auth.controller.js";
 import { requireCustomerAuth } from "../middleware/customerAuth.js";
 
@@ -28,6 +30,8 @@ const sensitiveLimit = rateLimit({
 
 router.use(cookieParser());
 router.post("/register", sensitiveLimit, register);
+router.post("/verify-email", sensitiveLimit, verifyEmail);
+router.post("/resend-verification", sensitiveLimit, resendVerification);
 router.post("/login", sensitiveLimit, login);
 router.post("/refresh", sensitiveLimit, refresh);
 router.post("/logout", logout);

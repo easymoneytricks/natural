@@ -63,6 +63,20 @@ export async function detail(pool, id) {
     "SELECT COUNT(*) count FROM customer_wishlist_items WHERE customer_id=?",
     [id],
   );
+  const [wishlist] = await pool.execute(
+    `SELECT p.id,p.name,p.slug,COALESCE((SELECT pm.file_path FROM product_media pm WHERE pm.product_id=p.id AND pm.deleted_at IS NULL ORDER BY pm.is_primary DESC,pm.id LIMIT 1),'') image
+     FROM customer_wishlist_items wi JOIN products p ON p.id=wi.product_id
+     WHERE wi.customer_id=? ORDER BY wi.created_at DESC`,
+    [id],
+  );
+  const [cartItems] = await pool.execute(
+    `SELECT ci.sku_id,ci.quantity,ps.sku,ps.price,ps.mrp,p.name product_name,p.slug product_slug,
+      COALESCE(i.quantity_on_hand-i.reserved_quantity,0) available
+     FROM customer_cart_items ci JOIN customer_carts cc ON cc.id=ci.cart_id
+     JOIN product_skus ps ON ps.id=ci.sku_id JOIN products p ON p.id=ps.product_id
+     LEFT JOIN inventory i ON i.sku_id=ps.id WHERE cc.customer_id=? ORDER BY ci.updated_at DESC`,
+    [id],
+  );
   return {
     customer: {
       ...c,
@@ -76,6 +90,15 @@ export async function detail(pool, id) {
       cartQuantity: Number(cart.quantity || 0),
       wishlistCount: Number(wish.count || 0),
     },
+    wishlist: wishlist.map((item) => ({ ...item, id: Number(item.id) })),
+    cart: cartItems.map((item) => ({
+      ...item,
+      skuId: Number(item.sku_id),
+      quantity: Number(item.quantity),
+      price: Number(item.price),
+      mrp: Number(item.mrp),
+      available: Number(item.available || 0),
+    })),
   };
 }
 export async function setStatus(pool, id, status, adminId, req) {

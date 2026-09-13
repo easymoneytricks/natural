@@ -13,6 +13,7 @@ export const registerCustomer = (profile) =>
         email: profile.email,
         phone: profile.mobile || profile.phone,
         password: profile.password,
+        recaptchaToken: profile.recaptchaToken,
       },
     }),
   );
@@ -21,6 +22,16 @@ export const loginCustomer = (email, password) =>
   apiRequest(
     "/auth/login",
     authOptions({ method: "POST", body: { email, password } }),
+  );
+export const verifyCustomerEmail = (email, code) =>
+  apiRequest(
+    "/auth/verify-email",
+    authOptions({ method: "POST", body: { email, code } }),
+  );
+export const resendCustomerVerification = (email) =>
+  apiRequest(
+    "/auth/resend-verification",
+    authOptions({ method: "POST", body: { email } }),
   );
 export const refreshSession = () =>
   apiRequest("/auth/refresh", authOptions({ method: "POST" }));
@@ -62,6 +73,20 @@ export function authErrorMessage(
     return "An account with this email already exists.";
   if (error?.code === "PHONE_ALREADY_EXISTS")
     return "An account with this phone already exists.";
+  if (error?.code === "EMAIL_NOT_VERIFIED")
+    return "Please verify your email address before signing in.";
+  if (error?.code === "INVALID_EMAIL_OTP")
+    return "That code is invalid or expired. Check the email and try again.";
+  if (error?.code === "EMAIL_OTP_ATTEMPTS_EXCEEDED")
+    return "Too many incorrect codes. Request a new verification code.";
+  if (error?.code === "RECAPTCHA_REQUIRED")
+    return "Please complete the security verification.";
+  if (
+    error?.code === "RECAPTCHA_FAILED" ||
+    error?.code === "RECAPTCHA_UNAVAILABLE" ||
+    error?.code === "RECAPTCHA_NOT_CONFIGURED"
+  )
+    return "Security verification could not be completed. Please try again.";
   if (error?.code === "VALIDATION_ERROR")
     return "Please check your details and try again.";
   return fallback;

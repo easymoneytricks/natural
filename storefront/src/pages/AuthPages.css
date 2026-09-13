@@ -114,11 +114,27 @@
   font-size: 12px;
   margin: 12px 0;
 }
+
+.recaptcha-widget {
+  min-height: 78px;
+  margin: 0.25rem 0 0.5rem;
+  overflow: hidden;
+}
 .auth-success {
   color: var(--sage-dark);
   font-size: 12px;
   background: #f0f3ed;
   padding: 11px;
+}
+.auth-text-button {
+  border: 0;
+  background: transparent;
+  color: var(--sage-dark);
+  text-decoration: underline;
+  cursor: pointer;
+  align-self: center;
+  font-size: 12px;
+  margin-top: 14px;
 }
 .auth-two {
   display: grid;

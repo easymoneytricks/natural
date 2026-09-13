@@ -56,6 +56,7 @@ export async function getProductBySlug(slug, options) {
     mrp: product.price?.mrpMin ?? product.price?.min ?? 0,
     rating: product.rating ?? 0,
     reviews: product.reviewCount ?? 0,
+    reviewsList: product.reviews || [],
     badge: product.bestSeller ? "Bestseller" : "",
     sizes:
       product.attributes

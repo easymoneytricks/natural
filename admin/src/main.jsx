@@ -29,7 +29,8 @@ import {
   FileText,
 } from "lucide-react";
 import { BrandsPage, CategoriesPage, ProductsPage } from "./catalog";
-import { CustomersPage } from "./customer";
+import { CustomerDetailPage, CustomersPage } from "./customer";
+import { ReviewsPage } from "./reviews";
 import { PromotionsPage } from "./promotions";
 import { ProductEditor } from "./productEditor";
 import { InventoryDetail } from "./inventory";
@@ -42,6 +43,7 @@ import { ContactSubmissionsPage } from "./contactSubmissions";
 import { ReportsPage, SystemPage } from "./systemReports";
 import { SettingsPage } from "./settings";
 import { PagesPage } from "./pages";
+import { UsefulInfoPage } from "./usefulInfo";
 import "./styles.css";
 import "./workspace.css";
 const API = (
@@ -177,6 +179,8 @@ const nav = [
   ["Brands", "/catalog/brands", Leaf, "catalog.view"],
   ["Orders", "/orders", ShoppingBag, "orders.view"],
   ["Customers", "/customers", Users, "customers.view"],
+  ["Useful Info", "/useful-info", BarChart3, "dashboard.view"],
+  ["Reviews", "/reviews", MessageSquare, "reviews.view"],
   ["Contact", "/contact", MessageSquare, "customers.view"],
   ["Promotions", "/promotions", Tags, "promotions.view"],
   ["Media library", "/media", Images, "catalog.view"],
@@ -334,6 +338,22 @@ function App() {
         }
       />
       <Route
+        path="/customers/:id"
+        element={
+          <Protected permission="customers.view">
+            <CustomerDetailPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/reviews"
+        element={
+          <Protected permission="reviews.view">
+            <ReviewsPage />
+          </Protected>
+        }
+      />
+      <Route
         path="/settings"
         element={
           <Protected permission="settings.view">
@@ -362,6 +382,14 @@ function App() {
         element={
           <Protected permission="dashboard.view">
             <ReportsPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/useful-info"
+        element={
+          <Protected permission="dashboard.view">
+            <UsefulInfoPage />
           </Protected>
         }
       />

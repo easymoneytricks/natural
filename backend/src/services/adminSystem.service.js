@@ -73,3 +73,42 @@ export async function reportSummary(pool, query = {}) {
     })),
   };
 }
+
+export async function usefulInfo(pool) {
+  const [wishlisted] = await pool.execute(
+    `SELECT p.id,p.name,p.slug,COUNT(*) wishlist_count,COUNT(DISTINCT wi.customer_id) shoppers
+     FROM customer_wishlist_items wi JOIN products p ON p.id=wi.product_id
+     WHERE p.deleted_at IS NULL GROUP BY p.id,p.name,p.slug
+     ORDER BY wishlist_count DESC,shoppers DESC,p.name LIMIT 5`,
+  );
+  const [carted] = await pool.execute(
+    `SELECT p.id,p.name,p.slug,SUM(ci.quantity) cart_quantity,COUNT(DISTINCT cc.customer_id) shoppers
+     FROM customer_cart_items ci JOIN customer_carts cc ON cc.id=ci.cart_id
+     JOIN product_skus ps ON ps.id=ci.sku_id JOIN products p ON p.id=ps.product_id
+     WHERE p.deleted_at IS NULL AND ps.deleted_at IS NULL
+     GROUP BY p.id,p.name,p.slug ORDER BY cart_quantity DESC,shoppers DESC,p.name LIMIT 5`,
+  );
+  const [[totals]] = await pool.execute(
+    `SELECT (SELECT COUNT(*) FROM customer_wishlist_items) wishlist_lines,
+      (SELECT COALESCE(SUM(quantity),0) FROM customer_cart_items) cart_units,
+      (SELECT COUNT(DISTINCT customer_id) FROM customer_wishlist_items) wishlist_shoppers,
+      (SELECT COUNT(DISTINCT cc.customer_id) FROM customer_cart_items ci JOIN customer_carts cc ON cc.id=ci.cart_id) cart_shoppers`,
+  );
+  return {
+    totals: Object.fromEntries(
+      Object.entries(totals).map(([key, value]) => [key, Number(value || 0)]),
+    ),
+    mostWishlisted: wishlisted.map((row) => ({
+      ...row,
+      id: Number(row.id),
+      wishlistCount: Number(row.wishlist_count),
+      shoppers: Number(row.shoppers),
+    })),
+    mostInCart: carted.map((row) => ({
+      ...row,
+      id: Number(row.id),
+      cartQuantity: Number(row.cart_quantity),
+      shoppers: Number(row.shoppers),
+    })),
+  };
+}

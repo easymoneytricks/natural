@@ -15,6 +15,7 @@ import { ProductCard } from "../components/product/ProductCard";
 import { useCart } from "../context/CartContext";
 import { getProductBySlug, getProducts } from "../services/catalogApi";
 import { useCompare, useWishlist } from "../context/PreferenceContext";
+import { useAuth } from "../context/AuthContext";
 import "./ProductDetail.css";
 
 const money = (value) => `₹${value.toLocaleString("en-IN")}`;
@@ -551,7 +552,7 @@ export function ProductDetail() {
             </div>
           ))}
         </section>
-        <Reviews product={product} />
+        <ReviewsInteractive product={product} />
         <ProductRail title="Pair it with" items={related} />
         {recentProducts.length > 0 && (
           <ProductRail title="Recently viewed" items={recentProducts} />
@@ -648,6 +649,125 @@ function Reviews({ product }) {
     </section>
   );
 }
+function ReviewsInteractive({ product }) {
+  const { isAuthenticated, authFetch } = useAuth();
+  const [rating, setRating] = useState(5);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const reviews = product.reviewsList || [];
+  const submit = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setMessage("");
+    try {
+      await authFetch(`/products/${encodeURIComponent(product.slug)}/reviews`, {
+        method: "POST",
+        body: { rating, title, body },
+      });
+      setTitle("");
+      setBody("");
+      setMessage("Thank you. Your review is awaiting approval.");
+    } catch (error) {
+      setMessage(
+        error?.code === "PURCHASE_REQUIRED"
+          ? "Reviews are available after you have purchased this product."
+          : error?.code === "REVIEW_ALREADY_EXISTS"
+            ? "You have already reviewed this product."
+            : error?.message || "We could not submit your review.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  return (
+    <section className="reviews-section">
+      <div>
+        <p className="eyebrow">Reviews</p>
+        <h2>{product.rating || "—"}</h2>
+        <p className="stars">★★★★★</p>
+        <span>Based on {product.reviews} reviews</span>
+      </div>
+      <div className="review-quotes">
+        {reviews.length ? (
+          reviews.map((review) => (
+            <blockquote key={review.id}>
+              “{review.body}”
+              <cite>
+                {review.title ? `${review.title} · ` : ""}
+                {review.author} · Verified purchase
+              </cite>
+            </blockquote>
+          ))
+        ) : (
+          <p>
+            No reviews yet. Be the first verified customer to share your
+            experience.
+          </p>
+        )}
+      </div>
+      <div className="review-form-wrap">
+        <h3>Share your experience</h3>
+        {isAuthenticated ? (
+          <form className="review-form" onSubmit={submit}>
+            <label>
+              Rating
+              <select
+                value={rating}
+                onChange={(event) => setRating(Number(event.target.value))}
+              >
+                {[5, 4, 3, 2, 1].map((value) => (
+                  <option key={value} value={value}>
+                    {value} stars
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Title
+              <input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                maxLength={160}
+                placeholder="A short headline"
+              />
+            </label>
+            <label>
+              Your review
+              <textarea
+                value={body}
+                onChange={(event) => setBody(event.target.value)}
+                minLength={10}
+                maxLength={3000}
+                required
+                placeholder="What did you think?"
+              />
+            </label>
+            <button className="button" disabled={submitting}>
+              {submitting ? "Submitting…" : "Submit review"}
+            </button>
+          </form>
+        ) : (
+          <p>
+            <Link
+              to={`/login?returnTo=${encodeURIComponent(`/product/${product.slug}`)}`}
+            >
+              Sign in
+            </Link>{" "}
+            to review after purchasing this product.
+          </p>
+        )}
+        {message && (
+          <p className="form-error" role="status">
+            {message}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function ProductRail({ title, items }) {
   return (
     <section className="product-rail">

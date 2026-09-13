@@ -321,6 +321,22 @@ export async function getProduct(connection, slug) {
         slug: row.value_slug,
       };
   }
+  const [reviewRows] = await connection.execute(
+    `SELECT r.id,r.rating,r.title,r.body,r.created_at,c.first_name,c.last_name
+     FROM product_reviews r JOIN customers c ON c.id=r.customer_id
+     WHERE r.product_id=? AND r.status='approved' ORDER BY r.created_at DESC`,
+    [product.id],
+  );
+  const reviews = reviewRows.map((row) => ({
+    id: Number(row.id),
+    rating: Number(row.rating),
+    title: row.title,
+    body: row.body,
+    author:
+      `${row.first_name} ${String(row.last_name || "").charAt(0)}.`.trim(),
+    createdAt: row.created_at,
+    verifiedPurchase: true,
+  }));
   const prices = skus.map((sku) => sku.price);
   return {
     data: {
@@ -370,6 +386,16 @@ export async function getProduct(connection, slug) {
           : decimal(product.base_mrp),
       },
       available: skus.some((sku) => sku.stock.inStock),
+      rating: reviews.length
+        ? Number(
+            (
+              reviews.reduce((sum, review) => sum + review.rating, 0) /
+              reviews.length
+            ).toFixed(1),
+          )
+        : 0,
+      reviewCount: reviews.length,
+      reviews,
       seo: { title: product.seo_title, description: product.seo_description },
     },
   };

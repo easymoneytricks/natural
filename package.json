@@ -14,6 +14,8 @@
     "build": "npm run build:storefront && npm run build:admin",
     "build:storefront": "npm --workspace storefront run build",
     "build:admin": "npm --workspace natural-beauty-admin run build",
+    "test:integration": "node --test backend/test/*.test.js",
+    "test:e2e": "playwright test",
     "format": "prettier --write \"admin/src/**/*.{js,jsx,css}\" \"backend/src/**/*.js\" \"storefront/src/**/*.{js,jsx,css}\"",
     "format:check": "prettier --check \"admin/src/**/*.{js,jsx,css}\" \"backend/src/**/*.js\" \"storefront/src/**/*.{js,jsx,css}\"",
     "migrate": "npm --workspace natural-beauty-api run migrate",
@@ -21,6 +23,7 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "@playwright/test": "^1.55.0"
   }
 }

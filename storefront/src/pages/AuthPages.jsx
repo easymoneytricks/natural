@@ -3,7 +3,16 @@ import { Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useWishlist } from "../context/PreferenceContext";
+import {
+  resendCustomerVerification,
+  verifyCustomerEmail,
+} from "../services/authApi";
 import "./AuthPages.css";
+import {
+  RecaptchaWidget,
+  isRecaptchaEnabled,
+} from "../components/RecaptchaWidget";
+import { useStoreSettings } from "../context/StoreSettingsContext";
 
 const safeReturn = (value, fallback = "/account") => {
   if (!value || !value.startsWith("/") || value.startsWith("//"))
@@ -165,6 +174,8 @@ export function Register() {
   const returnTo = safeReturn(
     new URLSearchParams(location.search).get("returnTo"),
   );
+  const settings = useStoreSettings();
+  const [recaptchaToken, setRecaptchaToken] = useState("");
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -189,16 +200,19 @@ export function Register() {
       !/^\d{10}$/.test(form.mobile.replace(/\D/g, "")) ||
       !validPassword(form.password) ||
       form.password !== form.confirm ||
-      !form.terms
+      !form.terms ||
+      (isRecaptchaEnabled(settings) && !recaptchaToken)
     )
       return setError(
         "Please complete all required fields and accept the terms.",
       );
     setLoading(true);
     try {
-      await register(form);
+      await register({ ...form, recaptchaToken });
       setForm((current) => ({ ...current, password: "", confirm: "" }));
-      navigate(returnTo);
+      navigate(
+        `/verify-email?email=${encodeURIComponent(form.email)}&returnTo=${encodeURIComponent(returnTo)}`,
+      );
     } catch (requestError) {
       setError(
         authErrorMessage(
@@ -250,6 +264,7 @@ export function Register() {
           onChange={(value) => update("password", value)}
           autoComplete="new-password"
         />
+        <RecaptchaWidget onToken={setRecaptchaToken} />
         <p className="password-note">
           Use at least 8 characters with uppercase, lowercase and a number.
         </p>
@@ -290,6 +305,87 @@ export function Register() {
             Sign in
           </Link>
         </p>
+      </form>
+    </AuthLayout>
+  );
+}
+
+export function VerifyEmail() {
+  const { authErrorMessage } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = new URLSearchParams(location.search);
+  const returnTo = safeReturn(params.get("returnTo"));
+  const [email, setEmail] = useState(params.get("email") || "");
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const submit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    setLoading(true);
+    try {
+      await verifyCustomerEmail(email, code);
+      navigate(`/login?returnTo=${encodeURIComponent(returnTo)}&verified=1`);
+    } catch (requestError) {
+      setError(
+        authErrorMessage(requestError, "We could not verify that code."),
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  const resend = async () => {
+    setError("");
+    try {
+      await resendCustomerVerification(email);
+      setMessage(
+        "If the account needs verification, a new code has been sent.",
+      );
+    } catch (requestError) {
+      setError(authErrorMessage(requestError, "We could not send a new code."));
+    }
+  };
+  return (
+    <AuthLayout
+      eyebrow="Verify your email"
+      heading="One last step."
+      copy="Enter the six-digit code we sent to your email address to activate your account."
+    >
+      <form className="auth-form" onSubmit={submit}>
+        <TextField
+          label="Email address"
+          value={email}
+          onChange={setEmail}
+          type="email"
+        />
+        <TextField
+          label="Verification code"
+          value={code}
+          onChange={(value) => setCode(value.replace(/\D/g, "").slice(0, 6))}
+        />
+        {error && (
+          <p className="auth-error" role="alert">
+            {error}
+          </p>
+        )}
+        {message && (
+          <p className="auth-success" role="status">
+            {message}
+          </p>
+        )}
+        <button
+          className="button"
+          type="submit"
+          disabled={loading || code.length !== 6}
+        >
+          {loading ? "Verifying..." : "Verify email"}
+        </button>
+        <button className="auth-text-button" type="button" onClick={resend}>
+          Resend code
+        </button>
       </form>
     </AuthLayout>
   );

@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { AlertTriangle, LoaderCircle, PackageOpen, Search } from "lucide-react";
+import {
+  AlertTriangle,
+  Download,
+  LoaderCircle,
+  PackageOpen,
+  Search,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "./main";
 
@@ -13,10 +19,41 @@ export function InventoryPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const exportCsv = () => {
+    const headers = [
+      "Product",
+      "SKU",
+      "On hand",
+      "Reserved",
+      "Available",
+      "Status",
+    ];
+    const escape = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+    const csv = [
+      headers,
+      ...rows.map((row) => [
+        row.product_name,
+        row.sku,
+        row.quantity_on_hand,
+        row.reserved_quantity,
+        row.available_quantity,
+        row.stock_status,
+      ]),
+    ]
+      .map((line) => line.map(escape).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "natural-beauty-inventory.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     setLoading(true);
     setError("");
-    const params = new URLSearchParams({ q: query, stockStatus });
+    const params = new URLSearchParams({ q: query, stockStatus, limit: "100" });
     if (tracking !== "all") params.set("tracking", tracking);
 
     Promise.all([
@@ -78,6 +115,12 @@ export function InventoryPage() {
           />
         </div>
         <div className="inventory-filters">
+          <button
+            className={`filter-chip ${stockStatus === "low_stock" ? "active" : ""}`}
+            onClick={() => setStockStatus("low_stock")}
+          >
+            <AlertTriangle size={15} /> Low stock
+          </button>
           <select
             value={stockStatus}
             onChange={(event) => setStockStatus(event.target.value)}
@@ -96,6 +139,13 @@ export function InventoryPage() {
             <option value="tracked">Tracked</option>
             <option value="not_tracked">Not tracked</option>
           </select>
+          <button
+            className="button-secondary inventory-export"
+            onClick={exportCsv}
+            disabled={!rows.length}
+          >
+            <Download size={15} /> Export CSV
+          </button>
         </div>
       </div>
 
@@ -121,7 +171,7 @@ export function InventoryPage() {
                 <th>Product / SKU</th>
                 <th>On hand</th>
                 <th>Reserved</th>
-                <th>Available</th>
+                <th>Available to sell</th>
                 <th>Status</th>
                 <th />
               </tr>

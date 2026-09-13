@@ -16,6 +16,7 @@ const groups = [
   "smtp",
   "homepage_sections",
   "payments",
+  "recaptcha",
 ];
 
 function parse(row) {
@@ -31,12 +32,13 @@ export async function read(pool, publicOnly = false) {
     `SELECT setting_group,setting_key,value_json FROM store_settings ${publicOnly ? "WHERE is_public=1 AND setting_group <> 'smtp'" : ""} ORDER BY setting_group,setting_key`,
   );
   return rows.reduce((result, row) => {
-    (result[row.setting_group] ||= {})[row.setting_key] =
-      (publicOnly || row.setting_group !== "smtp") &&
-      row.setting_group === "smtp" &&
-      row.setting_key === "password"
-        ? ""
-        : parse(row);
+    const privateKey =
+      (row.setting_group === "smtp" && row.setting_key === "password") ||
+      (row.setting_group === "recaptcha" && row.setting_key === "secret_key");
+    if (publicOnly && privateKey) return result;
+    (result[row.setting_group] ||= {})[row.setting_key] = privateKey
+      ? ""
+      : parse(row);
     return result;
   }, {});
 }
@@ -49,6 +51,19 @@ export async function readPrivate(pool) {
     (result[row.setting_group] ||= {})[row.setting_key] = parse(row);
     return result;
   }, {});
+}
+
+export async function getStoreMode(pool) {
+  const [[row]] = await pool.execute(
+    "SELECT value_json FROM store_settings WHERE setting_group='store' AND setting_key='maintenance_mode' LIMIT 1",
+  );
+  if (!row) return "open";
+  try {
+    const value = JSON.parse(row.value_json);
+    return ["open", "closed", "coming_soon"].includes(value) ? value : "open";
+  } catch {
+    return "open";
+  }
 }
 
 export async function update(pool, input, adminId, req) {
@@ -67,8 +82,8 @@ export async function update(pool, input, adminId, req) {
       for (const [settingKey, value] of Object.entries(values)) {
         if (!/^[a-z0-9_]{1,100}$/.test(settingKey)) continue;
         if (
-          settingGroup === "smtp" &&
-          settingKey === "password" &&
+          ((settingGroup === "smtp" && settingKey === "password") ||
+            (settingGroup === "recaptcha" && settingKey === "secret_key")) &&
           !String(value || "").trim()
         )
           continue;
@@ -78,7 +93,10 @@ export async function update(pool, input, adminId, req) {
             settingGroup,
             settingKey,
             JSON.stringify(value),
-            settingGroup === "smtp" ? 0 : 1,
+            settingGroup === "smtp" ||
+            (settingGroup === "recaptcha" && settingKey === "secret_key")
+              ? 0
+              : 1,
             adminId,
           ],
         );

@@ -203,6 +203,28 @@
   background: #fff;
   color: #315940;
 }
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 46px;
+  padding: 10px 13px;
+  border: 1px solid #d8e0d9;
+  border-radius: 9px;
+  background: #fff;
+  color: #557563;
+  font-size: 12px;
+  cursor: pointer;
+}
+.filter-chip.active,
+.filter-chip:hover {
+  border-color: #9fbea5;
+  background: #edf5e9;
+  color: #315940;
+}
+.inventory-export {
+  white-space: nowrap;
+}
 .inventory-table-wrap {
   padding: 0;
   overflow: hidden;
@@ -326,6 +348,31 @@
 }
 .movement-card .table-wrap {
   border: 0;
+}
+.movement-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 22px;
+  border-bottom: 1px solid #e7ece4;
+  color: #788474;
+}
+.movement-filters select,
+.movement-filters input {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #d8e0d9;
+  border-radius: 7px;
+  background: #fff;
+  color: #315940;
+  font-size: 12px;
+}
+.movement-filters label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #788474;
+  font-size: 11px;
 }
 .empty-cell {
   padding: 48px !important;
@@ -2340,6 +2387,164 @@ input::file-selector-button {
     monospace;
   white-space: pre-wrap;
 }
+.customer-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.insight-summary,
+.insight-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.insight-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.insight-summary > div {
+  background: #edf1e8;
+  border: 1px solid var(--line, #e2e4da);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+}
+
+.insight-summary b,
+.insight-summary span,
+.insight-row small {
+  display: block;
+}
+
+.insight-summary b {
+  color: #385941;
+  font-family: Georgia, serif;
+  font-size: 2rem;
+  font-weight: 400;
+}
+
+.insight-summary span,
+.insight-row small {
+  color: #6b7b70;
+  font-size: 0.78rem;
+}
+
+.insight-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.insight-card {
+  padding: 1.35rem;
+}
+
+.insight-card header {
+  border-bottom: 1px solid var(--line, #e2e4da);
+  margin-bottom: 0.3rem;
+  padding-bottom: 1rem;
+}
+
+.insight-card header svg {
+  color: #385941;
+  margin-bottom: 0.6rem;
+}
+
+.insight-card h2 {
+  font-family: Georgia, serif;
+  font-size: 1.55rem;
+  font-weight: 400;
+  margin: 0.35rem 0 0;
+}
+
+.insight-row {
+  align-items: center;
+  border-bottom: 1px solid var(--line, #e2e4da);
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: 2rem 1fr auto;
+  padding: 1rem 0;
+}
+
+.insight-rank {
+  color: #8a998d;
+  font-family: Georgia, serif;
+  font-size: 1.1rem;
+}
+
+.insight-row strong {
+  color: #385941;
+  font-family: Georgia, serif;
+  font-size: 1.25rem;
+  text-align: right;
+}
+
+.insight-row strong small {
+  font-family: Arial, sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.customer-detail-card {
+  padding: 1.35rem;
+}
+
+.customer-detail-card h2 {
+  margin: 0 0 1rem;
+  font-family: Georgia, serif;
+  font-size: 1.45rem;
+  font-weight: 400;
+}
+
+.customer-detail-card h3 {
+  margin: 1.35rem 0 0.75rem;
+  color: #55715b;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.customer-address,
+.customer-line {
+  border-top: 1px solid var(--line, #e2e4da);
+  padding: 0.8rem 0;
+}
+
+.customer-address p,
+.customer-line small {
+  color: #6b7b70;
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  margin: 0.25rem 0 0;
+}
+
+.customer-line {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.customer-signal {
+  align-items: baseline;
+  border-top: 1px solid var(--line, #e2e4da);
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.8rem 0;
+}
+
+.customer-signal b {
+  color: #385941;
+  font-family: Georgia, serif;
+  font-size: 1.7rem;
+  font-weight: 400;
+}
+
+.muted {
+  color: #7a877e;
+}
+
 .contact-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

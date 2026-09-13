@@ -22,6 +22,7 @@ export async function createOrder(req, res, next) {
               order,
               recipient: process.env.ADMIN_NOTIFICATION_EMAIL,
               name: "team",
+              admin: true,
             }),
             eventType: "order.received",
             subject: `New order received · ${order.orderNumber}`,

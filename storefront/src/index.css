@@ -662,6 +662,16 @@ input:focus-visible {
   font-size: 14px;
   line-height: 1.7;
 }
+.store-availability-notice {
+  padding: 0.7rem 1rem;
+  background: #edf1e8;
+  color: #385941;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 .contact-grid {
   display: grid;
   grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.2fr);

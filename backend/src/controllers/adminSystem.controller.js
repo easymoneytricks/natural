@@ -9,6 +9,9 @@ export const overview = wrap(async (req, res) =>
 export const reports = wrap(async (req, res) =>
   res.json({ data: await service.reportSummary(pool, req.query) }),
 );
+export const usefulInfo = wrap(async (req, res) =>
+  res.json({ data: await service.usefulInfo(pool) }),
+);
 export const testEmail = wrap(async (req, res) => {
   const recipient = String(
     req.body?.recipient || req.admin?.email || "",

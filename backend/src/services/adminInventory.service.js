@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { AuthError } from "./auth.service.js";
 import { adjustStock } from "./inventory.service.js";
 import { audit } from "./adminCatalog.service.js";
@@ -74,21 +75,50 @@ export async function detail(pool, id) {
   };
 }
 export async function movements(pool, id, q = {}) {
+  const where = ["sku_id=?"],
+    args = [id];
+  if (q.type && q.type !== "all") {
+    where.push("movement_type=?");
+    args.push(q.type);
+  }
+  if (q.from) {
+    where.push("created_at>=?");
+    args.push(`${q.from} 00:00:00`);
+  }
+  if (q.to) {
+    where.push("created_at<=?");
+    args.push(`${q.to} 23:59:59`);
+  }
   const limit = Math.min(Math.max(Number(q.limit) || 50, 1), 100),
     offset = Math.max(Number(q.page || 1) - 1, 0) * limit;
+  args.push(limit, offset);
   const [m] = await pool.execute(
-    "SELECT id,movement_type,quantity_change,quantity_before,quantity_after,reserved_before,reserved_after,reference_type,reference_id,note,created_at FROM inventory_movements WHERE sku_id=? ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?",
-    [id, limit, offset],
+    `SELECT id,movement_type,quantity_change,quantity_before,quantity_after,
+      reserved_before,reserved_after,reference_type,reference_id,note,created_at
+     FROM inventory_movements WHERE ${where.join(" AND ")}
+     ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?`,
+    args,
   );
   return m;
 }
-export async function adjust(pool, id, change, reason, adminId, req) {
+export async function adjust(
+  pool,
+  id,
+  change,
+  reason,
+  idempotencyKey,
+  adminId,
+  req,
+) {
   if (!Number.isInteger(change) || change === 0)
     fail(
       400,
       "INVALID_QUANTITY_CHANGE",
       "Quantity change must be a non-zero integer.",
     );
+  if (!reason) fail(400, "VALIDATION_ERROR", "A reason is required.");
+  if (!/^[0-9a-f-]{36}$/i.test(idempotencyKey || ""))
+    fail(400, "VALIDATION_ERROR", "A valid idempotency key is required.");
   const [[s]] = await pool.execute(
     "SELECT sku,track_inventory,deleted_at FROM product_skus WHERE id=?",
     [id],
@@ -103,7 +133,7 @@ export async function adjust(pool, id, change, reason, adminId, req) {
   let result;
   const c = await pool.getConnection();
   try {
-    result = await adjustStock(c, s.sku, change, reason);
+    result = await adjustStock(c, s.sku, change, reason, idempotencyKey);
     await audit(pool, adminId, "inventory.adjusted", "inventory", id, req);
   } finally {
     c.release();
@@ -136,7 +166,15 @@ export async function reorder(pool, id, value, adminId, req) {
   );
   return { reorderLevel: value };
 }
-export async function correct(pool, id, actual, reason, adminId, req) {
+export async function correct(
+  pool,
+  id,
+  actual,
+  reason,
+  idempotencyKey,
+  adminId,
+  req,
+) {
   if (!Number.isInteger(actual) || actual < 0)
     fail(
       400,
@@ -153,6 +191,7 @@ export async function correct(pool, id, actual, reason, adminId, req) {
     id,
     actual - Number(r.quantity_on_hand),
     reason,
+    idempotencyKey,
     adminId,
     req,
   );

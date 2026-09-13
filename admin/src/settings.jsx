@@ -47,7 +47,7 @@ const defaults = {
     store_name: "Natural Beauty",
     currency: "INR",
     support_hours: "Mon–Sat · 10:00 AM–6:00 PM",
-    maintenance_mode: "false",
+    maintenance_mode: "open",
   },
   smtp: {
     host: "",
@@ -78,9 +78,23 @@ const defaults = {
     provider: "cashfree",
     mode: "sandbox",
   },
+  recaptcha: {
+    enabled: "false",
+    site_key: "",
+    secret_key: "",
+  },
 };
 
-function Field({ label, group, name, type = "text", state, setState, help }) {
+function Field({
+  label,
+  group,
+  name,
+  type = "text",
+  state,
+  setState,
+  help,
+  options,
+}) {
   const value = state[group]?.[name] ?? "";
   const update = (next) =>
     setState((current) => ({
@@ -91,7 +105,18 @@ function Field({ label, group, name, type = "text", state, setState, help }) {
     <label className="settings-field">
       {label}
       <div className="settings-input-wrap">
-        {type === "textarea" ? (
+        {options ? (
+          <select
+            value={value}
+            onChange={(event) => update(event.target.value)}
+          >
+            {options.map(([optionValue, optionLabel]) => (
+              <option key={optionValue} value={optionValue}>
+                {optionLabel}
+              </option>
+            ))}
+          </select>
+        ) : type === "textarea" ? (
           <textarea
             value={value}
             onChange={(event) => update(event.target.value)}
@@ -341,12 +366,17 @@ export function SettingsPage() {
               setState={setState}
             />
             <Field
-              label="Maintenance mode"
+              label="Store availability"
               group="store"
               name="maintenance_mode"
+              options={[
+                ["open", "Open · customers can order"],
+                ["closed", "Closed · browse only"],
+                ["coming_soon", "Coming soon · browse only"],
+              ]}
               state={state}
               setState={setState}
-              help="Set true only when the storefront should be paused."
+              help="Closed and Coming soon keep products visible but block checkout and order placement."
             />
           </SettingsGroup>
           <SettingsGroup
@@ -456,6 +486,37 @@ export function SettingsPage() {
               state={state}
               setState={setState}
               help="Use sandbox while testing and production only for live credentials."
+            />
+          </SettingsGroup>
+          <SettingsGroup
+            icon={Settings2}
+            title="reCAPTCHA v2 protection"
+            description="Protect signup and contact submissions with Google's checkbox challenge. The secret key stays server-side."
+          >
+            <Field
+              label="Enable reCAPTCHA"
+              group="recaptcha"
+              name="enabled"
+              state={state}
+              setState={setState}
+              help="Set true only after adding a reCAPTCHA v2 Checkbox site key and secret key."
+            />
+            <Field
+              label="Site key"
+              group="recaptcha"
+              name="site_key"
+              state={state}
+              setState={setState}
+              help="Public key displayed in the storefront checkbox."
+            />
+            <Field
+              label="Secret key"
+              group="recaptcha"
+              name="secret_key"
+              type="password"
+              state={state}
+              setState={setState}
+              help="Private Google verification key. Leave blank to keep the saved key."
             />
           </SettingsGroup>
           <SettingsGroup

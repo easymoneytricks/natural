@@ -1,6 +1,11 @@
 import { ArrowRight, Mail, MapPin, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import {
+  RecaptchaWidget,
+  isRecaptchaEnabled,
+} from "../components/RecaptchaWidget";
+import { useStoreSettings } from "../context/StoreSettingsContext";
 
 const content = {
   about: {
@@ -143,11 +148,17 @@ export function RouteShell({ title }) {
 }
 
 function ContactPage() {
+  const settings = useStoreSettings();
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [recaptchaToken, setRecaptchaToken] = useState("");
   const submitContact = async (event) => {
     event.preventDefault();
+    if (isRecaptchaEnabled(settings) && !recaptchaToken) {
+      setError("Please complete the security verification.");
+      return;
+    }
     setSending(true);
     setError("");
     const formElement = event.currentTarget;
@@ -166,12 +177,14 @@ function ContactPage() {
             email: form.get("email"),
             orderNumber: form.get("order"),
             message: form.get("message"),
+            recaptchaToken,
           }),
         },
       );
       if (!response.ok)
         throw new Error("We could not send your message. Please try again.");
       setSent(true);
+      setRecaptchaToken("");
       formElement.reset();
     } catch (caught) {
       setError(
@@ -246,6 +259,7 @@ function ContactPage() {
               placeholder="How can we help?"
             />
           </label>
+          <RecaptchaWidget onToken={setRecaptchaToken} />
           <button className="button" type="submit">
             {sending ? "Sending…" : sent ? "Message sent" : "Send message"}{" "}
             <ArrowRight size={15} />

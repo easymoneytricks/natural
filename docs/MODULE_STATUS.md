@@ -294,3 +294,81 @@ The existing source-driven legacy routes (`/privacy`, `/terms`, `/shipping`, etc
 ## Current audit correction - 2026-09-14
 
 The earlier historical sections above intentionally preserve prior evidence. For current planning, the latest status is superseded by the executive table and the detailed production gap register in [`docs/gaps.md`](gaps.md). In particular, Admin Orders now has a routed UI, Settings is a persisted partial module, Pages CMS is implemented for `/pages/:slug`, and SMTP configuration fields exist but SMTP transport/test-send is not yet production-proven.
+
+## Automated critical paths and email verification - 2026-09-14
+
+### Implemented
+
+- Added Node API integration coverage for health/catalog reads, fail-closed customer/admin authentication, quote empty-state behaviour and Cashfree signature rejection.
+- Added Playwright browser coverage for storefront catalog/cart navigation and login/register/email-verification route reachability.
+- Added an opt-in MariaDB lifecycle test that creates a COD order from a customer cart, verifies reservation movement, cancels it through the admin order service and verifies stock release plus cleanup.
+- Customer registration now creates a short-lived hashed email OTP, sends it through the transactional mail service, with verification and resend endpoints. Login is blocked with `EMAIL_NOT_VERIFIED` until the OTP is accepted.
+- Added migration `019_create_customer_email_verifications.sql`; it is applied to the local database.
+
+### Verification and release gate
+
+- `npm run format:check`, `npm run build`, backend syntax checks and Playwright test discovery pass.
+- `npm run test:integration` runs both API and lifecycle suites; environment-dependent suites skip safely when the local API or dedicated staging credentials are unavailable.
+- Run `RUN_MUTATING_INTEGRATION=true E2E_EMAIL=... E2E_ADMIN_EMAIL=... npm run test:integration` only against a disposable staging customer/admin. Provider-backed Cashfree callback, OTP inbox delivery and order-email receipt still require real staging secrets and mailbox evidence.
+
+## reCAPTCHA v2 protection - 2026-09-14
+
+- Added persisted Admin Settings controls for enablement, public site key and private secret key.
+- Added Google reCAPTCHA v2 Checkbox rendering to customer signup and Contact Us forms.
+- Backend verifies tokens with Google's `siteverify` endpoint before creating accounts or contact submissions; missing, expired, invalid and unavailable challenges fail with explicit error codes.
+- Secret keys are stored as non-public settings and are masked from both public settings and the Admin response after save. Migration `020_add_recaptcha_settings.sql` is applied locally.
+- Final release gate: add the production domain in Google reCAPTCHA, paste the matching keys in Admin Settings, enable protection and complete a real staging signup/contact submission.
+
+## Real development catalog seed - 2026-09-14
+
+- Expanded the repeatable development seed to five active brands, ten active categories and twenty realistic skincare products across cleansers, serums, moisturizers, sun care, treatments, eye care, lip care, exfoliators and body care.
+- Each seeded product has a brand/category relation, required pack-size/skin-type/concern attributes, an explicit purchasable SKU, inventory quantity and product media metadata.
+- Seed is idempotent and was executed successfully against the local MariaDB database; verified totals are brands `5`, categories `10`, products `20` and SKUs `29`.
+
+## Transactional email design system - 2026-09-14
+
+- Replaced minimal email fragments with a responsive Natural Beauty HTML shell using branded typography, sage palette, accessible fallback text and mobile-safe table layout.
+- Added polished templates for signup verification, order confirmation, admin order received, order status updates, customer contact acknowledgement, admin contact alerts and SMTP test messages.
+- Contact submissions now notify both the customer and the configured admin recipient. Admin order status changes notify the customer, while checkout sends customer confirmation and admin received messages.
+- All sends continue through the logged/retried `email_deliveries` pipeline; actual provider rendering and inbox delivery still require SMTP staging verification.
+
+## Store availability / maintenance mode - 2026-09-14
+
+- Admin Settings now exposes `Open`, `Closed` and `Coming soon` options instead of the old boolean maintenance field.
+- Closed and Coming soon keep the catalog and product pages viewable, show a storefront notice and reject order creation server-side with `STORE_NOT_ACCEPTING_ORDERS`.
+- Migration `021_normalize_store_availability.sql` converts legacy `false` values to the safe default `open` and is applied locally.
+
+## Verified product reviews - 2026-09-14
+
+- Added `product_reviews` persistence with one-review-per-customer/product, pending/approved/rejected/deleted lifecycle and verified-purchase order foreign key.
+- Customer review submission requires authentication and a non-cancelled customer order containing the product; only approved reviews are included in the public product payload.
+- Added storefront review list and submission form with verified-purchase messaging.
+- Added Admin Reviews navigation after Customers, with pending queue filters and approve/reject/delete controls. Added `reviews.view` and `reviews.manage` permissions and migrated them to Super Admin.
+
+## Admin customer intelligence view - 2026-09-14
+
+- Customer directory rows now link to `/customers/:id` detail pages.
+- Detail view shows saved/default addresses, order history and payment/status context, current cart line items and quantities, wishlist products and high-level shopping signals for promotion planning.
+- Data is read directly from customer, address, order, cart, wishlist, product and inventory tables; no demo fallback data was added.
+
+## Useful Info customer insights - 2026-09-14
+
+- Added Admin `Useful Info` navigation and protected `/useful-info` route.
+- Added real database reports for the top five most-wishlisted products and top five products currently held in customer carts, including unique shopper counts and aggregate saves/units.
+- Added summary cards for wishlist saves, cart units, wishlist shoppers and cart shoppers. No mock analytics data is used.
+
+## Reviews and Useful Info render stability - 2026-09-14
+
+- Fixed blank admin routes caused by passing async loaders directly to React `useEffect`, which could be treated as invalid cleanup functions under StrictMode.
+- Reviews and Useful Info now wrap async loading inside synchronous effects and render their loading, empty, error and data states normally.
+- Live Useful Info route verification displayed real local MariaDB activity: one wishlist save, one cart unit and the Barrier Restore Moisturizer ranked in both lists.
+- Validation passed: `npm run format:check`, `npm run build:admin` and `git diff --check`.
+
+## Inventory UX completion - 2026-09-14
+
+- Added server-side idempotency keys for manual stock adjustments and physical-count corrections, with required reason capture and replay-safe responses.
+- Added explicit browser confirmation before inventory quantity changes and separated adjustment reasons from stocktake reasons.
+- Added low-stock quick filtering, tracked/not-tracked filtering, 100-row filtered CSV export, movement type/date filters and reserved-before/after movement visibility.
+- Inventory list and SKU detail now label on-hand, reserved and available-to-sell quantities clearly; available stock remains calculated as on-hand minus reserved.
+- Added migration `024_inventory_adjustment_idempotency.sql` and applied it to the local MariaDB database.
+- Validation passed: `npm run format:check`, `npm run build:admin`, `npm run build:storefront`, `npm run migrate:status` and `git diff --check`.

@@ -28,7 +28,9 @@ import adminSystemRoutes from "./routes/adminSystem.routes.js";
 import storeSettingsRoutes from "./routes/storeSettings.routes.js";
 import contentPageRoutes from "./routes/contentPage.routes.js";
 import rewardRoutes from "./routes/reward.routes.js";
+import reviewRoutes from "./routes/review.routes.js";
 import adminRewardRoutes from "./routes/adminReward.routes.js";
+import adminReviewRoutes from "./routes/adminReview.routes.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { notFound } from "./middleware/notFound.js";
@@ -94,6 +96,7 @@ export function createApp() {
   app.use("/api/v1/customer", customerCommerceRoutes);
   app.use("/api/v1/checkout", checkoutRoutes);
   app.use("/api/v1", orderRoutes);
+  app.use("/api/v1", reviewRoutes);
   app.use("/api/v1", contactRoutes);
   app.use("/api/v1/payments", paymentRoutes);
   app.use("/api/v1/admin", adminRoutes);
@@ -109,6 +112,7 @@ export function createApp() {
   app.use("/api/v1/admin", adminSystemRoutes);
   app.use("/api/v1/customer", rewardRoutes);
   app.use("/api/v1/admin", adminRewardRoutes);
+  app.use("/api/v1/admin", adminReviewRoutes);
   app.use(
     "/uploads",
     express.static(path.resolve(backendRoot, "storage", "uploads"), {

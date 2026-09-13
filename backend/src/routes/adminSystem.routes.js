@@ -17,6 +17,11 @@ router.get(
   requireAdminPermission("dashboard.view"),
   controller.reports,
 );
+router.get(
+  "/useful-info",
+  requireAdminPermission("dashboard.view"),
+  controller.usefulInfo,
+);
 router.post(
   "/system/email-test",
   requireAdminPermission("settings.manage"),

@@ -82,7 +82,11 @@ export function AuthProvider({ children }) {
     [applySession],
   );
   const register = useCallback(
-    async (profile) => applySession(await registerCustomer(profile)),
+    async (profile) => {
+      const result = await registerCustomer(profile);
+      if (result?.data?.verificationRequired) return result;
+      return applySession(result);
+    },
     [applySession],
   );
   const logout = useCallback(async () => {

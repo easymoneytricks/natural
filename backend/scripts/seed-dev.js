@@ -1,33 +1,323 @@
-import 'dotenv/config'
-import mysql from 'mysql2/promise'
-import { env } from '../src/config/env.js'
-import { logger } from '../src/utils/logger.js'
-import { validateSkuAttributes, normalizeCombination } from '../src/services/sku.service.js'
-import { hashPassword } from '../src/utils/password.js'
-import crypto from 'node:crypto'
+import "dotenv/config";
+import mysql from "mysql2/promise";
+import { env } from "../src/config/env.js";
+import { logger } from "../src/utils/logger.js";
+import {
+  validateSkuAttributes,
+  normalizeCombination,
+} from "../src/services/sku.service.js";
+import { hashPassword } from "../src/utils/password.js";
+import crypto from "node:crypto";
 
-const categories = ['Cleansers', 'Toners & Mists', 'Serums', 'Moisturizers', 'Sunscreens', 'Masks & Treatments', 'Eye Care', 'Lip Care']
-const skinTypes = ['Normal', 'Dry', 'Oily', 'Combination', 'Sensitive', 'Acne-Prone']
-const concerns = ['Acne & Breakouts', 'Dark Spots', 'Pigmentation', 'Dryness', 'Dullness', 'Fine Lines', 'Uneven Texture', 'Redness', 'Oil Control', 'Dehydration', 'Sun Protection', 'Barrier Support']
-const packSizes = ['30 ml', '50 ml', '100 ml', '200 ml']
+const categories = [
+  "Cleansers",
+  "Toners & Mists",
+  "Serums",
+  "Moisturizers",
+  "Sunscreens",
+  "Masks & Treatments",
+  "Eye Care",
+  "Lip Care",
+  "Exfoliators",
+  "Body Care",
+];
+const brands = [
+  ["Natural Beauty", "Thoughtfully formulated skincare for everyday rituals."],
+  ["Aster & Grove", "Botanical formulas rooted in calm, modern rituals."],
+  ["Mender", "Targeted care for restoring balance and comfort."],
+  ["Curology", "Personal-feeling formulas for clear, healthy-looking skin."],
+  ["Serein Labs", "Quietly effective essentials for sensitive skin."],
+];
+const additionalProducts = [
+  [
+    "Aster & Grove",
+    "Cloudmilk Gentle Cleanser",
+    "Cleansers",
+    899,
+    1099,
+    "A low-foam cream cleanser that leaves skin soft and comfortable.",
+  ],
+  [
+    "Aster & Grove",
+    "Dewline Balancing Essence",
+    "Toners & Mists",
+    1099,
+    1299,
+    "A weightless essence that refreshes and layers beautifully under serum.",
+  ],
+  [
+    "Aster & Grove",
+    "Lumen C-Glow Serum",
+    "Serums",
+    1599,
+    1899,
+    "A brightening vitamin C serum for a more even-looking, luminous complexion.",
+  ],
+  [
+    "Mender",
+    "Daily Dose Barrier Cream",
+    "Moisturizers",
+    1299,
+    1499,
+    "A nourishing daily cream made for dry, tight-feeling skin.",
+  ],
+  [
+    "Mender",
+    "Sunveil Mineral SPF 50",
+    "Sunscreens",
+    1399,
+    1599,
+    "A comfortable mineral sunscreen with a soft, non-greasy finish.",
+  ],
+  [
+    "Mender",
+    "Reset Enzyme Polish",
+    "Masks & Treatments",
+    1199,
+    1399,
+    "A gentle weekly enzyme mask that smooths the feel of uneven texture.",
+  ],
+  [
+    "Curology",
+    "Bright Eyes Caffeine Gel",
+    "Eye Care",
+    999,
+    1199,
+    "A cooling eye gel that helps refresh the look of tired under-eyes.",
+  ],
+  [
+    "Curology",
+    "Cushion Lip Recovery Balm",
+    "Lip Care",
+    499,
+    599,
+    "A comforting overnight balm for soft, conditioned lips.",
+  ],
+  [
+    "Curology",
+    "Renew AHA Resurfacing Lotion",
+    "Exfoliators",
+    1499,
+    1799,
+    "A considered AHA lotion for smoother-looking, more refined skin.",
+  ],
+  [
+    "Serein Labs",
+    "Stillwater Micellar Cleanser",
+    "Cleansers",
+    799,
+    999,
+    "A no-rinse micellar cleanser for quick, gentle morning refreshes.",
+  ],
+  [
+    "Serein Labs",
+    "Calm Current Hydrating Mist",
+    "Toners & Mists",
+    899,
+    1099,
+    "A fine mist with humectants to comfort dry and reactive-feeling skin.",
+  ],
+  [
+    "Serein Labs",
+    "Quietude Niacinamide Serum",
+    "Serums",
+    1299,
+    1499,
+    "A balanced niacinamide serum for visibly calmer, clearer-looking skin.",
+  ],
+  [
+    "Serein Labs",
+    "Cloudveil Daily Emulsion",
+    "Moisturizers",
+    1199,
+    1399,
+    "A light emulsion that seals in hydration without feeling heavy.",
+  ],
+  [
+    "Natural Beauty",
+    "Botanical Shield SPF 40",
+    "Sunscreens",
+    1249,
+    1499,
+    "An everyday sunscreen lotion with a natural satin finish.",
+  ],
+  [
+    "Natural Beauty",
+    "Green Clay Clarifying Mask",
+    "Masks & Treatments",
+    999,
+    1199,
+    "A mineral clay mask that helps absorb excess oil and refresh pores.",
+  ],
+  [
+    "Natural Beauty",
+    "Peptide Lift Eye Cream",
+    "Eye Care",
+    1699,
+    1999,
+    "A cushioning eye cream for smoother, rested-looking contours.",
+  ],
+  [
+    "Aster & Grove",
+    "Soft Petal Body Wash",
+    "Body Care",
+    699,
+    849,
+    "A creamy body wash with a gentle botanical scent and soft lather.",
+  ],
+  [
+    "Mender",
+    "Restore Hand & Body Balm",
+    "Body Care",
+    749,
+    899,
+    "A rich balm for hands and dry patches that need extra comfort.",
+  ],
+  [
+    "Serein Labs",
+    "Overnight Recovery Mask",
+    "Masks & Treatments",
+    1399,
+    1699,
+    "A plush sleeping mask that supports a replenished morning feel.",
+  ],
+];
+const skinTypes = [
+  "Normal",
+  "Dry",
+  "Oily",
+  "Combination",
+  "Sensitive",
+  "Acne-Prone",
+];
+const concerns = [
+  "Acne & Breakouts",
+  "Dark Spots",
+  "Pigmentation",
+  "Dryness",
+  "Dullness",
+  "Fine Lines",
+  "Uneven Texture",
+  "Redness",
+  "Oil Control",
+  "Dehydration",
+  "Sun Protection",
+  "Barrier Support",
+];
+const packSizes = ["30 ml", "50 ml", "100 ml", "200 ml"];
 const skuSeed = [
-  ['NB-BRM-50-DRY-DRYNESS', '50 ml / Dry / Dryness', '50 ml', 'Dry', 'Dryness', 1249, 1049, 14],
-  ['NB-BRM-50-DRY-DEHYDRATION', '50 ml / Dry / Dehydration', '50 ml', 'Dry', 'Dehydration', 1249, 1049, 8],
-  ['NB-BRM-50-COMBINATION-BARRIER', '50 ml / Combination / Barrier Support', '50 ml', 'Combination', 'Barrier Support', 1249, 1049, 6],
-  ['NB-BRM-50-SENSITIVE-BARRIER', '50 ml / Sensitive / Barrier Support', '50 ml', 'Sensitive', 'Barrier Support', 1249, 1049, 4],
-  ['NB-BRM-50-OILY-ACNE', '50 ml / Oily / Acne & Breakouts', '50 ml', 'Oily', 'Acne & Breakouts', 1249, 1049, 0],
-  ['NB-BRM-100-DRY-DRYNESS', '100 ml / Dry / Dryness', '100 ml', 'Dry', 'Dryness', 1899, 1649, 9],
-  ['NB-BRM-100-DRY-DEHYDRATION', '100 ml / Dry / Dehydration', '100 ml', 'Dry', 'Dehydration', 1899, 1649, 5],
-  ['NB-BRM-100-SENSITIVE-BARRIER', '100 ml / Sensitive / Barrier Support', '100 ml', 'Sensitive', 'Barrier Support', 1899, 1649, 7],
-  ['NB-BRM-100-COMBINATION-BARRIER', '100 ml / Combination / Barrier Support', '100 ml', 'Combination', 'Barrier Support', 1899, 1649, 3],
-  ['NB-BRM-100-OILY-ACNE', '100 ml / Oily / Acne & Breakouts', '100 ml', 'Oily', 'Acne & Breakouts', 1899, 1649, 2],
-]
+  [
+    "NB-BRM-50-DRY-DRYNESS",
+    "50 ml / Dry / Dryness",
+    "50 ml",
+    "Dry",
+    "Dryness",
+    1249,
+    1049,
+    14,
+  ],
+  [
+    "NB-BRM-50-DRY-DEHYDRATION",
+    "50 ml / Dry / Dehydration",
+    "50 ml",
+    "Dry",
+    "Dehydration",
+    1249,
+    1049,
+    8,
+  ],
+  [
+    "NB-BRM-50-COMBINATION-BARRIER",
+    "50 ml / Combination / Barrier Support",
+    "50 ml",
+    "Combination",
+    "Barrier Support",
+    1249,
+    1049,
+    6,
+  ],
+  [
+    "NB-BRM-50-SENSITIVE-BARRIER",
+    "50 ml / Sensitive / Barrier Support",
+    "50 ml",
+    "Sensitive",
+    "Barrier Support",
+    1249,
+    1049,
+    4,
+  ],
+  [
+    "NB-BRM-50-OILY-ACNE",
+    "50 ml / Oily / Acne & Breakouts",
+    "50 ml",
+    "Oily",
+    "Acne & Breakouts",
+    1249,
+    1049,
+    0,
+  ],
+  [
+    "NB-BRM-100-DRY-DRYNESS",
+    "100 ml / Dry / Dryness",
+    "100 ml",
+    "Dry",
+    "Dryness",
+    1899,
+    1649,
+    9,
+  ],
+  [
+    "NB-BRM-100-DRY-DEHYDRATION",
+    "100 ml / Dry / Dehydration",
+    "100 ml",
+    "Dry",
+    "Dehydration",
+    1899,
+    1649,
+    5,
+  ],
+  [
+    "NB-BRM-100-SENSITIVE-BARRIER",
+    "100 ml / Sensitive / Barrier Support",
+    "100 ml",
+    "Sensitive",
+    "Barrier Support",
+    1899,
+    1649,
+    7,
+  ],
+  [
+    "NB-BRM-100-COMBINATION-BARRIER",
+    "100 ml / Combination / Barrier Support",
+    "100 ml",
+    "Combination",
+    "Barrier Support",
+    1899,
+    1649,
+    3,
+  ],
+  [
+    "NB-BRM-100-OILY-ACNE",
+    "100 ml / Oily / Acne & Breakouts",
+    "100 ml",
+    "Oily",
+    "Acne & Breakouts",
+    1899,
+    1649,
+    2,
+  ],
+];
 
-const slugify = (value) => value.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+const slugify = (value) =>
+  value
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 
 async function upsert(connection, sql, values) {
-  const [result] = await connection.execute(sql, values)
-  return result.insertId
+  const [result] = await connection.execute(sql, values);
+  return result.insertId;
 }
 
 async function seed() {
@@ -37,110 +327,521 @@ async function seed() {
     database: env.db.name,
     user: env.db.user,
     password: env.db.password,
-    charset: 'utf8mb4',
-  })
+    charset: "utf8mb4",
+  });
   try {
     if (process.env.DEV_CUSTOMER_PASSWORD) {
-      const passwordHash = await hashPassword(process.env.DEV_CUSTOMER_PASSWORD)
-      await connection.execute(`INSERT INTO customers (first_name, last_name, email, phone, password_hash, status)
-        VALUES ('Aanya', 'Mehta', 'aanya@example.com', '9876543210', ?, 'active')
-        ON DUPLICATE KEY UPDATE id = id`, [passwordHash])
-      const [[seedCustomer]] = await connection.execute('SELECT id, phone FROM customers WHERE email = ?', ['aanya@example.com'])
-      const [[existingAddress]] = await connection.execute('SELECT id FROM customer_addresses WHERE customer_id = ? AND label = ? AND deleted_at IS NULL LIMIT 1', [seedCustomer.id, 'Home'])
-      if (!existingAddress) await connection.execute(`INSERT INTO customer_addresses (customer_id,label,first_name,last_name,phone,address_line_1,address_line_2,landmark,city,state,postal_code,country_code,address_type,is_default)
-        VALUES (?, 'Home', 'Aanya', 'Mehta', ?, '42 Lotus Residency', NULL, NULL, 'Bengaluru', 'Karnataka', '560038', 'IN', 'home', 1)`, [seedCustomer.id, seedCustomer.phone])
+      const passwordHash = await hashPassword(
+        process.env.DEV_CUSTOMER_PASSWORD,
+      );
+      await connection.execute(
+        `INSERT INTO customers (first_name, last_name, email, phone, password_hash, status, email_verified_at)
+        VALUES ('Aanya', 'Mehta', 'aanya@example.com', '9876543210', ?, 'active', NOW())
+        ON DUPLICATE KEY UPDATE email_verified_at = COALESCE(email_verified_at, NOW())`,
+        [passwordHash],
+      );
+      const [[seedCustomer]] = await connection.execute(
+        "SELECT id, phone FROM customers WHERE email = ?",
+        ["aanya@example.com"],
+      );
+      const [[existingAddress]] = await connection.execute(
+        "SELECT id FROM customer_addresses WHERE customer_id = ? AND label = ? AND deleted_at IS NULL LIMIT 1",
+        [seedCustomer.id, "Home"],
+      );
+      if (!existingAddress)
+        await connection.execute(
+          `INSERT INTO customer_addresses (customer_id,label,first_name,last_name,phone,address_line_1,address_line_2,landmark,city,state,postal_code,country_code,address_type,is_default)
+        VALUES (?, 'Home', 'Aanya', 'Mehta', ?, '42 Lotus Residency', NULL, NULL, 'Bengaluru', 'Karnataka', '560038', 'IN', 'home', 1)`,
+          [seedCustomer.id, seedCustomer.phone],
+        );
     }
     const couponSeeds = [
-      ['WELCOME10', 'Welcome 10', '10% off your ritual', 'percentage', 10, 799, 250, null],
-      ['GLOW20', 'Glow 20', '20% off qualifying orders', 'percentage', 20, 1999, 500, null],
-      ['FLAT200', 'Flat 200', '₹200 off qualifying orders', 'flat', 200, 1499, null, null],
-      ['EXPIRED15', 'Expired 15', 'Expired development coupon', 'percentage', 15, 0, null, '2020-01-01 00:00:00'],
-    ]
-    for (const [code,name,description,type,value,min,max,expires] of couponSeeds) await connection.execute(`INSERT INTO coupons (code,name,description,discount_type,discount_value,minimum_cart_amount,maximum_discount_amount,expires_at) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name),description=VALUES(description)`, [code,name,description,type,value,min,max,expires])
-    const cards = [['NB-GIFT-500',500,null],['NB-GIFT-1000',1000,650],['NB-GIFT-2000',2000,2000],['NB-GIFT-USED',500,0],['NB-GIFT-EXPIRED',1000,750,'2020-01-01 00:00:00']]
-    for (const card of cards) { const code=card[0], value=card[1], balance=card[2] ?? card[1], expires=card[3] || null; const digest=crypto.createHash('sha256').update(code).digest('hex'); await connection.execute(`INSERT INTO gift_cards (code_hash,code_last4,initial_value,current_balance,status,expires_at) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE code_last4=VALUES(code_last4),current_balance=VALUES(current_balance),status=VALUES(status),expires_at=VALUES(expires_at)`, [digest,code.replace(/[^A-Z0-9]/g,'').slice(-4),value,balance,balance>0?'active':'exhausted',expires]) }
-    await connection.execute(`INSERT INTO shipping_methods (code,name,description,fee,free_shipping_threshold,estimated_days_min,estimated_days_max,sort_order) VALUES ('STANDARD','Standard Delivery','3–6 business days',79,999,3,6,1),('EXPRESS','Express Delivery','1–3 business days',149,NULL,1,3,2) ON DUPLICATE KEY UPDATE name=VALUES(name),fee=VALUES(fee),free_shipping_threshold=VALUES(free_shipping_threshold),is_active=1`)
-    if (process.env.DEV_ADMIN_PASSWORD) { const permissions=['dashboard.view','catalog.view','catalog.manage','inventory.view','inventory.manage','orders.view','orders.manage','customers.view','customers.manage','promotions.view','promotions.manage','content.view','content.manage','settings.view','settings.manage','staff.view','staff.manage','audit.view']; for(const slug of permissions) await connection.execute('INSERT INTO admin_permissions (name,slug) VALUES (?,?) ON DUPLICATE KEY UPDATE name=VALUES(name)',[slug,slug]); await connection.execute('INSERT INTO admin_roles (name,slug,description,is_system) VALUES (?,?,?,1) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)', ['Super Admin','super-admin','Full administrative access']); const [[role]]=await connection.execute('SELECT id FROM admin_roles WHERE slug="super-admin"'); for(const slug of permissions){const [[permission]]=await connection.execute('SELECT id FROM admin_permissions WHERE slug=?',[slug]);await connection.execute('INSERT IGNORE INTO admin_role_permissions (role_id,permission_id) VALUES (?,?)',[role.id,permission.id])} const email=(process.env.DEV_ADMIN_EMAIL||'admin@naturalbeauty.local').trim().toLowerCase(); const hash=await hashPassword(process.env.DEV_ADMIN_PASSWORD); await connection.execute('INSERT INTO admin_users (first_name,last_name,email,password_hash,status) VALUES (?,?,?,?,"active") ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)', ['Natural','Beauty',email,hash]); const [[admin]]=await connection.execute('SELECT id FROM admin_users WHERE email=?',[email]); await connection.execute('INSERT IGNORE INTO admin_user_roles (admin_user_id,role_id) VALUES (?,?)',[admin.id,role.id]); }
-    const brandId = await upsert(connection, `INSERT INTO brands (name, slug, description, is_active)
-      VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), name = VALUES(name), description = VALUES(description), is_active = 1`,
-    ['Natural Beauty', 'natural-beauty', 'Thoughtfully formulated skincare for everyday rituals.'])
+      [
+        "WELCOME10",
+        "Welcome 10",
+        "10% off your ritual",
+        "percentage",
+        10,
+        799,
+        250,
+        null,
+      ],
+      [
+        "GLOW20",
+        "Glow 20",
+        "20% off qualifying orders",
+        "percentage",
+        20,
+        1999,
+        500,
+        null,
+      ],
+      [
+        "FLAT200",
+        "Flat 200",
+        "₹200 off qualifying orders",
+        "flat",
+        200,
+        1499,
+        null,
+        null,
+      ],
+      [
+        "EXPIRED15",
+        "Expired 15",
+        "Expired development coupon",
+        "percentage",
+        15,
+        0,
+        null,
+        "2020-01-01 00:00:00",
+      ],
+    ];
+    for (const [
+      code,
+      name,
+      description,
+      type,
+      value,
+      min,
+      max,
+      expires,
+    ] of couponSeeds)
+      await connection.execute(
+        `INSERT INTO coupons (code,name,description,discount_type,discount_value,minimum_cart_amount,maximum_discount_amount,expires_at) VALUES (?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name),description=VALUES(description)`,
+        [code, name, description, type, value, min, max, expires],
+      );
+    const cards = [
+      ["NB-GIFT-500", 500, null],
+      ["NB-GIFT-1000", 1000, 650],
+      ["NB-GIFT-2000", 2000, 2000],
+      ["NB-GIFT-USED", 500, 0],
+      ["NB-GIFT-EXPIRED", 1000, 750, "2020-01-01 00:00:00"],
+    ];
+    for (const card of cards) {
+      const code = card[0],
+        value = card[1],
+        balance = card[2] ?? card[1],
+        expires = card[3] || null;
+      const digest = crypto.createHash("sha256").update(code).digest("hex");
+      await connection.execute(
+        `INSERT INTO gift_cards (code_hash,code_last4,initial_value,current_balance,status,expires_at) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE code_last4=VALUES(code_last4),current_balance=VALUES(current_balance),status=VALUES(status),expires_at=VALUES(expires_at)`,
+        [
+          digest,
+          code.replace(/[^A-Z0-9]/g, "").slice(-4),
+          value,
+          balance,
+          balance > 0 ? "active" : "exhausted",
+          expires,
+        ],
+      );
+    }
+    await connection.execute(
+      `INSERT INTO shipping_methods (code,name,description,fee,free_shipping_threshold,estimated_days_min,estimated_days_max,sort_order) VALUES ('STANDARD','Standard Delivery','3–6 business days',79,999,3,6,1),('EXPRESS','Express Delivery','1–3 business days',149,NULL,1,3,2) ON DUPLICATE KEY UPDATE name=VALUES(name),fee=VALUES(fee),free_shipping_threshold=VALUES(free_shipping_threshold),is_active=1`,
+    );
+    if (process.env.DEV_ADMIN_PASSWORD) {
+      const permissions = [
+        "dashboard.view",
+        "catalog.view",
+        "catalog.manage",
+        "inventory.view",
+        "inventory.manage",
+        "orders.view",
+        "orders.manage",
+        "customers.view",
+        "customers.manage",
+        "reviews.view",
+        "reviews.manage",
+        "promotions.view",
+        "promotions.manage",
+        "content.view",
+        "content.manage",
+        "settings.view",
+        "settings.manage",
+        "staff.view",
+        "staff.manage",
+        "audit.view",
+      ];
+      for (const slug of permissions)
+        await connection.execute(
+          "INSERT INTO admin_permissions (name,slug) VALUES (?,?) ON DUPLICATE KEY UPDATE name=VALUES(name)",
+          [slug, slug],
+        );
+      await connection.execute(
+        "INSERT INTO admin_roles (name,slug,description,is_system) VALUES (?,?,?,1) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+        ["Super Admin", "super-admin", "Full administrative access"],
+      );
+      const [[role]] = await connection.execute(
+        'SELECT id FROM admin_roles WHERE slug="super-admin"',
+      );
+      for (const slug of permissions) {
+        const [[permission]] = await connection.execute(
+          "SELECT id FROM admin_permissions WHERE slug=?",
+          [slug],
+        );
+        await connection.execute(
+          "INSERT IGNORE INTO admin_role_permissions (role_id,permission_id) VALUES (?,?)",
+          [role.id, permission.id],
+        );
+      }
+      const email = (process.env.DEV_ADMIN_EMAIL || "admin@naturalbeauty.local")
+        .trim()
+        .toLowerCase();
+      const hash = await hashPassword(process.env.DEV_ADMIN_PASSWORD);
+      await connection.execute(
+        'INSERT INTO admin_users (first_name,last_name,email,password_hash,status) VALUES (?,?,?,?,"active") ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)',
+        ["Natural", "Beauty", email, hash],
+      );
+      const [[admin]] = await connection.execute(
+        "SELECT id FROM admin_users WHERE email=?",
+        [email],
+      );
+      await connection.execute(
+        "INSERT IGNORE INTO admin_user_roles (admin_user_id,role_id) VALUES (?,?)",
+        [admin.id, role.id],
+      );
+    }
+    const brandIds = {};
+    for (const [name, description] of brands) {
+      brandIds[name] = await upsert(
+        connection,
+        `INSERT INTO brands (name, slug, description, is_active)
+        VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), name = VALUES(name), description = VALUES(description), is_active = 1`,
+        [name, slugify(name), description],
+      );
+    }
+    const brandId = brandIds["Natural Beauty"];
 
-    const categoryIds = {}
+    const categoryIds = {};
     for (const [index, name] of categories.entries()) {
-      categoryIds[name] = await upsert(connection, `INSERT INTO categories (name, slug, is_active, sort_order)
-        VALUES (?, ?, 1, ?) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), name = VALUES(name), is_active = 1, sort_order = VALUES(sort_order)`, [name, slugify(name), index])
+      categoryIds[name] = await upsert(
+        connection,
+        `INSERT INTO categories (name, slug, is_active, sort_order)
+        VALUES (?, ?, 1, ?) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), name = VALUES(name), is_active = 1, deleted_at = NULL, sort_order = VALUES(sort_order)`,
+        [name, slugify(name), index],
+      );
     }
 
-    const attributeIds = {}
-    for (const [index, [name, displayType]] of [['Pack Size', 'button'], ['Skin Type', 'button'], ['Concern', 'button']].entries()) {
-      attributeIds[name] = await upsert(connection, `INSERT INTO attributes (name, slug, display_type, sort_order, is_active)
-        VALUES (?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), name = VALUES(name), display_type = VALUES(display_type), sort_order = VALUES(sort_order), is_active = 1`, [name, slugify(name), displayType, index])
+    const attributeIds = {};
+    for (const [index, [name, displayType]] of [
+      ["Pack Size", "button"],
+      ["Skin Type", "button"],
+      ["Concern", "button"],
+    ].entries()) {
+      attributeIds[name] = await upsert(
+        connection,
+        `INSERT INTO attributes (name, slug, display_type, sort_order, is_active)
+        VALUES (?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), name = VALUES(name), display_type = VALUES(display_type), sort_order = VALUES(sort_order), is_active = 1`,
+        [name, slugify(name), displayType, index],
+      );
     }
 
-    const valueIds = {}
-    for (const [attributeName, values] of [['Pack Size', packSizes], ['Skin Type', skinTypes], ['Concern', concerns]]) {
-      valueIds[attributeName] = {}
+    const valueIds = {};
+    for (const [attributeName, values] of [
+      ["Pack Size", packSizes],
+      ["Skin Type", skinTypes],
+      ["Concern", concerns],
+    ]) {
+      valueIds[attributeName] = {};
       for (const [index, value] of values.entries()) {
-        valueIds[attributeName][value] = await upsert(connection, `INSERT INTO attribute_values (attribute_id, value, slug, display_value, sort_order, is_active)
-          VALUES (?, ?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), value = VALUES(value), display_value = VALUES(display_value), sort_order = VALUES(sort_order), is_active = 1`, [attributeIds[attributeName], value, slugify(value), value, index])
+        valueIds[attributeName][value] = await upsert(
+          connection,
+          `INSERT INTO attribute_values (attribute_id, value, slug, display_value, sort_order, is_active)
+          VALUES (?, ?, ?, ?, ?, 1) ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), value = VALUES(value), display_value = VALUES(display_value), sort_order = VALUES(sort_order), is_active = 1`,
+          [attributeIds[attributeName], value, slugify(value), value, index],
+        );
       }
     }
 
-    const productId = await upsert(connection, `INSERT INTO products (brand_id, name, slug, short_description, description, status, product_type, base_price, base_mrp, featured, best_seller, is_active, how_to_use, texture, usage_time)
+    const productId = await upsert(
+      connection,
+      `INSERT INTO products (brand_id, name, slug, short_description, description, status, product_type, base_price, base_mrp, featured, best_seller, is_active, how_to_use, texture, usage_time)
       VALUES (?, ?, ?, ?, ?, 'active', 'variant', ?, ?, 1, 1, 1, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), brand_id = VALUES(brand_id), name = VALUES(name), short_description = VALUES(short_description), description = VALUES(description), status = 'active', product_type = 'variant', base_price = VALUES(base_price), base_mrp = VALUES(base_mrp), featured = 1, best_seller = 1, is_active = 1, how_to_use = VALUES(how_to_use), texture = VALUES(texture), usage_time = VALUES(usage_time)`, [brandId, 'Barrier Restore Moisturizer', 'barrier-restore-moisturizer', 'A replenishing moisturizer for a calm, comfortable barrier.', 'A ceramide-rich daily moisturizer that cushions dry-feeling skin without heaviness.', 1649, 1899, 'Massage a pea-sized amount over clean skin after serum.', 'Lightweight cream', 'AM & PM'])
+      ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), brand_id = VALUES(brand_id), name = VALUES(name), short_description = VALUES(short_description), description = VALUES(description), status = 'active', product_type = 'variant', base_price = VALUES(base_price), base_mrp = VALUES(base_mrp), featured = 1, best_seller = 1, is_active = 1, how_to_use = VALUES(how_to_use), texture = VALUES(texture), usage_time = VALUES(usage_time)`,
+      [
+        brandId,
+        "Barrier Restore Moisturizer",
+        "barrier-restore-moisturizer",
+        "A replenishing moisturizer for a calm, comfortable barrier.",
+        "A ceramide-rich daily moisturizer that cushions dry-feeling skin without heaviness.",
+        1649,
+        1899,
+        "Massage a pea-sized amount over clean skin after serum.",
+        "Lightweight cream",
+        "AM & PM",
+      ],
+    );
 
-    await connection.execute(`INSERT INTO product_categories (product_id, category_id, is_primary, sort_order) VALUES (?, ?, 1, 0)
-      ON DUPLICATE KEY UPDATE is_primary = 1, sort_order = 0`, [productId, categoryIds.Moisturizers])
-    for (const [index, attributeName] of ['Pack Size', 'Skin Type', 'Concern'].entries()) {
-      await connection.execute(`INSERT INTO product_attributes (product_id, attribute_id, sort_order, is_required) VALUES (?, ?, ?, 1)
-        ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order), is_required = 1`, [productId, attributeIds[attributeName], index])
+    await connection.execute(
+      `INSERT INTO product_categories (product_id, category_id, is_primary, sort_order) VALUES (?, ?, 1, 0)
+      ON DUPLICATE KEY UPDATE is_primary = 1, sort_order = 0`,
+      [productId, categoryIds.Moisturizers],
+    );
+    for (const [index, attributeName] of [
+      "Pack Size",
+      "Skin Type",
+      "Concern",
+    ].entries()) {
+      await connection.execute(
+        `INSERT INTO product_attributes (product_id, attribute_id, sort_order, is_required) VALUES (?, ?, ?, 1)
+        ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order), is_required = 1`,
+        [productId, attributeIds[attributeName], index],
+      );
     }
-    for (const [attributeName, values] of [['Pack Size', ['50 ml', '100 ml']], ['Skin Type', ['Dry', 'Oily', 'Combination', 'Sensitive']], ['Concern', ['Dryness', 'Dehydration', 'Barrier Support', 'Acne & Breakouts']]]) {
+    for (const [attributeName, values] of [
+      ["Pack Size", ["50 ml", "100 ml"]],
+      ["Skin Type", ["Dry", "Oily", "Combination", "Sensitive"]],
+      [
+        "Concern",
+        ["Dryness", "Dehydration", "Barrier Support", "Acne & Breakouts"],
+      ],
+    ]) {
       for (const [index, value] of values.entries()) {
-        await connection.execute(`INSERT INTO product_attribute_values (product_id, attribute_id, attribute_value_id, sort_order) VALUES (?, ?, ?, ?)
-          ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)`, [productId, attributeIds[attributeName], valueIds[attributeName][value], index])
+        await connection.execute(
+          `INSERT INTO product_attribute_values (product_id, attribute_id, attribute_value_id, sort_order) VALUES (?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)`,
+          [
+            productId,
+            attributeIds[attributeName],
+            valueIds[attributeName][value],
+            index,
+          ],
+        );
       }
     }
-    for (const [index, filePath] of ['/uploads/products/barrier-restore/front.webp', '/uploads/products/barrier-restore/back.webp'].entries()) {
-      await connection.execute(`INSERT INTO product_media (product_id, media_type, file_path, alt_text, sort_order, is_primary)
-        VALUES (?, 'image', ?, ?, ?, ?) ON DUPLICATE KEY UPDATE alt_text = VALUES(alt_text), sort_order = VALUES(sort_order), is_primary = VALUES(is_primary)`, [productId, filePath, `Barrier Restore Moisturizer ${index === 0 ? 'front' : 'detail'}`, index, index === 0 ? 1 : 0])
+    for (const [index, filePath] of [
+      "/uploads/products/barrier-restore/front.webp",
+      "/uploads/products/barrier-restore/back.webp",
+    ].entries()) {
+      await connection.execute(
+        `INSERT INTO product_media (product_id, media_type, file_path, alt_text, sort_order, is_primary)
+        VALUES (?, 'image', ?, ?, ?, ?) ON DUPLICATE KEY UPDATE alt_text = VALUES(alt_text), sort_order = VALUES(sort_order), is_primary = VALUES(is_primary)`,
+        [
+          productId,
+          filePath,
+          `Barrier Restore Moisturizer ${index === 0 ? "front" : "detail"}`,
+          index,
+          index === 0 ? 1 : 0,
+        ],
+      );
     }
-    for (const [index, benefit] of ['Supports the skin barrier', 'Long-lasting hydration', 'Comforts dry-feeling skin'].entries()) {
-      await connection.execute('INSERT INTO product_benefits (product_id, benefit, sort_order) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)', [productId, benefit, index])
+    for (const [index, benefit] of [
+      "Supports the skin barrier",
+      "Long-lasting hydration",
+      "Comforts dry-feeling skin",
+    ].entries()) {
+      await connection.execute(
+        "INSERT INTO product_benefits (product_id, benefit, sort_order) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)",
+        [productId, benefit, index],
+      );
     }
-    for (const [index, [name, description]] of [['Ceramides', 'Helps support a resilient moisture barrier.'], ['Hyaluronic Acid', 'Helps attract and retain hydration.']].entries()) {
-      await connection.execute('INSERT INTO product_ingredients (product_id, name, description, is_key, sort_order) VALUES (?, ?, ?, 1, ?) ON DUPLICATE KEY UPDATE description = VALUES(description), sort_order = VALUES(sort_order)', [productId, name, description, index])
+    for (const [index, [name, description]] of [
+      ["Ceramides", "Helps support a resilient moisture barrier."],
+      ["Hyaluronic Acid", "Helps attract and retain hydration."],
+    ].entries()) {
+      await connection.execute(
+        "INSERT INTO product_ingredients (product_id, name, description, is_key, sort_order) VALUES (?, ?, ?, 1, ?) ON DUPLICATE KEY UPDATE description = VALUES(description), sort_order = VALUES(sort_order)",
+        [productId, name, description, index],
+      );
     }
 
-    for (const [sortOrder, [sku, title, size, skinType, concern, mrp, price, stock]] of skuSeed.entries()) {
+    for (const [
+      sortOrder,
+      [sku, title, size, skinType, concern, mrp, price, stock],
+    ] of skuSeed.entries()) {
       const assignments = [
-        { attributeId: attributeIds['Pack Size'], attributeValueId: valueIds['Pack Size'][size] },
-        { attributeId: attributeIds['Skin Type'], attributeValueId: valueIds['Skin Type'][skinType] },
-        { attributeId: attributeIds.Concern, attributeValueId: valueIds.Concern[concern] },
-      ]
-      const combinationKey = await validateSkuAttributes(connection, productId, assignments)
-      const skuId = await upsert(connection, `INSERT INTO product_skus (product_id, sku, title, combination_key, price, mrp, is_active, track_inventory, allow_backorder, sort_order)
+        {
+          attributeId: attributeIds["Pack Size"],
+          attributeValueId: valueIds["Pack Size"][size],
+        },
+        {
+          attributeId: attributeIds["Skin Type"],
+          attributeValueId: valueIds["Skin Type"][skinType],
+        },
+        {
+          attributeId: attributeIds.Concern,
+          attributeValueId: valueIds.Concern[concern],
+        },
+      ];
+      const combinationKey = await validateSkuAttributes(
+        connection,
+        productId,
+        assignments,
+      );
+      const skuId = await upsert(
+        connection,
+        `INSERT INTO product_skus (product_id, sku, title, combination_key, price, mrp, is_active, track_inventory, allow_backorder, sort_order)
         VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0, ?)
-        ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), title = VALUES(title), price = VALUES(price), mrp = VALUES(mrp), is_active = 1`, [productId, sku, title, combinationKey, price, mrp, sortOrder])
+        ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), title = VALUES(title), price = VALUES(price), mrp = VALUES(mrp), is_active = 1`,
+        [productId, sku, title, combinationKey, price, mrp, sortOrder],
+      );
       for (const assignment of assignments) {
-        await connection.execute(`INSERT INTO sku_attribute_values (sku_id, attribute_id, attribute_value_id) VALUES (?, ?, ?)
-          ON DUPLICATE KEY UPDATE attribute_value_id = VALUES(attribute_value_id)`, [skuId, assignment.attributeId, assignment.attributeValueId])
+        await connection.execute(
+          `INSERT INTO sku_attribute_values (sku_id, attribute_id, attribute_value_id) VALUES (?, ?, ?)
+          ON DUPLICATE KEY UPDATE attribute_value_id = VALUES(attribute_value_id)`,
+          [skuId, assignment.attributeId, assignment.attributeValueId],
+        );
       }
-      const [existingInventory] = await connection.execute('SELECT id FROM inventory WHERE sku_id = ?', [skuId])
+      const [existingInventory] = await connection.execute(
+        "SELECT id FROM inventory WHERE sku_id = ?",
+        [skuId],
+      );
       if (!existingInventory.length) {
-        await connection.execute('INSERT INTO inventory (sku_id, quantity_on_hand, reserved_quantity, reorder_level) VALUES (?, ?, 0, 2)', [skuId, stock])
-        if (stock > 0) await connection.execute(`INSERT INTO inventory_movements (sku_id, movement_type, quantity_change, quantity_before, quantity_after, note)
-          VALUES (?, 'initial', ?, 0, ?, 'Development seed initial stock')`, [skuId, stock, stock])
+        await connection.execute(
+          "INSERT INTO inventory (sku_id, quantity_on_hand, reserved_quantity, reorder_level) VALUES (?, ?, 0, 2)",
+          [skuId, stock],
+        );
+        if (stock > 0)
+          await connection.execute(
+            `INSERT INTO inventory_movements (sku_id, movement_type, quantity_change, quantity_before, quantity_after, note)
+          VALUES (?, 'initial', ?, 0, ?, 'Development seed initial stock')`,
+            [skuId, stock, stock],
+          );
       }
     }
-    logger.info('Development catalog seed completed.')
+
+    const concernByCategory = {
+      Cleansers: "Barrier Support",
+      "Toners & Mists": "Dehydration",
+      Serums: "Dark Spots",
+      Moisturizers: "Dryness",
+      Sunscreens: "Sun Protection",
+      "Masks & Treatments": "Uneven Texture",
+      "Eye Care": "Fine Lines",
+      "Lip Care": "Dryness",
+      Exfoliators: "Dullness",
+      "Body Care": "Dryness",
+    };
+    for (const [
+      index,
+      [brandName, name, category, price, mrp, description],
+    ] of additionalProducts.entries()) {
+      const slug = slugify(name);
+      const genericProductId = await upsert(
+        connection,
+        `INSERT INTO products (brand_id, name, slug, short_description, description, status, product_type, base_price, base_mrp, featured, best_seller, new_arrival, is_active, how_to_use, texture, usage_time)
+        VALUES (?, ?, ?, ?, ?, 'active', 'variant', ?, ?, ?, ?, 1, 1, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), brand_id = VALUES(brand_id), name = VALUES(name), short_description = VALUES(short_description), description = VALUES(description), status = 'active', base_price = VALUES(base_price), base_mrp = VALUES(base_mrp), featured = VALUES(featured), best_seller = VALUES(best_seller), new_arrival = 1, is_active = 1, how_to_use = VALUES(how_to_use), texture = VALUES(texture), usage_time = VALUES(usage_time)`,
+        [
+          brandIds[brandName],
+          name,
+          slug,
+          description,
+          `${description} Designed to sit comfortably within a simple, consistent daily ritual.`,
+          price,
+          mrp,
+          index < 6 ? 1 : 0,
+          index < 8 ? 1 : 0,
+          "Apply as the final step of your routine, or as directed for targeted care.",
+          "Lightweight botanical texture",
+          "AM & PM",
+        ],
+      );
+      await connection.execute(
+        `INSERT INTO product_categories (product_id, category_id, is_primary, sort_order) VALUES (?, ?, 1, 0)
+        ON DUPLICATE KEY UPDATE is_primary = 1, sort_order = 0`,
+        [genericProductId, categoryIds[category]],
+      );
+      for (const [attributeIndex, attributeName] of [
+        "Pack Size",
+        "Skin Type",
+        "Concern",
+      ].entries()) {
+        await connection.execute(
+          `INSERT INTO product_attributes (product_id, attribute_id, sort_order, is_required) VALUES (?, ?, ?, 1)
+          ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order), is_required = 1`,
+          [genericProductId, attributeIds[attributeName], attributeIndex],
+        );
+      }
+      const concern = concernByCategory[category];
+      for (const [attributeName, value] of [
+        ["Pack Size", "50 ml"],
+        ["Skin Type", "Normal"],
+        ["Concern", concern],
+      ]) {
+        await connection.execute(
+          `INSERT INTO product_attribute_values (product_id, attribute_id, attribute_value_id, sort_order) VALUES (?, ?, ?, 0)
+          ON DUPLICATE KEY UPDATE sort_order = 0`,
+          [
+            genericProductId,
+            attributeIds[attributeName],
+            valueIds[attributeName][value],
+          ],
+        );
+      }
+      const assignments = [
+        {
+          attributeId: attributeIds["Pack Size"],
+          attributeValueId: valueIds["Pack Size"]["50 ml"],
+        },
+        {
+          attributeId: attributeIds["Skin Type"],
+          attributeValueId: valueIds["Skin Type"].Normal,
+        },
+        {
+          attributeId: attributeIds.Concern,
+          attributeValueId: valueIds.Concern[concern],
+        },
+      ];
+      const combinationKey = await validateSkuAttributes(
+        connection,
+        genericProductId,
+        assignments,
+      );
+      const genericSkuId = await upsert(
+        connection,
+        `INSERT INTO product_skus (product_id, sku, title, combination_key, price, mrp, is_active, track_inventory, allow_backorder, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, 1, 1, 0, 0)
+        ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), title = VALUES(title), price = VALUES(price), mrp = VALUES(mrp), is_active = 1, deleted_at = NULL`,
+        [
+          genericProductId,
+          `NB-${slug.toUpperCase().slice(0, 35)}-50-NORMAL`,
+          "50 ml / Normal / " + concern,
+          combinationKey,
+          price,
+          mrp,
+        ],
+      );
+      for (const assignment of assignments)
+        await connection.execute(
+          `INSERT INTO sku_attribute_values (sku_id, attribute_id, attribute_value_id) VALUES (?, ?, ?)
+          ON DUPLICATE KEY UPDATE attribute_value_id = VALUES(attribute_value_id)`,
+          [genericSkuId, assignment.attributeId, assignment.attributeValueId],
+        );
+      const [[inventory]] = await connection.execute(
+        "SELECT id FROM inventory WHERE sku_id = ?",
+        [genericSkuId],
+      );
+      if (!inventory)
+        await connection.execute(
+          "INSERT INTO inventory (sku_id, quantity_on_hand, reserved_quantity, reorder_level) VALUES (?, 24, 0, 5)",
+          [genericSkuId],
+        );
+      await connection.execute(
+        `INSERT INTO product_media (product_id, media_type, file_path, alt_text, sort_order, is_primary)
+        VALUES (?, 'image', ?, ?, 0, 1) ON DUPLICATE KEY UPDATE alt_text = VALUES(alt_text), is_primary = 1`,
+        [
+          genericProductId,
+          `https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?auto=format&fit=crop&w=900&q=85&sig=${index}`,
+          `${name} product image`,
+        ],
+      );
+      for (const [benefitIndex, benefit] of [
+        "Thoughtful daily care",
+        "Comfortable, layerable texture",
+      ].entries())
+        await connection.execute(
+          "INSERT INTO product_benefits (product_id, benefit, sort_order) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE sort_order = VALUES(sort_order)",
+          [genericProductId, benefit, benefitIndex],
+        );
+    }
+    logger.info("Development catalog seed completed.");
   } finally {
-    await connection.end()
+    await connection.end();
   }
 }
 
 seed().catch((error) => {
-  logger.error(`Development seed failed: ${error.message}`)
-  process.exitCode = 1
-})
+  logger.error(`Development seed failed: ${error.message}`);
+  process.exitCode = 1;
+});

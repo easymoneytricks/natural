@@ -255,10 +255,16 @@ export async function revokeAllSessions(pool, customerId) {
 }
 
 export async function verifyCustomerEmail(pool, input, req) {
-  const email = String(input?.email || "").trim().toLowerCase();
+  const email = String(input?.email || "")
+    .trim()
+    .toLowerCase();
   const code = String(input?.code || "").trim();
   if (!emailPattern.test(email) || !/^\d{6}$/.test(code))
-    throw new AuthError(400, "INVALID_EMAIL_OTP", "Enter the 6-digit code sent to your email.");
+    throw new AuthError(
+      400,
+      "INVALID_EMAIL_OTP",
+      "Enter the 6-digit code sent to your email.",
+    );
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -267,7 +273,11 @@ export async function verifyCustomerEmail(pool, input, req) {
       [email],
     );
     if (!customer)
-      throw new AuthError(400, "INVALID_EMAIL_OTP", "The verification code is invalid or expired.");
+      throw new AuthError(
+        400,
+        "INVALID_EMAIL_OTP",
+        "The verification code is invalid or expired.",
+      );
     if (customer.email_verified_at) {
       const session = await createSession(connection, customer.id, req);
       await connection.commit();
@@ -278,16 +288,28 @@ export async function verifyCustomerEmail(pool, input, req) {
       [customer.id],
     );
     if (!verification || new Date(verification.expires_at) <= new Date())
-      throw new AuthError(400, "INVALID_EMAIL_OTP", "The verification code is invalid or expired.");
+      throw new AuthError(
+        400,
+        "INVALID_EMAIL_OTP",
+        "The verification code is invalid or expired.",
+      );
     if (verification.attempts >= 5) {
-      throw new AuthError(429, "EMAIL_OTP_ATTEMPTS_EXCEEDED", "Too many incorrect codes. Request a new code.");
+      throw new AuthError(
+        429,
+        "EMAIL_OTP_ATTEMPTS_EXCEEDED",
+        "Too many incorrect codes. Request a new code.",
+      );
     }
     if (verificationHash(code) !== verification.code_hash) {
       await connection.execute(
         "UPDATE customer_email_verifications SET attempts=attempts+1 WHERE id=?",
         [verification.id],
       );
-      throw new AuthError(400, "INVALID_EMAIL_OTP", "The verification code is invalid or expired.");
+      throw new AuthError(
+        400,
+        "INVALID_EMAIL_OTP",
+        "The verification code is invalid or expired.",
+      );
     }
     await connection.execute(
       "UPDATE customers SET email_verified_at=NOW() WHERE id=?",
@@ -312,7 +334,9 @@ export async function verifyCustomerEmail(pool, input, req) {
 }
 
 export async function createCustomerEmailVerification(pool, email) {
-  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();

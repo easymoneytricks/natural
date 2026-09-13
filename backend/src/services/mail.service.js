@@ -5,6 +5,24 @@ import { readPrivate } from "./storeSettings.service.js";
 let transport;
 let transportKey = "";
 
+const esc = (value) =>
+  String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+const money = (value) => `&#8377;${Number(value || 0).toLocaleString("en-IN")}`;
+const plainMoney = (value) =>
+  `Rs. ${Number(value || 0).toLocaleString("en-IN")}`;
+const paragraph = (value) =>
+  `<p style="margin:0 0 16px;color:#52665a;font-size:16px">${value}</p>`;
+const button = (label, href) =>
+  `<a href="${esc(href)}" style="display:inline-block;background:#385941;color:#fffdf8;text-decoration:none;padding:13px 20px;font-size:12px;letter-spacing:1px;text-transform:uppercase;font-weight:bold">${esc(label)} &rarr;</a>`;
+
+const shell = ({ eyebrow, title, preview, body }) =>
+  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title></head><body style="margin:0;background:#f5f4ee;color:#24352b;font-family:Arial,Helvetica,sans-serif;line-height:1.6"><div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preview)}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f4ee;padding:28px 12px"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#fffdf8;border:1px solid #e2e4da"><tr><td style="padding:28px 36px;border-bottom:1px solid #e2e4da"><span style="font-family:Georgia,serif;font-size:27px;color:#1d2c22">Natural Beauty</span><div style="margin-top:6px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#5c725f">Thoughtful skincare, simply considered</div></td></tr><tr><td style="padding:38px 36px"><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#55715b;font-weight:bold">${esc(eyebrow)}</div><h1 style="margin:13px 0 18px;font-family:Georgia,serif;font-size:36px;line-height:1.12;font-weight:normal;color:#1d2c22">${esc(title)}</h1>${body}</td></tr><tr><td style="padding:20px 36px;background:#edf1e8;border-top:1px solid #e2e4da;color:#627267;font-size:12px">You are receiving this email from Natural Beauty. Need help? Reply to this email and our care team will be happy to help.</td></tr></table><div style="max-width:640px;padding:18px 12px;color:#7b877d;font-size:11px">Natural Beauty · Bengaluru, India</div></td></tr></table></body></html>`;
+
 async function getTransport() {
   const settings = (await readPrivate(pool)).smtp || {};
   const host = settings.host || process.env.SMTP_HOST;
@@ -77,18 +95,88 @@ export async function sendEmail({
   throw lastError;
 }
 
-export function orderEmail({ order, recipient, name }) {
-  const total = Number(
-    order.pricing?.total || order.grandTotal || 0,
-  ).toLocaleString("en-IN");
+export function orderEmail({ order, recipient, name, admin = false }) {
+  const number = order.orderNumber || order.order_number;
+  const total =
+    order.pricing?.grandTotal ?? order.pricing?.total ?? order.grandTotal;
+  const subject = admin
+    ? `New order received · ${number}`
+    : `Order confirmed · ${number}`;
+  const body = `${paragraph(`Hi ${esc(name || (admin ? "team" : "there"))},`)}${paragraph(admin ? "A new customer order has been placed and is ready for your team to review." : "Thank you for choosing Natural Beauty. We have received your order and will keep you updated as it moves along.")}<div style="margin:24px 0;padding:20px;background:#edf1e8"><div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#55715b">Order number</div><div style="margin-top:5px;font-family:Georgia,serif;font-size:23px">${esc(number)}</div><div style="margin-top:12px;font-size:17px;font-weight:bold">Total: ${money(total)}</div></div>${button(admin ? "Open orders" : "View your order", `${admin ? process.env.ADMIN_URL || "http://localhost:5174" : process.env.STOREFRONT_URL || "http://localhost:5173"}/orders/${encodeURIComponent(number)}`)}`;
   return {
-    eventType: "order.confirmed",
+    eventType: admin ? "order.received" : "order.confirmed",
     to: recipient,
-    subject: `Order confirmed · ${order.orderNumber}`,
+    subject,
     referenceType: "order",
-    referenceId: order.orderNumber,
-    text: `Hi ${name || "there"}, your Natural Beauty order ${order.orderNumber} has been received. Total: ₹${total}.`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:600px;color:#24352b"><h1 style="font-family:Georgia,serif">Your order is confirmed</h1><p>Hi ${name || "there"},</p><p>We have received order <strong>${order.orderNumber}</strong>.</p><p style="font-size:20px">Total: <strong>₹${total}</strong></p><p>We will keep you updated as your ritual moves along.</p></div>`,
+    referenceId: number,
+    text: `Hi ${name || "there"}, order ${number} has been received. Total: ${plainMoney(total)}.`,
+    html: shell({
+      eyebrow: admin ? "Operations" : "Order confirmed",
+      title: admin ? "A new order has arrived" : "Your ritual is on its way",
+      preview: subject,
+      body,
+    }),
+  };
+}
+
+export function orderStatusEmail({ order, recipient, name, status, note }) {
+  const titles = {
+    confirmed: "Your order is confirmed",
+    processing: "We are preparing your order",
+    shipped: "Your order has shipped",
+    delivered: "Your order has arrived",
+    cancelled: "Your order has been cancelled",
+  };
+  const number = order.orderNumber || order.order_number;
+  const title = titles[status] || "Your order status was updated";
+  const body = `${paragraph(`Hi ${esc(name || "there")},`)}${paragraph(`The status of order <strong>${esc(number)}</strong> is now <strong>${esc(status)}</strong>.`)}${note ? paragraph(`Note from our team: ${esc(note)}`) : ""}${button("View order", `${process.env.STOREFRONT_URL || "http://localhost:5173"}/account/orders/${encodeURIComponent(number)}`)}`;
+  return {
+    eventType: `order.${status}`,
+    to: recipient,
+    subject: `${title} · ${number}`,
+    referenceType: "order",
+    referenceId: number,
+    text: `Order ${number} is now ${status}.`,
+    html: shell({
+      eyebrow: "Order update",
+      title,
+      preview: `Order ${number} is now ${status}.`,
+      body,
+    }),
+  };
+}
+
+export function contactReceivedEmail({ recipient, name }) {
+  const body = `${paragraph(`Hi ${esc(name || "there")},`)}${paragraph("Thanks for reaching out to Natural Beauty. Your message is with our care team, and we will reply as soon as possible during support hours.")}${button("Explore skincare", `${process.env.STOREFRONT_URL || "http://localhost:5173"}/shop`)}`;
+  return {
+    eventType: "contact.received",
+    to: recipient,
+    subject: "We received your message · Natural Beauty",
+    text: `Hi ${name || "there"}, we received your message and will be in touch soon.`,
+    html: shell({
+      eyebrow: "Customer care",
+      title: "Your note is with us",
+      preview: "We received your Natural Beauty message.",
+      body,
+    }),
+  };
+}
+
+export function contactAdminEmail({ submission }) {
+  const body = `${paragraph("A new customer enquiry has been submitted through the storefront.")}<div style="padding:20px;background:#edf1e8"><strong>${esc(submission.name)}</strong><br><a href="mailto:${esc(submission.email)}" style="color:#385941">${esc(submission.email)}</a><p style="margin:14px 0 0;color:#52665a">${esc(submission.message)}</p></div>${button("Open contact inbox", `${process.env.ADMIN_URL || "http://localhost:5174"}/contact`)}`;
+  return {
+    eventType: "contact.received.admin",
+    to: process.env.ADMIN_NOTIFICATION_EMAIL,
+    subject: `New customer enquiry · ${submission.name}`,
+    referenceType: "contact_submission",
+    referenceId: submission.id,
+    text: `New enquiry from ${submission.name} (${submission.email}): ${submission.message}`,
+    html: shell({
+      eyebrow: "Customer care",
+      title: "New enquiry received",
+      preview: `New enquiry from ${submission.name}`,
+      body,
+    }),
   };
 }
 
@@ -98,6 +186,29 @@ export async function sendTestEmail(recipient) {
     to: recipient,
     subject: "Natural Beauty SMTP test",
     text: "Your Natural Beauty SMTP configuration is working.",
-    html: "<p>Your Natural Beauty SMTP configuration is working.</p>",
+    html: shell({
+      eyebrow: "System check",
+      title: "Email delivery is connected",
+      preview: "Your Natural Beauty SMTP configuration is working.",
+      body: paragraph(
+        "This is a test message from your Natural Beauty admin settings. Your transactional email connection is ready for staging verification.",
+      ),
+    }),
   });
+}
+
+export function emailVerificationEmail({ recipient, code }) {
+  const body = `${paragraph("Use this one-time code to finish creating your Natural Beauty account:")}<div style="margin:24px 0;padding:18px;text-align:center;background:#edf1e8;font-family:Georgia,serif;font-size:34px;letter-spacing:8px;color:#385941"><strong>${esc(code)}</strong></div>${paragraph("This code expires in 10 minutes. If you did not create an account, you can safely ignore this email.")}`;
+  return {
+    eventType: "customer.email_verification",
+    to: recipient,
+    subject: "Verify your Natural Beauty email",
+    text: `Your Natural Beauty verification code is ${code}. It expires in 10 minutes.`,
+    html: shell({
+      eyebrow: "Welcome to Natural Beauty",
+      title: "Verify your email",
+      preview: "Your Natural Beauty verification code is ready.",
+      body,
+    }),
+  };
 }

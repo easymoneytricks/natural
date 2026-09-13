@@ -3,6 +3,7 @@ import { AuthError } from "./auth.service.js";
 import { quote } from "./checkoutPricing.service.js";
 import { earnForOrder } from "./reward.service.js";
 import { env } from "../config/env.js";
+import { getStoreMode } from "./storeSettings.service.js";
 
 const hash = (value) =>
   crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -21,6 +22,15 @@ const normalizeAddress = (a = {}) => ({
   countryCode: String(a.countryCode || "IN").toUpperCase(),
 });
 export async function placeCodOrder(pool, input = {}, customer) {
+  const storeMode = await getStoreMode(pool);
+  if (storeMode !== "open")
+    throw new AuthError(
+      503,
+      "STORE_NOT_ACCEPTING_ORDERS",
+      storeMode === "coming_soon"
+        ? "Our store is coming soon. Ordering will open shortly."
+        : "Ordering is temporarily paused. You can still browse our products.",
+    );
   if (!["cod", "online"].includes(input.paymentMethod))
     throw new AuthError(
       422,

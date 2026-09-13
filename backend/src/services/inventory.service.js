@@ -13,11 +13,31 @@ export async function adjustStock(
   sku,
   quantityChange,
   note = null,
+  idempotencyKey = null,
 ) {
   if (!Number.isInteger(quantityChange) || quantityChange === 0)
     throw new Error("Stock adjustment must be a non-zero integer.");
   await connection.beginTransaction();
   try {
+    if (idempotencyKey) {
+      const [existing] = await connection.execute(
+        `SELECT sku_id,quantity_before,quantity_after,quantity_change
+         FROM inventory_movements
+         WHERE idempotency_key=? AND movement_type='adjustment'
+         LIMIT 1`,
+        [idempotencyKey],
+      );
+      if (existing.length) {
+        await connection.commit();
+        return {
+          sku,
+          quantityBefore: existing[0].quantity_before,
+          quantityAfter: existing[0].quantity_after,
+          quantityChange: existing[0].quantity_change,
+          replayed: true,
+        };
+      }
+    }
     const [rows] = await connection.execute(
       `SELECT i.id, i.sku_id, i.quantity_on_hand, i.reserved_quantity
       FROM inventory i JOIN product_skus ps ON ps.id = i.sku_id WHERE ps.sku = ? FOR UPDATE`,
@@ -36,14 +56,15 @@ export async function adjustStock(
     );
     await connection.execute(
       `INSERT INTO inventory_movements
-      (sku_id, movement_type, quantity_change, quantity_before, quantity_after, note)
-      VALUES (?, 'adjustment', ?, ?, ?, ?)`,
+      (sku_id, movement_type, quantity_change, quantity_before, quantity_after, note, idempotency_key)
+      VALUES (?, 'adjustment', ?, ?, ?, ?, ?)`,
       [
         current.sku_id,
         quantityChange,
         current.quantity_on_hand,
         nextQuantity,
         note,
+        idempotencyKey,
       ],
     );
     await connection.commit();

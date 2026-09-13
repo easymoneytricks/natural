@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   LoaderCircle,
   PackageCheck,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "./main";
@@ -16,6 +17,10 @@ export function InventoryDetail() {
   const [actual, setActual] = useState("");
   const [reorderLevel, setReorderLevel] = useState("");
   const [reason, setReason] = useState("");
+  const [correctReason, setCorrectReason] = useState("");
+  const [movementType, setMovementType] = useState("all");
+  const [movementFrom, setMovementFrom] = useState("");
+  const [movementTo, setMovementTo] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -48,6 +53,7 @@ export function InventoryDetail() {
       setMessage(success);
       setChange("");
       setReason("");
+      setCorrectReason("");
       await load();
     } catch (caught) {
       setError(caught.message || "Inventory update failed.");
@@ -63,6 +69,17 @@ export function InventoryDetail() {
         {error}
       </div>
     );
+
+  const visibleMovements = data.movements.filter((movement) => {
+    const date = new Date(movement.created_at);
+    const from = movementFrom ? new Date(`${movementFrom}T00:00:00`) : null;
+    const to = movementTo ? new Date(`${movementTo}T23:59:59`) : null;
+    return (
+      (movementType === "all" || movement.movement_type === movementType) &&
+      (!from || date >= from) &&
+      (!to || date <= to)
+    );
+  });
 
   return (
     <div className="inventory-detail-page">
@@ -138,13 +155,23 @@ export function InventoryDetail() {
             </label>
             <button
               disabled={saving || !change || !reason}
-              onClick={() =>
+              onClick={() => {
+                if (
+                  !window.confirm(
+                    `Record ${Number(change) > 0 ? "+" : ""}${change} units? This will change available stock.`,
+                  )
+                )
+                  return;
                 save(
                   "/adjust",
-                  { quantityChange: Number(change), reason },
+                  {
+                    quantityChange: Number(change),
+                    reason,
+                    idempotencyKey: crypto.randomUUID(),
+                  },
                   "Stock adjusted successfully.",
-                )
-              }
+                );
+              }}
             >
               {saving && <LoaderCircle className="spin" size={16} />} Save
               adjustment
@@ -171,20 +198,26 @@ export function InventoryDetail() {
             <label>
               Reason
               <textarea
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
+                value={correctReason}
+                onChange={(event) => setCorrectReason(event.target.value)}
                 placeholder="Weekly stocktake"
               />
             </label>
             <button
-              disabled={saving || actual === "" || !reason}
-              onClick={() =>
+              disabled={saving || actual === "" || !correctReason}
+              onClick={() => {
+                if (!window.confirm(`Set on-hand quantity to ${actual} units?`))
+                  return;
                 save(
                   "/correct",
-                  { actualOnHand: Number(actual), reason },
+                  {
+                    actualOnHand: Number(actual),
+                    reason: correctReason,
+                    idempotencyKey: crypto.randomUUID(),
+                  },
                   "Physical count saved successfully.",
-                )
-              }
+                );
+              }}
             >
               Save count
             </button>
@@ -230,6 +263,38 @@ export function InventoryDetail() {
           </div>
           <span>Latest 50 movements</span>
         </div>
+        <div className="movement-filters">
+          <SlidersHorizontal size={16} />
+          <select
+            value={movementType}
+            onChange={(event) => setMovementType(event.target.value)}
+          >
+            <option value="all">All movement types</option>
+            <option value="initial">Initial</option>
+            <option value="adjustment">Adjustment</option>
+            <option value="sale">Sale</option>
+            <option value="return">Return</option>
+            <option value="reservation">Reservation</option>
+            <option value="release">Release</option>
+            <option value="cancellation">Cancellation</option>
+          </select>
+          <label>
+            From{" "}
+            <input
+              type="date"
+              value={movementFrom}
+              onChange={(event) => setMovementFrom(event.target.value)}
+            />
+          </label>
+          <label>
+            To{" "}
+            <input
+              type="date"
+              value={movementTo}
+              onChange={(event) => setMovementTo(event.target.value)}
+            />
+          </label>
+        </div>
         <div className="table-wrap">
           <table>
             <thead>
@@ -238,24 +303,29 @@ export function InventoryDetail() {
                 <th>Change</th>
                 <th>Before</th>
                 <th>After</th>
+                <th>Reserved</th>
                 <th>Note</th>
                 <th>Date</th>
               </tr>
             </thead>
             <tbody>
-              {!data.movements.length && (
+              {!visibleMovements.length && (
                 <tr>
-                  <td colSpan="6" className="empty-cell">
-                    No stock movements recorded yet.
+                  <td colSpan="7" className="empty-cell">
+                    No stock movements match these filters.
                   </td>
                 </tr>
               )}
-              {data.movements.map((movement) => (
+              {visibleMovements.map((movement) => (
                 <tr key={movement.id}>
                   <td>{movement.movement_type}</td>
                   <td>{movement.quantity_change}</td>
                   <td>{movement.quantity_before}</td>
                   <td>{movement.quantity_after}</td>
+                  <td>
+                    {movement.reserved_before ?? 0} →{" "}
+                    {movement.reserved_after ?? 0}
+                  </td>
                   <td>{movement.note || "—"}</td>
                   <td>{new Date(movement.created_at).toLocaleString()}</td>
                 </tr>

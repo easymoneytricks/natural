@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import { AnnouncementBar } from "./components/layout/AnnouncementBar";
+import { StoreAvailabilityNotice } from "./components/layout/StoreAvailabilityNotice";
 import { Header } from "./components/layout/Header";
 import { SearchOverlay } from "./components/search/SearchOverlay";
 import { CartDrawer } from "./components/cart/CartDrawer";
@@ -20,6 +21,7 @@ import {
   Register,
   ForgotPassword,
   ResetPassword,
+  VerifyEmail,
 } from "./pages/AuthPages";
 import { AccountOverview, Rewards, GiftCards } from "./pages/AccountDashboard";
 import {
@@ -82,6 +84,7 @@ export default function App() {
         onCart={() => setCartOpen(true)}
         onMenu={() => setMenuOpen(true)}
       />
+      <StoreAvailabilityNotice />
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -98,6 +101,7 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/account" element={<AccountOverview />} />
           <Route path="/account/orders" element={<CustomerOrders />} />
           <Route

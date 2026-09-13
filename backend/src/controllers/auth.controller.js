@@ -7,8 +7,12 @@ import {
   revokeAllSessions,
   revokeSession,
   publicCustomer,
+  verifyCustomerEmail,
+  createCustomerEmailVerification,
 } from "../services/auth.service.js";
+import { emailVerificationEmail, sendEmail } from "../services/mail.service.js";
 import { refreshCookieOptions } from "../utils/tokens.js";
+import { verifyRecaptcha } from "../services/recaptcha.service.js";
 
 const setRefreshCookie = (res, token) =>
   res.cookie(env.auth.refreshCookieName, token, refreshCookieOptions());
@@ -20,10 +24,54 @@ const clearRefreshCookie = (res) =>
 
 export async function register(req, res, next) {
   try {
+    await verifyRecaptcha(pool, req.body?.recaptchaToken, req, "signup");
     const result = await registerCustomer(pool, req.body, req);
+    await sendEmail(
+      emailVerificationEmail({
+        recipient: result.verification.email,
+        code: result.verification.code,
+      }),
+    );
+    res.status(202).json({
+      data: { customer: result.customer, verificationRequired: true },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function verifyEmail(req, res, next) {
+  try {
+    const result = await verifyCustomerEmail(pool, req.body, req);
     setRefreshCookie(res, result.rawToken);
-    res.status(201).json({
-      data: { accessToken: result.accessToken, customer: result.customer },
+    res.json({
+      data: {
+        accessToken: result.accessToken,
+        customer: result.customer,
+        verified: true,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function resendVerification(req, res, next) {
+  try {
+    const result = await createCustomerEmailVerification(pool, req.body?.email);
+    if (result)
+      await sendEmail(
+        emailVerificationEmail({
+          recipient: result.email,
+          code: result.code,
+        }),
+      );
+    res.status(202).json({
+      data: {
+        accepted: true,
+        message:
+          "If that account needs verification, a new code has been sent.",
+      },
     });
   } catch (error) {
     next(error);
