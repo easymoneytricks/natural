@@ -1,8 +1,16 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
 import multer from "multer";
-const root = path.resolve(process.cwd(), "storage", "uploads");
+import { env } from "../config/env.js";
+const backendRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../..",
+);
+const root = path.resolve(
+  env.media.root || path.resolve(backendRoot, "storage", "uploads"),
+);
 export const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
@@ -25,7 +33,7 @@ export async function saveUpload(file, area) {
 }
 export async function removeManagedFile(relativePath) {
   if (!relativePath || !relativePath.startsWith("uploads/")) return;
-  const target = path.resolve(process.cwd(), "storage", relativePath);
+  const target = path.resolve(root, relativePath.replace(/^uploads[\\/]/, ""));
   if (!target.startsWith(root)) return;
   try {
     await fs.unlink(target);

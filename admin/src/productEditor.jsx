@@ -16,6 +16,14 @@ const imageUrl = (path) =>
       ? path
       : `${API_ROOT}/${path.replace(/^\//, "")}`
     : "";
+const slugify = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 190);
 
 const emptyProduct = {
   name: "",
@@ -101,6 +109,7 @@ export function ProductEditor() {
   const [deleted, setDeleted] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [slugTouched, setSlugTouched] = useState(Boolean(id));
   const canManage = admin?.effectivePermissions?.includes("catalog.manage");
   const canViewInventory =
     admin?.effectivePermissions?.includes("inventory.view");
@@ -164,6 +173,7 @@ export function ProductEditor() {
     setLoading(true);
     setEditingSkuId(null);
     setSku(emptySku);
+    setSlugTouched(Boolean(id));
     load()
       .catch(() => setError("Unable to load product."))
       .finally(() => setLoading(false));
@@ -309,8 +319,8 @@ export function ProductEditor() {
 
   if (loading) return <div className="loading">Loading product editor…</div>;
   return (
-    <div>
-      <div className="page-head">
+    <div className="product-editor-page">
+      <div className="page-head product-page-head">
         <div>
           <h1>{id ? "Edit product" : "New product"}</h1>
           <p>
@@ -356,7 +366,7 @@ export function ProductEditor() {
           onClose={() => setConfirmation(null)}
         />
       )}
-      <form onSubmit={saveProduct}>
+      <form className="product-editor-form" onSubmit={saveProduct}>
         <fieldset
           disabled={busy || deleted || !canManage}
           className="product-fields"
@@ -378,14 +388,32 @@ export function ProductEditor() {
               <input
                 required
                 value={form.name}
-                onChange={(event) => updateForm("name", event.target.value)}
+                onChange={(event) => {
+                  const name = event.target.value;
+                  setForm((current) => ({
+                    ...current,
+                    name,
+                    ...(!slugTouched ? { slug: slugify(name) } : {}),
+                  }));
+                }}
               />
             </label>
             <label>
               Slug
               <input
                 value={form.slug}
-                onChange={(event) => updateForm("slug", event.target.value)}
+                onChange={(event) => {
+                  const slug = event.target.value;
+                  setSlugTouched(Boolean(slug.trim()));
+                  updateForm("slug", slug);
+                }}
+                onBlur={() => {
+                  if (!form.slug.trim()) {
+                    setSlugTouched(false);
+                    updateForm("slug", slugify(form.name));
+                  }
+                }}
+                placeholder="auto-generated from product name"
               />
             </label>
             <label>

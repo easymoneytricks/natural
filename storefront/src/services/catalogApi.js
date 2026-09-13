@@ -1,11 +1,8 @@
 import { apiRequest, mediaUrl } from "../lib/api";
-import { products as demoProducts } from "../data/products";
 
-const normalizeImage = (image, slug) => {
-  const fallback =
-    demoProducts.find((product) => product.slug === slug)?.image || null;
-  if (!image?.src) return fallback;
-  return image.src.startsWith("/uploads/") ? fallback : mediaUrl(image.src);
+const normalizeImage = (image) => {
+  if (!image?.src) return null;
+  return image.src.startsWith("/uploads/") ? mediaUrl(image.src) : image.src;
 };
 const normalizeListItem = (item) => ({
   ...item,

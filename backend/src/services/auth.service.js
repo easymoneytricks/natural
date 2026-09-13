@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { env } from "../config/env.js";
 import { hashPassword, comparePassword } from "../utils/password.js";
 import {
@@ -17,6 +18,11 @@ export class AuthError extends Error {
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,128}$/;
 const phonePattern = /^\d{10}$/;
+const verificationTtlMinutes = 10;
+const verificationHash = (code) =>
+  crypto.createHash("sha256").update(String(code)).digest("hex");
+const createVerificationCode = () =>
+  String(crypto.randomInt(0, 1000000)).padStart(6, "0");
 
 export function normalizeRegistration(input = {}) {
   const firstName = String(input.firstName || "").trim();
@@ -116,9 +122,25 @@ export async function registerCustomer(pool, input, req) {
       "SELECT * FROM customers WHERE id = ?",
       [result.insertId],
     );
-    const session = await createSession(connection, result.insertId, req);
+    const verificationCode = createVerificationCode();
+    await connection.execute(
+      "INSERT INTO customer_email_verifications (customer_id,code_hash,expires_at) VALUES (?,?,DATE_ADD(NOW(), INTERVAL ? MINUTE))",
+      [
+        result.insertId,
+        verificationHash(verificationCode),
+        verificationTtlMinutes,
+      ],
+    );
     await connection.commit();
-    return { customer: publicCustomer(rows[0]), ...session };
+    return {
+      customer: publicCustomer(rows[0]),
+      verificationRequired: true,
+      verification: {
+        customerId: result.insertId,
+        email: data.email,
+        code: verificationCode,
+      },
+    };
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -147,6 +169,12 @@ export async function loginCustomer(pool, input, req) {
       401,
       "INVALID_CREDENTIALS",
       "Invalid email or password.",
+    );
+  if (!rows[0].email_verified_at)
+    throw new AuthError(
+      403,
+      "EMAIL_NOT_VERIFIED",
+      "Please verify your email address before signing in.",
     );
   const connection = await pool.getConnection();
   try {
@@ -224,6 +252,95 @@ export async function revokeAllSessions(pool, customerId) {
     "UPDATE customer_sessions SET revoked_at = COALESCE(revoked_at, NOW()) WHERE customer_id = ? AND revoked_at IS NULL",
     [customerId],
   );
+}
+
+export async function verifyCustomerEmail(pool, input, req) {
+  const email = String(input?.email || "").trim().toLowerCase();
+  const code = String(input?.code || "").trim();
+  if (!emailPattern.test(email) || !/^\d{6}$/.test(code))
+    throw new AuthError(400, "INVALID_EMAIL_OTP", "Enter the 6-digit code sent to your email.");
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [[customer]] = await connection.execute(
+      "SELECT * FROM customers WHERE email=? AND deleted_at IS NULL LIMIT 1 FOR UPDATE",
+      [email],
+    );
+    if (!customer)
+      throw new AuthError(400, "INVALID_EMAIL_OTP", "The verification code is invalid or expired.");
+    if (customer.email_verified_at) {
+      const session = await createSession(connection, customer.id, req);
+      await connection.commit();
+      return { customer: publicCustomer(customer), ...session };
+    }
+    const [[verification]] = await connection.execute(
+      "SELECT * FROM customer_email_verifications WHERE customer_id=? AND consumed_at IS NULL ORDER BY created_at DESC,id DESC LIMIT 1 FOR UPDATE",
+      [customer.id],
+    );
+    if (!verification || new Date(verification.expires_at) <= new Date())
+      throw new AuthError(400, "INVALID_EMAIL_OTP", "The verification code is invalid or expired.");
+    if (verification.attempts >= 5) {
+      throw new AuthError(429, "EMAIL_OTP_ATTEMPTS_EXCEEDED", "Too many incorrect codes. Request a new code.");
+    }
+    if (verificationHash(code) !== verification.code_hash) {
+      await connection.execute(
+        "UPDATE customer_email_verifications SET attempts=attempts+1 WHERE id=?",
+        [verification.id],
+      );
+      throw new AuthError(400, "INVALID_EMAIL_OTP", "The verification code is invalid or expired.");
+    }
+    await connection.execute(
+      "UPDATE customers SET email_verified_at=NOW() WHERE id=?",
+      [customer.id],
+    );
+    await connection.execute(
+      "UPDATE customer_email_verifications SET consumed_at=NOW() WHERE id=?",
+      [verification.id],
+    );
+    const session = await createSession(connection, customer.id, req);
+    await connection.commit();
+    return {
+      customer: publicCustomer({ ...customer, email_verified_at: new Date() }),
+      ...session,
+    };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+export async function createCustomerEmailVerification(pool, email) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [[customer]] = await connection.execute(
+      "SELECT id,email,email_verified_at FROM customers WHERE email=? AND deleted_at IS NULL LIMIT 1 FOR UPDATE",
+      [normalizedEmail],
+    );
+    if (!customer || customer.email_verified_at) {
+      await connection.commit();
+      return null;
+    }
+    const code = createVerificationCode();
+    await connection.execute(
+      "UPDATE customer_email_verifications SET consumed_at=NOW() WHERE customer_id=? AND consumed_at IS NULL",
+      [customer.id],
+    );
+    await connection.execute(
+      "INSERT INTO customer_email_verifications (customer_id,code_hash,expires_at) VALUES (?,?,DATE_ADD(NOW(), INTERVAL ? MINUTE))",
+      [customer.id, verificationHash(code), verificationTtlMinutes],
+    );
+    await connection.commit();
+    return { customerId: customer.id, email: customer.email, code };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 export async function getActiveCustomer(pool, customerId) {

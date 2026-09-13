@@ -6,7 +6,7 @@
 }
 .wishlist-header h1,
 .wishlist-empty h1 {
-  font: clamp(45px, 6vw, 78px)/1.05 var(--serif);
+  font: var(--display-xl) / 1.05 var(--serif);
   letter-spacing: -0.045em;
   margin: 0;
 }
@@ -44,9 +44,13 @@
 }
 .wishlist-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 900px;
   gap: 38px 18px;
   padding: 35px 0 85px;
+}
+.wishlist-grid .product-image-wrap {
+  aspect-ratio: 1;
 }
 .wishlist-empty {
   padding: clamp(100px, 16vh, 190px) 0;
@@ -88,7 +92,7 @@
   }
   .wishlist-header h1,
   .wishlist-empty h1 {
-    font-size: 48px;
+    font-size: var(--display-xl);
   }
   .confirm-clear {
     flex-wrap: wrap;

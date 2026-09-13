@@ -182,3 +182,61 @@
     border-right-color: var(--border);
   }
 }
+/* CMS pages */
+.cms-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 72px 32px 96px;
+}
+.cms-page-header {
+  max-width: 760px;
+  padding-bottom: 42px;
+  border-bottom: 1px solid var(--line, #dfe4dc);
+}
+.cms-page-header h1 {
+  margin: 14px 0 16px;
+  font-size: clamp(42px, 6vw, 76px);
+  line-height: 0.98;
+}
+.cms-page-header p {
+  max-width: 640px;
+  margin: 0;
+  color: #5e7168;
+  font-size: 18px;
+  line-height: 1.6;
+}
+.cms-page-content {
+  max-width: 760px;
+  padding-top: 12px;
+}
+.cms-page-content section {
+  padding: 28px 0;
+  border-bottom: 1px solid var(--line, #dfe4dc);
+}
+.cms-page-content h2 {
+  margin: 0 0 10px;
+  font:
+    28px Georgia,
+    serif;
+  color: #233229;
+}
+.cms-page-content p {
+  margin: 0;
+  color: #5e7168;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+.cms-state {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 100px 32px;
+  color: #5e7168;
+}
+@media (max-width: 640px) {
+  .cms-page {
+    padding: 48px 20px 68px;
+  }
+  .cms-page-header h1 {
+    font-size: 46px;
+  }
+}

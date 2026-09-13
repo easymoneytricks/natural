@@ -4,9 +4,30 @@ import {
   getOrder,
   placeCodOrder,
 } from "../services/order.service.js";
+import { orderEmail, sendEmail } from "../services/mail.service.js";
 export async function createOrder(req, res, next) {
   try {
     const order = await placeCodOrder(pool, req.body, req.customer);
+    const customerEmail = req.body?.contact?.email || order.customerEmail;
+    const customerName = req.body?.shippingAddress?.firstName;
+    Promise.allSettled([
+      customerEmail
+        ? sendEmail(
+            orderEmail({ order, recipient: customerEmail, name: customerName }),
+          )
+        : Promise.resolve(),
+      process.env.ADMIN_NOTIFICATION_EMAIL
+        ? sendEmail({
+            ...orderEmail({
+              order,
+              recipient: process.env.ADMIN_NOTIFICATION_EMAIL,
+              name: "team",
+            }),
+            eventType: "order.received",
+            subject: `New order received · ${order.orderNumber}`,
+          })
+        : Promise.resolve(),
+    ]).catch(() => {});
     res.status(201).json({ data: { order } });
   } catch (e) {
     next(e);

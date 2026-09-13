@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Minus, Plus, X, Trash2, ShoppingBag } from "lucide-react";
 import { useFocusTrap } from "../ui/useFocusTrap";
 import { useCart } from "../../context/CartContext";
@@ -7,12 +8,17 @@ const formatPrice = (value) => `₹${value.toLocaleString("en-IN")}`;
 
 export function CartDrawer({ open, onClose }) {
   const ref = useRef(null);
+  const navigate = useNavigate();
   const { items, count, updateQuantity, removeItem } = useCart();
   useFocusTrap(ref, open, onClose);
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
+  const goTo = (path) => {
+    onClose();
+    navigate(path);
+  };
   return (
     <div
       className={`overlay cart-overlay ${open ? "is-open" : ""}`}
@@ -111,10 +117,13 @@ export function CartDrawer({ open, onClose }) {
             <b>{formatPrice(subtotal)}</b>
           </div>
           <p>Taxes and shipping calculated at checkout.</p>
-          <button className="button button-secondary" onClick={onClose}>
+          <button
+            className="button button-secondary"
+            onClick={() => goTo("/cart")}
+          >
             View Bag
           </button>
-          <button className="button" onClick={onClose}>
+          <button className="button" onClick={() => goTo("/checkout")}>
             Checkout
           </button>
         </footer>

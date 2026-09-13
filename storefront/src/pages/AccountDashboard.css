@@ -1,5 +1,5 @@
 .account-title {
-  font: 42px var(--serif);
+  font: clamp(28px, 2.6vw, 36px) / 1.12 var(--serif);
   margin: 0 0 12px;
 }
 .account-muted {
@@ -22,6 +22,41 @@
   gap: 18px;
   align-items: center;
   margin: 30px 0;
+}
+.order-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+.order-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 22px;
+  align-items: center;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  background: #fbfaf6;
+}
+.order-row strong {
+  display: block;
+  font: 22px var(--serif);
+}
+.order-row span,
+.order-row small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 5px;
+}
+.order-row > b {
+  font: 20px var(--serif);
+}
+.order-row > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--sage-dark);
+  font-size: 11px;
 }
 .latest-order h3 {
   font: 23px var(--serif);

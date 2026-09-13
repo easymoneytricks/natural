@@ -13,12 +13,10 @@ import {
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ProductCard } from "../components/product/ProductCard";
 import { useCart } from "../context/CartContext";
-import { products, newArrivals } from "../data/products";
-import { getProductBySlug } from "../services/catalogApi";
+import { getProductBySlug, getProducts } from "../services/catalogApi";
 import { useCompare, useWishlist } from "../context/PreferenceContext";
 import "./ProductDetail.css";
 
-const catalog = [...products, ...newArrivals];
 const money = (value) => `₹${value.toLocaleString("en-IN")}`;
 const slugify = (value) => value.toUpperCase().replace(/[^A-Z0-9]+/g, "-");
 
@@ -120,7 +118,8 @@ export function ProductDetail() {
   const [pin, setPin] = useState("");
   const [delivery, setDelivery] = useState(null);
   const [openInfo, setOpenInfo] = useState("Description");
-  const [recent, setRecent] = useState([]);
+  const [recentProducts, setRecentProducts] = useState([]);
+  const [related, setRelated] = useState([]);
 
   useEffect(() => {
     if (!product) return;
@@ -128,11 +127,36 @@ export function ProductDetail() {
       localStorage.getItem("natural-beauty-recent") || "[]",
     ).filter((item) => item !== product.slug);
     // oxlint-disable-next-line react/set-state-in-effect
-    setRecent(previous.slice(0, 4));
     localStorage.setItem(
       "natural-beauty-recent",
       JSON.stringify([product.slug, ...previous].slice(0, 5)),
     );
+    Promise.all(
+      previous
+        .slice(0, 4)
+        .map((item) => getProductBySlug(item).catch(() => null)),
+    ).then((items) => setRecentProducts(items.filter(Boolean)));
+  }, [product]);
+
+  useEffect(() => {
+    if (!product) return undefined;
+    let active = true;
+    getProducts({ category: product.categorySlug, limit: 4 })
+      .then((result) => {
+        if (active) {
+          setRelated(
+            result.data
+              .filter((item) => item.slug !== product.slug)
+              .slice(0, 4),
+          );
+        }
+      })
+      .catch(() => {
+        if (active) setRelated([]);
+      });
+    return () => {
+      active = false;
+    };
   }, [product]);
 
   useEffect(() => {
@@ -248,19 +272,6 @@ export function ProductDetail() {
       image: selectedVariant.image,
     });
   };
-  const related = catalog
-    .filter(
-      (item) =>
-        item.slug !== product.slug &&
-        [
-          "gentle-barrier-cleanser",
-          "hyaluronic-water-gel",
-          "daily-defence-spf-50",
-          "cica-recovery-gel",
-        ].includes(item.slug),
-    )
-    .slice(0, 4);
-
   return (
     <>
       <main className="product-detail container">
@@ -451,9 +462,7 @@ export function ProductDetail() {
                 </small>
               )}
               {delivery === false && (
-                <small className="error">
-                  Enter a valid 6-digit demo PIN code.
-                </small>
+                <small className="error">Enter a valid 6-digit PIN code.</small>
               )}
             </div>
           </section>
@@ -544,13 +553,8 @@ export function ProductDetail() {
         </section>
         <Reviews product={product} />
         <ProductRail title="Pair it with" items={related} />
-        {recent.length > 0 && (
-          <ProductRail
-            title="Recently viewed"
-            items={recent
-              .map((item) => catalog.find((entry) => entry.slug === item))
-              .filter(Boolean)}
-          />
+        {recentProducts.length > 0 && (
+          <ProductRail title="Recently viewed" items={recentProducts} />
         )}
       </main>
       {viewerOpen && (

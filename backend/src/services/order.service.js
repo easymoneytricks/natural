@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { AuthError } from "./auth.service.js";
 import { quote } from "./checkoutPricing.service.js";
 import { earnForOrder } from "./reward.service.js";
+import { env } from "../config/env.js";
 
 const hash = (value) =>
   crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -20,9 +21,15 @@ const normalizeAddress = (a = {}) => ({
   countryCode: String(a.countryCode || "IN").toUpperCase(),
 });
 export async function placeCodOrder(pool, input = {}, customer) {
-  if (input.paymentMethod !== "cod")
+  if (!["cod", "online"].includes(input.paymentMethod))
     throw new AuthError(
       422,
+      "ONLINE_PAYMENT_NOT_AVAILABLE_YET",
+      "Online payment is not available yet.",
+    );
+  if (input.paymentMethod === "online" && !env.cashfree.enabled)
+    throw new AuthError(
+      503,
       "ONLINE_PAYMENT_NOT_AVAILABLE_YET",
       "Online payment is not available yet.",
     );
@@ -141,8 +148,8 @@ export async function placeCodOrder(pool, input = {}, customer) {
         customer?.id || null,
         input.contact?.email || customer?.email || "",
         input.contact?.phone || address.phone,
-        "confirmed",
-        "cod",
+        input.paymentMethod === "online" ? "pending" : "confirmed",
+        input.paymentMethod,
         p.payableTotal === 0 ? "paid" : "pending",
         p.subtotal,
         p.mrpTotal,
@@ -200,9 +207,11 @@ export async function placeCodOrder(pool, input = {}, customer) {
         address.countryCode,
       ],
     );
+    const initialStatus =
+      input.paymentMethod === "online" ? "pending" : "confirmed";
     await connection.execute(
-      'INSERT INTO order_status_history (order_id,status,note) VALUES (?,"confirmed","Order placed successfully.")',
-      [orderId],
+      "INSERT INTO order_status_history (order_id,status,note) VALUES (?,?,?)",
+      [orderId, initialStatus, "Order placed successfully."],
     );
     for (const { row, item } of inventoryRows) {
       await connection.execute(
@@ -210,22 +219,46 @@ export async function placeCodOrder(pool, input = {}, customer) {
         [item.quantity, row.id],
       );
       await connection.execute(
-        'INSERT INTO inventory_movements (sku_id,movement_type,quantity_change,quantity_before,quantity_after,reserved_before,reserved_after,note) VALUES (?,"reservation",0,?,?,?, ?,"COD order reservation")',
+        'INSERT INTO inventory_movements (sku_id,movement_type,quantity_change,quantity_before,quantity_after,reserved_before,reserved_after,note) VALUES (?,"reservation",0,?,?,?, ?,?)',
         [
           row.sku_id,
           row.quantity_on_hand,
           row.quantity_on_hand,
           row.reserved_quantity,
           row.reserved_quantity + item.quantity,
+          input.paymentMethod === "online"
+            ? "Online payment reservation"
+            : "COD order reservation",
         ],
       );
     }
     if (p.coupon?.code) {
       const [rows] = await connection.execute(
-        "SELECT id FROM coupons WHERE code=? FOR UPDATE",
+        "SELECT id,usage_count,usage_limit_total,usage_limit_per_customer FROM coupons WHERE code=? FOR UPDATE",
         [p.coupon.code],
       );
       if (rows[0]) {
+        if (
+          rows[0].usage_limit_total !== null &&
+          rows[0].usage_count >= rows[0].usage_limit_total
+        )
+          throw new AuthError(
+            409,
+            "COUPON_USAGE_LIMIT_REACHED",
+            "This coupon has reached its usage limit.",
+          );
+        if (customer?.id && rows[0].usage_limit_per_customer !== null) {
+          const [[usage]] = await connection.execute(
+            "SELECT COUNT(*) AS count FROM coupon_redemptions WHERE coupon_id=? AND customer_id=?",
+            [rows[0].id, customer.id],
+          );
+          if (usage.count >= rows[0].usage_limit_per_customer)
+            throw new AuthError(
+              409,
+              "COUPON_USAGE_LIMIT_REACHED",
+              "You have already used this coupon the maximum number of times.",
+            );
+        }
         await connection.execute(
           "UPDATE coupons SET usage_count=usage_count+1 WHERE id=?",
           [rows[0].id],
@@ -265,6 +298,19 @@ export async function placeCodOrder(pool, input = {}, customer) {
     return getOrder(pool, orderId, customer?.id);
   } catch (error) {
     await connection.rollback();
+    if (
+      error?.code === "ER_DUP_ENTRY" &&
+      String(error.sqlMessage || error.message).includes(
+        "uq_orders_idempotency",
+      )
+    ) {
+      const [[duplicate]] = await pool.execute(
+        "SELECT id,request_fingerprint FROM orders WHERE idempotency_key=? LIMIT 1",
+        [input.idempotencyKey],
+      );
+      if (duplicate?.request_fingerprint === fingerprint)
+        return getOrder(pool, duplicate.id, customer?.id);
+    }
     throw error;
   } finally {
     connection.release();
@@ -335,10 +381,12 @@ export async function releaseOrderReservations(
   pool,
   orderId,
   reason = "Order reservation released",
+  existingConnection = null,
 ) {
-  const connection = await pool.getConnection();
+  const connection = existingConnection || (await pool.getConnection());
+  const ownsTransaction = !existingConnection;
   try {
-    await connection.beginTransaction();
+    if (ownsTransaction) await connection.beginTransaction();
     const [rows] = await connection.execute(
       "SELECT oi.sku_id,oi.quantity,i.id,i.quantity_on_hand,i.reserved_quantity FROM order_items oi JOIN inventory i ON i.sku_id=oi.sku_id WHERE oi.order_id=? FOR UPDATE",
       [orderId],
@@ -363,11 +411,11 @@ export async function releaseOrderReservations(
         );
       }
     }
-    await connection.commit();
+    if (ownsTransaction) await connection.commit();
   } catch (e) {
-    await connection.rollback();
+    if (ownsTransaction) await connection.rollback();
     throw e;
   } finally {
-    connection.release();
+    if (ownsTransaction) connection.release();
   }
 }

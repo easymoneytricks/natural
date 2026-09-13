@@ -6,7 +6,7 @@
 }
 .cart-header h1,
 .cart-empty-page h1 {
-  font: clamp(42px, 6vw, 76px)/1.05 var(--serif);
+  font: var(--display-xl) / 1.05 var(--serif);
   letter-spacing: -0.045em;
   margin: 0;
 }
@@ -316,7 +316,7 @@
   }
   .cart-header h1,
   .cart-empty-page h1 {
-    font-size: 47px;
+    font-size: var(--display-xl);
   }
   .shipping-progress {
     margin-bottom: 24px;

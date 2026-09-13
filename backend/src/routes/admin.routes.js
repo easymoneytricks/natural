@@ -13,6 +13,7 @@ import {
   requireAdminPermission,
 } from "../middleware/adminAuth.js";
 import { pool } from "../config/database.js";
+import * as auditService from "../services/adminAudit.service.js";
 const router = Router();
 router.use(cookieParser());
 const limit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20 });
@@ -27,10 +28,19 @@ router.get(
   requireAdminPermission("audit.view"),
   async (req, res, next) => {
     try {
-      const [rows] = await pool.execute(
-        "SELECT action,entity_type,entity_id,created_at FROM admin_audit_logs ORDER BY created_at DESC LIMIT 100",
-      );
-      res.json({ data: rows });
+      res.json({ data: await auditService.list(pool, req.query) });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+router.get(
+  "/audit-logs/filters",
+  requireAdminAuth,
+  requireAdminPermission("audit.view"),
+  async (req, res, next) => {
+    try {
+      res.json({ data: await auditService.filters(pool) });
     } catch (e) {
       next(e);
     }

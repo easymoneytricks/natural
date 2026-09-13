@@ -1,17 +1,27 @@
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useCompare } from "../../context/PreferenceContext";
-import { products, newArrivals } from "../../data/products";
+import { getProductBySlug } from "../../services/catalogApi";
 import "./CompareTray.css";
-
-const catalog = [...products, ...newArrivals];
 
 export function CompareTray() {
   const compare = useCompare();
   const location = useLocation();
-  const selected = compare.items
-    .map((entry) => catalog.find((product) => product.slug === entry.slug))
-    .filter(Boolean);
+  const [selected, setSelected] = useState([]);
+  useEffect(() => {
+    let active = true;
+    Promise.all(
+      compare.items
+        .filter((entry) => entry.slug)
+        .map((entry) => getProductBySlug(entry.slug).catch(() => null)),
+    ).then((products) => {
+      if (active) setSelected(products.filter(Boolean));
+    });
+    return () => {
+      active = false;
+    };
+  }, [compare.items]);
   if (
     !selected.length ||
     [

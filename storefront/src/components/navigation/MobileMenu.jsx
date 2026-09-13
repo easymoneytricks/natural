@@ -42,7 +42,11 @@ export function MobileMenu({ open, onClose }) {
       >
         <header>
           <Link to="/" onClick={onClose} className="wordmark">
-            Natural Beauty
+            <img
+              className="brand-logo"
+              src="https://www.svgrepo.com/show/42722/skincare.svg"
+              alt="Natural Beauty logo"
+            />
           </Link>
           <button
             className="close-button"

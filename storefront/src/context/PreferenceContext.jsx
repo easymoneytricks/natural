@@ -1,18 +1,9 @@
 /* oxlint-disable react/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { products, newArrivals } from "../data/products";
 import { useAuth } from "./AuthContext";
 import * as commerceApi from "../services/cartApi";
 
-const validSlugs = new Set(
-  [...products, ...newArrivals].map((product) => product.slug),
-);
-const catalog = [...products, ...newArrivals];
-const decorateWishlist = (lines) =>
-  lines.map((line) => {
-    const match = catalog.find((product) => product.slug === line.slug);
-    return { ...match, ...line, image: line.image || match?.image };
-  });
+const decorateWishlist = (lines) => lines;
 
 function read(key) {
   try {
@@ -29,9 +20,7 @@ const CompareContext = createContext(null);
 export function WishlistProvider({ children }) {
   const { authStatus, authFetch } = useAuth();
   const [guestItems, setGuestItems] = useState(() =>
-    read("natural-beauty-wishlist").filter(
-      (item) => item && validSlugs.has(item.slug),
-    ),
+    read("natural-beauty-wishlist"),
   );
   const [items, setItems] = useState(guestItems);
   const [serverMode, setServerMode] = useState(false);
@@ -132,11 +121,7 @@ export function useWishlist() {
 }
 
 export function CompareProvider({ children }) {
-  const [items, setItems] = useState(() =>
-    read("natural-beauty-compare").filter(
-      (item) => item && validSlugs.has(item.slug),
-    ),
-  );
+  const [items, setItems] = useState(() => read("natural-beauty-compare"));
   const [message, setMessage] = useState("");
   useEffect(() => {
     try {

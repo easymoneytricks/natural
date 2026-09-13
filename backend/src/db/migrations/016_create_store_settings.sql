@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS store_settings (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  setting_group VARCHAR(50) NOT NULL,
+  setting_key VARCHAR(100) NOT NULL,
+  value_json JSON NOT NULL,
+  is_public TINYINT(1) NOT NULL DEFAULT 1,
+  updated_by BIGINT UNSIGNED NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY(id), UNIQUE KEY uq_store_setting(setting_group,setting_key),
+  CONSTRAINT fk_store_setting_admin FOREIGN KEY(updated_by) REFERENCES admin_users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

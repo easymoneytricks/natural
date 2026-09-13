@@ -17,6 +17,16 @@ import {
   Layers,
   Warehouse,
   Leaf,
+  Images,
+  ShoppingBag,
+  UserCog,
+  ShieldCheck,
+  KeyRound,
+  ClipboardList,
+  MessageSquare,
+  Settings2,
+  BarChart3,
+  FileText,
 } from "lucide-react";
 import { BrandsPage, CategoriesPage, ProductsPage } from "./catalog";
 import { CustomersPage } from "./customer";
@@ -24,6 +34,14 @@ import { PromotionsPage } from "./promotions";
 import { ProductEditor } from "./productEditor";
 import { InventoryDetail } from "./inventory";
 import { InventoryPage as InventoryManagementPage } from "./inventoryPage";
+import { MediaLibrary } from "./mediaLibrary";
+import { OrdersPage } from "./orders";
+import { RolePermissionsPage, RolesPage, UsersPage } from "./staff";
+import { AuditPage } from "./audit";
+import { ContactSubmissionsPage } from "./contactSubmissions";
+import { ReportsPage, SystemPage } from "./systemReports";
+import { SettingsPage } from "./settings";
+import { PagesPage } from "./pages";
 import "./styles.css";
 import "./workspace.css";
 const API = (
@@ -154,11 +172,22 @@ function Login() {
 const nav = [
   ["Dashboard", "/dashboard", LayoutDashboard, "dashboard.view"],
   ["Products", "/catalog/products", Package, "catalog.view"],
-  ["Brands", "/catalog/brands", Leaf, "catalog.view"],
-  ["Categories", "/catalog/categories", Layers, "catalog.view"],
-  ["Customers", "/customers", Users, "customers.view"],
-  ["Promotions", "/promotions", Tags, "promotions.view"],
   ["Inventory", "/inventory", Warehouse, "inventory.view"],
+  ["Categories", "/catalog/categories", Layers, "catalog.view"],
+  ["Brands", "/catalog/brands", Leaf, "catalog.view"],
+  ["Orders", "/orders", ShoppingBag, "orders.view"],
+  ["Customers", "/customers", Users, "customers.view"],
+  ["Contact", "/contact", MessageSquare, "customers.view"],
+  ["Promotions", "/promotions", Tags, "promotions.view"],
+  ["Media library", "/media", Images, "catalog.view"],
+  ["Reports", "/reports", BarChart3, "dashboard.view"],
+  ["Pages", "/pages", FileText, "content.view"],
+  ["Users", "/staff/users", UserCog, "staff.view"],
+  ["Roles", "/staff/roles", ShieldCheck, "staff.view"],
+  ["Role permissions", "/staff/permissions", KeyRound, "staff.view"],
+  ["Settings", "/settings", Settings2, "settings.view"],
+  ["Audit log", "/audit-logs", ClipboardList, "audit.view"],
+  ["System", "/system", Settings2, "settings.view"],
 ];
 function Shell({ children }) {
   const { admin, logout } = useAuth();
@@ -305,6 +334,86 @@ function App() {
         }
       />
       <Route
+        path="/settings"
+        element={
+          <Protected permission="settings.view">
+            <SettingsPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/pages"
+        element={
+          <Protected permission="content.view">
+            <PagesPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/system"
+        element={
+          <Protected permission="settings.view">
+            <SystemPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <Protected permission="dashboard.view">
+            <ReportsPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/contact"
+        element={
+          <Protected permission="customers.view">
+            <ContactSubmissionsPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/audit-logs"
+        element={
+          <Protected permission="audit.view">
+            <AuditPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/staff/users"
+        element={
+          <Protected permission="staff.view">
+            <UsersPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/staff/roles"
+        element={
+          <Protected permission="staff.view">
+            <RolesPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/staff/permissions"
+        element={
+          <Protected permission="staff.view">
+            <RolePermissionsPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/orders"
+        element={
+          <Protected permission="orders.view">
+            <OrdersPage />
+          </Protected>
+        }
+      />
+      <Route
         path="/promotions"
         element={
           <Protected permission="promotions.view">
@@ -325,6 +434,14 @@ function App() {
         element={
           <Protected permission="inventory.view">
             <InventoryManagementPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/media"
+        element={
+          <Protected>
+            <MediaLibrary />
           </Protected>
         }
       />

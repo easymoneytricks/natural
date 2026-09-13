@@ -26,16 +26,17 @@ async function audit(pool, adminId, action, entity, id, req) {
     ],
   );
 }
-export async function list(pool, type, q = "") {
+export async function list(pool, type, q = "", includeDeleted = false) {
   const f = fields[type];
   const search = q ? ` AND (name LIKE ? OR slug LIKE ?)` : "",
     params = q ? [`%${q}%`, `%${q}%`] : [];
+  const lifecycle = includeDeleted ? "" : " AND x.deleted_at IS NULL";
   const count =
     type === "brands"
       ? "(SELECT COUNT(*) FROM products p WHERE p.brand_id=x.id AND p.deleted_at IS NULL)"
       : "(SELECT COUNT(*) FROM product_categories pc JOIN products p ON p.id=pc.product_id WHERE pc.category_id=x.id AND p.deleted_at IS NULL)";
   const [rows] = await pool.execute(
-    `SELECT x.*, ${count} AS product_count${type === "categories" ? ",(SELECT COUNT(*) FROM categories c WHERE c.parent_id=x.id AND c.deleted_at IS NULL) AS child_count" : ""} FROM ${f.table} x WHERE x.deleted_at IS NULL${search} ORDER BY x.sort_order,x.name`,
+    `SELECT x.*, ${count} AS product_count${type === "categories" ? ",(SELECT COUNT(*) FROM categories c WHERE c.parent_id=x.id AND c.deleted_at IS NULL) AS child_count" : ""} FROM ${f.table} x WHERE 1=1${lifecycle}${search} ORDER BY x.deleted_at IS NULL DESC,x.sort_order,x.name`,
     params,
   );
   return rows.map((row) => ({
@@ -43,6 +44,7 @@ export async function list(pool, type, q = "") {
     id: Number(row.id),
     logo: row.logo_path || null,
     image: row.image_path || null,
+    deletedAt: row.deleted_at || null,
     productCount: Number(row.product_count || 0),
     childCount: Number(row.child_count || 0),
     parentId: row.parent_id == null ? null : Number(row.parent_id),

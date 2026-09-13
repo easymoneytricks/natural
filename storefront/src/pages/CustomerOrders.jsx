@@ -33,7 +33,20 @@ function Shell({ children }) {
         <p className="eyebrow">My account</p>
         <h1>Welcome back, {user.firstName}.</h1>
       </header>
-      <section className="account-content">{children}</section>
+      <div className="account-layout">
+        <nav className="account-nav" aria-label="Account navigation">
+          <Link to="/account">Overview</Link>
+          <Link className="active" to="/account/orders">
+            Orders
+          </Link>
+          <Link to="/account/wishlist">Wishlist</Link>
+          <Link to="/account/addresses">Addresses</Link>
+          <Link to="/account/profile">Profile</Link>
+          <Link to="/account/rewards">Rewards</Link>
+          <Link to="/account/gift-cards">Gift Cards</Link>
+        </nav>
+        <section className="account-content">{children}</section>
+      </div>
     </main>
   );
 }

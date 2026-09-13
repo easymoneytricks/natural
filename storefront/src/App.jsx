@@ -5,6 +5,7 @@ import { Header } from "./components/layout/Header";
 import { SearchOverlay } from "./components/search/SearchOverlay";
 import { CartDrawer } from "./components/cart/CartDrawer";
 import { MobileMenu } from "./components/navigation/MobileMenu";
+import { Footer } from "./components/layout/Footer";
 import { Home } from "./pages/Home";
 import { RouteShell } from "./pages/RouteShell";
 import { Shop } from "./pages/Shop";
@@ -26,6 +27,8 @@ import {
   CustomerProfile,
 } from "./pages/CustomerAccountPages";
 import { CustomerOrders, CustomerOrderDetail } from "./pages/CustomerOrders";
+import { StoreSettingsProvider } from "./context/StoreSettingsContext";
+import { CmsPage } from "./pages/CmsPage";
 
 const informationalRoutes = [
   "/about",
@@ -72,7 +75,7 @@ export default function App() {
   }, [searchOpen, cartOpen, menuOpen]);
 
   return (
-    <>
+    <StoreSettingsProvider>
       <AnnouncementBar />
       <Header
         onSearch={() => setSearchOpen(true)}
@@ -87,6 +90,7 @@ export default function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/compare" element={<Compare />} />
+          <Route path="/pages/:slug" element={<CmsPage />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order-success" element={<OrderSuccess />} />
           <Route path="/order-failed" element={<OrderFailed />} />
@@ -113,10 +117,11 @@ export default function App() {
           ))}
         </Routes>
       </main>
+      <Footer />
       <CompareTray />
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
       <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-    </>
+    </StoreSettingsProvider>
   );
 }

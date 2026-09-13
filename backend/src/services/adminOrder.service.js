@@ -27,7 +27,7 @@ export async function list(pool, q = {}) {
       a.push(q[k]);
     }
   const [rows] = await pool.execute(
-    `SELECT o.id,o.order_number,o.customer_email,o.customer_phone,o.status,o.payment_status,o.payment_method,o.grand_total,o.placed_at,o.updated_at,o.courier_name,o.tracking_id,COUNT(oi.id) item_count FROM orders o LEFT JOIN order_items oi ON oi.order_id=o.id WHERE ${w.join(" AND ")} GROUP BY o.id ORDER BY o.placed_at DESC LIMIT 100`,
+    `SELECT o.id,o.order_number,o.customer_id,o.customer_email,o.customer_phone,o.status,o.payment_status,o.payment_method,o.grand_total,o.placed_at,o.updated_at,o.courier_name,o.tracking_id,COUNT(oi.id) item_count FROM orders o LEFT JOIN order_items oi ON oi.order_id=o.id WHERE ${w.join(" AND ")} GROUP BY o.id ORDER BY o.placed_at DESC LIMIT 100`,
     a,
   );
   return rows.map((r) => ({
@@ -131,8 +131,12 @@ export async function updateStatus(pool, number, next, note, adminId, req) {
         `Cannot move an order from ${o.status} to ${next}.`,
       );
     if (next === "cancelled") {
-      await conn.commit();
-      await releaseOrderReservations(pool, o.id, "Order cancelled by Admin");
+      await releaseOrderReservations(
+        pool,
+        o.id,
+        "Order cancelled by Admin",
+        conn,
+      );
     } else if (
       next === "delivered" &&
       o.payment_method === "cod" &&
@@ -141,16 +145,16 @@ export async function updateStatus(pool, number, next, note, adminId, req) {
       await conn.execute('UPDATE orders SET payment_status="paid" WHERE id=?', [
         o.id,
       ]);
-      await conn.commit();
-    } else await conn.commit();
-    await pool.execute(
+    }
+    await conn.execute(
       'UPDATE orders SET status=?,cancelled_at=IF(?="cancelled",NOW(),cancelled_at),shipped_at=IF(?="shipped",NOW(),shipped_at),delivered_at=IF(?="delivered",NOW(),delivered_at) WHERE id=?',
       [next, next, next, next, o.id],
     );
-    await pool.execute(
+    await conn.execute(
       "INSERT INTO order_status_history(order_id,status,note) VALUES(?,?,?)",
       [o.id, next, note || null],
     );
+    await conn.commit();
     await audit(pool, adminId, "order.status_updated", "orders", o.id, req);
     return detail(pool, number);
   } catch (e) {

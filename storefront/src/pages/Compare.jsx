@@ -1,60 +1,42 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Heart, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCompare, useWishlist } from "../context/PreferenceContext";
-import { products, newArrivals } from "../data/products";
-import { detailContent } from "../data/productDetails";
+import { getProductBySlug } from "../services/catalogApi";
 import "./Compare.css";
 
-const catalog = [...products, ...newArrivals];
 const money = (value) => `₹${value.toLocaleString("en-IN")}`;
 function details(product) {
-  const explicit = detailContent[product.slug]?.variants || [];
-  const prices = explicit.length
-    ? explicit.map((item) => item[5])
-    : [product.price];
-  const sizes = explicit.length
-    ? [...new Set(explicit.map((item) => item[1]))]
-    : product.sizes;
-  const skin = explicit.length
-    ? [...new Set(explicit.map((item) => item[2]))]
-    : product.skinTypes;
-  const concerns = explicit.length
-    ? [...new Set(explicit.map((item) => item[3]))]
-    : product.concerns;
-  const content = detailContent[product.slug];
   return {
-    prices,
-    sizes,
-    skin,
-    concerns,
-    ingredients: content?.ingredients?.map(([name]) => name) || [
-      "Botanical extracts",
-      "Humectants",
-    ],
-    benefits: content?.benefits?.map(([name]) => name) || [
-      "Thoughtful formula",
-      "Everyday comfort",
-    ],
-    texture:
-      product.category === "Serums"
-        ? "Lightweight serum"
-        : product.category === "Treatments"
-          ? "Targeted treatment"
-          : "Comforting cream",
-    usage: product.category === "Sunscreens" ? "Morning" : "Morning / Evening",
-    available: explicit.length
-      ? explicit.some((item) => item[6] > 0)
-      : product.availability !== "out-of-stock",
+    prices: [product.price],
+    sizes: product.sizes || [],
+    skin: product.skinTypes || [],
+    concerns: product.concerns || [],
+    ingredients: product.keyIngredients?.map((item) => item.name) || [],
+    benefits: product.benefits || [],
+    texture: product.texture || "",
+    usage: product.usage || "",
+    available: product.available !== false,
   };
 }
 
 export function Compare() {
   const compare = useCompare();
   const wishlist = useWishlist();
-  const selected = compare.items
-    .map((entry) => catalog.find((product) => product.slug === entry.slug))
-    .filter(Boolean);
+  const [selected, setSelected] = useState([]);
+  useEffect(() => {
+    let active = true;
+    Promise.all(
+      compare.items
+        .filter((entry) => entry.slug)
+        .map((entry) => getProductBySlug(entry.slug).catch(() => null)),
+    ).then((products) => {
+      if (active) setSelected(products.filter(Boolean));
+    });
+    return () => {
+      active = false;
+    };
+  }, [compare.items]);
   const [differences, setDifferences] = useState(false);
   const rows = useMemo(
     () => [
@@ -125,14 +107,6 @@ export function Compare() {
       <p className="breadcrumb">
         <Link to="/">Home</Link> <span>/</span> Compare
       </p>
-      <header className="compare-header">
-        <p className="eyebrow">Side by side</p>
-        <h1>Compare your formulas</h1>
-        <p>
-          See how your saved choices differ across skin needs, ingredients,
-          sizes and everyday use.
-        </p>
-      </header>
       {compare.message && (
         <p className="compare-toast" role="status">
           {compare.message}

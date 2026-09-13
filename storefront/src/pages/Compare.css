@@ -5,7 +5,7 @@
   padding: 30px 0 35px;
 }
 .compare-header h1 {
-  font: clamp(43px, 6vw, 76px)/1.05 var(--serif);
+  font: var(--display-xl) / 1.05 var(--serif);
   letter-spacing: -0.045em;
   margin: 0;
 }
@@ -102,10 +102,10 @@
   color: var(--sage-dark);
 }
 .compare-empty {
-  padding: 90px 0 160px;
+  padding: 60px 0 110px;
 }
 .compare-empty h2 {
-  font: 48px var(--serif);
+  font: var(--display-md) / 1.08 var(--serif);
   margin: 0;
 }
 .compare-empty p:not(.eyebrow) {
@@ -136,7 +136,7 @@
     padding: 22px 0 28px;
   }
   .compare-header h1 {
-    font-size: 48px;
+    font-size: var(--display-xl);
   }
   .compare-row {
     grid-template-columns: 125px repeat(4, 155px);
@@ -161,6 +161,6 @@
     padding: 70px 0 130px;
   }
   .compare-empty h2 {
-    font-size: 39px;
+    font-size: var(--display-md);
   }
 }

@@ -3,13 +3,11 @@ import { Minus, Plus, Trash2, Heart, ArrowRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProductCard } from "../components/product/ProductCard";
 import { useCart } from "../context/CartContext";
-import { products, newArrivals } from "../data/products";
-import { demoCoupons, demoGiftCards, shippingRules } from "../data/promotions";
+import { shippingRules } from "../config/commerce";
 import { useWishlist } from "../context/PreferenceContext";
 import "./Cart.css";
 
 const money = (value) => `₹${Math.max(0, value).toLocaleString("en-IN")}`;
-const catalog = [...products, ...newArrivals];
 
 export function Cart() {
   const { items, updateQuantity, removeItem, clearCart } = useCart();
@@ -44,39 +42,13 @@ export function Cart() {
     : 0;
   const total = Math.max(0, subtotal - couponDiscount + shipping - giftApplied);
   const unavailable = items.some((item) => item.stock < 1);
-  const recommendations = catalog
-    .filter((product) => !items.some((item) => item.slug === product.slug))
-    .slice(0, 4);
+  const recommendations = [];
 
   const applyCoupon = () => {
-    const code = couponInput.trim().toUpperCase();
-    const candidate = demoCoupons[code];
-    if (!candidate) return setCouponMessage("This coupon code isn't valid.");
-    if (candidate.expired) return setCouponMessage("This coupon has expired.");
-    if (subtotal < candidate.minimum)
-      return setCouponMessage(
-        `Add ${money(candidate.minimum - subtotal)} more to use this coupon.`,
-      );
-    setCoupon({ ...candidate, code });
-    sessionStorage.setItem(
-      "natural-beauty-coupon",
-      JSON.stringify({ ...candidate, code }),
-    );
-    setCouponMessage("");
+    setCouponMessage("Coupons are validated securely at checkout.");
   };
   const redeemGift = () => {
-    const code = giftInput.trim().toUpperCase();
-    const candidate = demoGiftCards[code];
-    if (!candidate) return setGiftMessage("This gift card code isn't valid.");
-    if (candidate.expired) return setGiftMessage("This gift card has expired.");
-    if (!candidate.balance)
-      return setGiftMessage("This gift card has no available balance.");
-    setGift({ ...candidate, code });
-    sessionStorage.setItem(
-      "natural-beauty-gift",
-      JSON.stringify({ ...candidate, code }),
-    );
-    setGiftMessage("");
+    setGiftMessage("Gift cards are validated securely at checkout.");
   };
   const moveToWishlist = (item) => {
     toggleWishlist(item, {

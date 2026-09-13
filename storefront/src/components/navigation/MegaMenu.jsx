@@ -9,7 +9,7 @@ export function MegaMenu({ item }) {
         {item.columns.map((column) => (
           <section key={column.title}>
             <h3>{column.title}</h3>
-            <ul>
+            <ul className="mega-links">
               {column.links.map((link) => (
                 <li key={link}>
                   <Link to={linkTarget(link)} role="menuitem">

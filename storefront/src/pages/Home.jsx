@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ProductCard } from "../components/product/ProductCard";
 import { QuickOptions } from "../components/product/QuickOptions";
-import { Footer } from "../components/layout/Footer";
 import { Newsletter } from "../components/layout/Newsletter";
 import {
   brandPrinciples,
@@ -20,6 +19,7 @@ import {
   trustItems,
 } from "../data/home";
 import { getProducts } from "../services/catalogApi";
+import { useStoreSettings } from "../context/StoreSettingsContext";
 
 const trustIcons = {
   sparkle: Sparkles,
@@ -34,6 +34,9 @@ export function Home() {
   const [bestSellers, setBestSellers] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [catalogError, setCatalogError] = useState(false);
+  const storeSettings = useStoreSettings();
+  const visible = (section) =>
+    storeSettings.homepage_sections?.[section] !== "false";
 
   const testimonials = [
     {
@@ -101,7 +104,7 @@ export function Home() {
 
   return (
     <>
-      <section className="homepage-hero">
+      <section className="homepage-hero" hidden={!visible("hero")}>
         <div className="homepage-container hero-layout">
           <div className="hero-copy">
             <p className="eyebrow">
@@ -146,7 +149,11 @@ export function Home() {
         </div>
       </section>
 
-      <section className="trust-strip" aria-label="Natural Beauty commitments">
+      <section
+        className="trust-strip"
+        aria-label="Natural Beauty commitments"
+        hidden={!visible("trust")}
+      >
         <div className="homepage-container trust-grid">
           {trustItems.map(({ icon, title, text }) => {
             const Icon = trustIcons[icon];
@@ -164,7 +171,10 @@ export function Home() {
         </div>
       </section>
 
-      <section className="concerns-section homepage-container">
+      <section
+        className="concerns-section homepage-container"
+        hidden={!visible("concerns")}
+      >
         <header className="section-heading">
           <div>
             <p className="eyebrow">Find your formula</p>
@@ -194,7 +204,10 @@ export function Home() {
         </div>
       </section>
 
-      <section className="bestsellers-section homepage-container">
+      <section
+        className="bestsellers-section homepage-container"
+        hidden={!visible("bestsellers")}
+      >
         <header className="section-heading">
           <div>
             <p className="eyebrow">Most loved</p>
@@ -219,7 +232,10 @@ export function Home() {
         </div>
       </section>
 
-      <section className="skin-types-section homepage-container">
+      <section
+        className="skin-types-section homepage-container"
+        hidden={!visible("skin_types")}
+      >
         <header className="section-heading">
           <div>
             <p className="eyebrow">Skin, understood</p>
@@ -253,7 +269,10 @@ export function Home() {
         </div>
       </section>
 
-      <section className="brand-story-section homepage-container">
+      <section
+        className="brand-story-section homepage-container"
+        hidden={!visible("brand_story")}
+      >
         <div className="brand-story-visual">
           <img
             src={homeImages.hero}
@@ -285,7 +304,10 @@ export function Home() {
         </div>
       </section>
 
-      <section className="ingredient-section homepage-container">
+      <section
+        className="ingredient-section homepage-container"
+        hidden={!visible("ingredient")}
+      >
         <div className="ingredient-visual">
           <img
             src={homeImages.hero}
@@ -313,7 +335,7 @@ export function Home() {
         </div>
       </section>
 
-      <section className="principles-strip">
+      <section className="principles-strip" hidden={!visible("principles")}>
         <div className="homepage-container principles-grid">
           {brandPrinciples.map((principle) => (
             <article key={principle.title}>
@@ -324,7 +346,7 @@ export function Home() {
         </div>
       </section>
 
-      <section className="ritual-banner">
+      <section className="ritual-banner" hidden={!visible("ritual")}>
         <img
           src={homeImages.hero}
           alt="A calm botanical skincare ritual arranged on stone"
@@ -346,7 +368,10 @@ export function Home() {
         </div>
       </section>
 
-      <section className="new-arrivals-section homepage-container">
+      <section
+        className="new-arrivals-section homepage-container"
+        hidden={!visible("new_arrivals")}
+      >
         <header className="section-heading">
           <div>
             <p className="eyebrow">Just in</p>
@@ -379,7 +404,10 @@ export function Home() {
         )}
       </section>
 
-      <section className="routine-section homepage-container">
+      <section
+        className="routine-section homepage-container"
+        hidden={!visible("routine")}
+      >
         <div className="routine-visual">
           <img
             src={homeImages.hero}
@@ -422,11 +450,12 @@ export function Home() {
         </div>
       </section>
 
-      <section className="testimonials-section homepage-container">
+      <section
+        className="testimonials-section homepage-container"
+        hidden={!visible("testimonials")}
+      >
         <div className="testimonial-feature">
-          <p className="eyebrow">
-            Notes from the ritual <span>• Demo content</span>
-          </p>
+          <p className="eyebrow">Notes from the ritual</p>
           <div className="quote-mark">“</div>
           <blockquote>{testimonials[testimonialIndex].quote}</blockquote>
           <p className="testimonial-name">
@@ -451,9 +480,7 @@ export function Home() {
         </div>
       </section>
 
-      <Newsletter />
-      <Footer />
-
+      {visible("newsletter") && <Newsletter />}
       <QuickOptions
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}

@@ -9,7 +9,12 @@ const singular = (t) => (t === "brands" ? "brand" : "category");
 const send = (res, data) => res.json({ data });
 export const list = (type) => (req, res, next) =>
   catalog
-    .list(pool, type, req.query.q || "")
+    .list(
+      pool,
+      type,
+      req.query.q || "",
+      req.query.deleted === "true" || req.query.deleted === "1",
+    )
     .then((rows) => send(res, rows))
     .catch(next);
 export const detail = (type) => (req, res, next) =>

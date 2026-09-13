@@ -17,6 +17,7 @@ export const adminRefreshCookieOptions = () => ({
   httpOnly: true,
   secure: env.nodeEnv === "production",
   sameSite: env.nodeEnv === "production" ? "strict" : "lax",
+  ...(env.cookieDomain ? { domain: env.cookieDomain } : {}),
   path: "/api/v1/admin/auth",
   maxAge: env.admin.refreshTtlDays * 86400000,
 });

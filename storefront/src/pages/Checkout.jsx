@@ -3,11 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Lock, Check } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import { shippingRules } from "../data/promotions";
+import { shippingRules } from "../config/commerce";
 import { useAuth } from "../context/AuthContext";
 import { getAddresses } from "../services/authApi";
 import { getQuote } from "../services/checkoutApi";
 import { createOrder } from "../services/orderApi";
+import { createCashfreeOrder } from "../services/paymentApi";
 import "./Checkout.css";
 
 const money = (value) => `₹${Math.max(0, value).toLocaleString("en-IN")}`;
@@ -74,7 +75,6 @@ export function Checkout() {
     }),
   );
   const [errors, setErrors] = useState({});
-  const [demoResult, setDemoResult] = useState("success");
   const [quote, setQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [, setQuoteError] = useState("");
@@ -312,15 +312,11 @@ export function Checkout() {
       return;
     }
     if (!validate()) return;
-    if (draft.payment !== "cod") {
-      setQuoteError("Online payment is not available yet.");
-      return;
-    }
     setPlacing(true);
     idempotencyRef.current ||= crypto.randomUUID();
     const body = {
       idempotencyKey: idempotencyRef.current,
-      paymentMethod: "cod",
+      paymentMethod: draft.payment,
       shippingMethod: draft.shippingMethod.toUpperCase(),
       shippingAddress: {
         firstName: draft.address.firstName,
@@ -349,6 +345,33 @@ export function Checkout() {
     try {
       const result = await createOrder(body, serverMode ? authFetch : null);
       const created = result.data.order;
+      if (draft.payment === "online") {
+        const cashfreeOrder = await createCashfreeOrder(
+          {
+            orderNumber: created.orderNumber,
+            customer: { email: draft.email, phone: draft.mobile },
+          },
+          serverMode ? authFetch : null,
+        );
+        if (!window.Cashfree) {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+            script.onload = resolve;
+            script.onerror = () =>
+              reject(new Error("Cashfree checkout could not load."));
+            document.head.appendChild(script);
+          });
+        }
+        const cashfree = window.Cashfree({
+          mode: cashfreeOrder.data.cashfreeMode || "sandbox",
+        });
+        await cashfree.checkout({
+          paymentSessionId: cashfreeOrder.data.paymentSessionId,
+          redirectTarget: "_self",
+        });
+        return;
+      }
       sessionStorage.setItem(
         "natural-beauty-order",
         JSON.stringify({
@@ -431,10 +454,16 @@ export function Checkout() {
               inputMode="numeric"
             />
           </CheckoutSection>
-          <p className="guest-note">
+          <p
+            className="guest-note"
+            style={{ display: isAuthenticated ? "none" : undefined }}
+          >
             Guest checkout · Already have an account?{" "}
             <Link to="/account">Sign in</Link>
           </p>
+          {isAuthenticated && (
+            <p className="guest-note">Signed in as {user?.email}</p>
+          )}
           <CheckoutSection title="Delivery address">
             <AddressFields
               address={draft.address}
@@ -504,22 +533,10 @@ export function Checkout() {
               />
             </div>
             {draft.payment === "online" && (
-              <div className="demo-payment">
-                <p>
-                  You'll be securely redirected to the payment gateway after
-                  placing your order.
-                </p>
-                <label>
-                  DEMO TESTING{" "}
-                  <select
-                    value={demoResult}
-                    onChange={(event) => setDemoResult(event.target.value)}
-                  >
-                    <option value="success">Simulate success</option>
-                    <option value="failure">Simulate failure</option>
-                  </select>
-                </label>
-              </div>
+              <p className="payment-note">
+                You will be securely redirected to Cashfree to complete your
+                payment after reviewing this order.
+              </p>
             )}
             {errors.payment && <p className="field-error">{errors.payment}</p>}
           </CheckoutSection>

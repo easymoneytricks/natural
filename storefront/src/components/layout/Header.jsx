@@ -14,6 +14,7 @@ import { menus } from "../../data/navigation";
 import { useCart } from "../../context/CartContext";
 import { useCompare, useWishlist } from "../../context/PreferenceContext";
 import { useAuth } from "../../context/AuthContext";
+import { useStoreSettings } from "../../context/StoreSettingsContext";
 
 const navItems = ["Shop", "Skin", "Concerns", "Collections"];
 
@@ -22,6 +23,10 @@ export function Header({ onSearch, onCart, onMenu }) {
   const { count: wishlistCount } = useWishlist();
   const { count: compareCount } = useCompare();
   const { isAuthenticated, user, authStatus } = useAuth();
+  const settings = useStoreSettings();
+  const logo =
+    settings.branding?.logo_url ||
+    "https://www.svgrepo.com/show/42722/skincare.svg";
   const bagLabel = `Shopping bag, ${count} ${count === 1 ? "item" : "items"}`;
   const accountReady = authStatus !== "checking";
   return (
@@ -31,7 +36,7 @@ export function Header({ onSearch, onCart, onMenu }) {
           <Menu />
         </IconButton>
         <Link to="/" className="wordmark">
-          Natural Beauty
+          <img className="brand-logo" src={logo} alt="Natural Beauty logo" />
         </Link>
         <span>
           <IconButton label="Search" onClick={onSearch}>
@@ -44,7 +49,7 @@ export function Header({ onSearch, onCart, onMenu }) {
       </div>
       <div className="desktop-header container">
         <Link to="/" className="wordmark">
-          Natural Beauty
+          <img className="brand-logo" src={logo} alt="Natural Beauty logo" />
         </Link>
         <nav aria-label="Main navigation">
           <ul>

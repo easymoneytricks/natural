@@ -17,6 +17,7 @@ export const refreshCookieOptions = () => ({
   httpOnly: true,
   secure: env.nodeEnv === "production",
   sameSite: env.nodeEnv === "production" ? "strict" : "lax",
+  ...(env.cookieDomain ? { domain: env.cookieDomain } : {}),
   path: "/api/v1/auth",
   maxAge: env.auth.refreshTtlDays * 24 * 60 * 60 * 1000,
 });

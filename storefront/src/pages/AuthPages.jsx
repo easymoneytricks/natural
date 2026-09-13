@@ -326,11 +326,6 @@ export function ForgotPassword() {
         <button className="button" type="submit">
           Send reset link
         </button>
-        {sent && (
-          <Link className="demo-link" to="/reset-password">
-            Demo only · Continue to reset password <ArrowRight size={14} />
-          </Link>
-        )}
         <p className="auth-switch">
           <Link to="/login">Return to sign in</Link>
         </p>
@@ -339,51 +334,15 @@ export function ForgotPassword() {
   );
 }
 export function ResetPassword() {
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [done, setDone] = useState(false);
   return (
     <AuthLayout
-      eyebrow="Demo password reset"
-      heading="Choose a new password."
-      copy="This frontend demo shows the reset journey without changing a real account password."
+      eyebrow="Account recovery"
+      heading="Password reset link required."
+      copy="Use the secure link from your account-recovery email to choose a new password."
     >
-      <form
-        className="auth-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (validPassword(password) && password === confirm) setDone(true);
-        }}
-      >
-        <PasswordField
-          label="New password"
-          value={password}
-          onChange={setPassword}
-          autoComplete="new-password"
-        />
-        <p className="password-note">
-          Use at least 8 characters with uppercase, lowercase and a number.
-        </p>
-        <PasswordField
-          label="Confirm new password"
-          value={confirm}
-          onChange={setConfirm}
-          autoComplete="new-password"
-        />
-        {done && (
-          <p className="auth-success" role="status">
-            Password updated for demo.
-          </p>
-        )}
-        <button className="button" type="submit">
-          Reset password
-        </button>
-        {done && (
-          <Link className="demo-link" to="/login">
-            Return to sign in <ArrowRight size={14} />
-          </Link>
-        )}
-      </form>
+      <Link className="button" to="/forgot-password">
+        Request a reset link <ArrowRight size={14} />
+      </Link>
     </AuthLayout>
   );
 }

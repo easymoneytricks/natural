@@ -1,6 +1,7 @@
 import { Bookmark, Camera, ChevronDown, Globe, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { useStoreSettings } from "../../context/StoreSettingsContext";
 
 const groups = {
   Shop: [
@@ -57,15 +58,22 @@ const routeMap = {
 
 export function Footer() {
   const [openGroup, setOpenGroup] = useState(null);
+  const settings = useStoreSettings();
+  const logo =
+    settings.branding?.logo_url ||
+    "https://www.svgrepo.com/show/42722/skincare.svg";
 
   return (
     <footer className="site-footer">
       <div className="footer-main homepage-container">
         <div className="footer-brand">
           <Link to="/" className="wordmark">
-            Natural Beauty
+            <img className="brand-logo" src={logo} alt="Natural Beauty logo" />
           </Link>
-          <p>Thoughtful skincare for everyday rituals.</p>
+          <p>
+            {settings.footer?.tagline ||
+              "Thoughtful skincare for everyday rituals."}
+          </p>
           <span>Modern botanical care, made to feel simple and personal.</span>
           <div className="footer-socials">
             <a href="#" aria-label="Natural Beauty on Instagram">

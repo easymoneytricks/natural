@@ -1,4 +1,16 @@
 import React, { useEffect, useState } from "react";
+import {
+  Archive,
+  ExternalLink,
+  ImagePlus,
+  LoaderCircle,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useAuth } from "./main";
 
 const media = (p) =>
@@ -7,6 +19,14 @@ const media = (p) =>
       ? p
       : `${(import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1").replace(/\/api\/v1\/?$/, "")}/${p.replace(/^\//, "")}`
     : "";
+const slugify = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 150);
 function Editor({ type, editing, onDone }) {
   const { authFetch } = useAuth();
   const [form, setForm] = useState(
@@ -205,6 +225,508 @@ function Manager({ type }) {
     </ProtectedCatalog>
   );
 }
+
+function BrandEditor({ editing, onClose, onSaved }) {
+  const { authFetch } = useAuth();
+  const [form, setForm] = useState(() => ({
+    name: editing?.name || "",
+    slug: editing?.slug || "",
+    websiteUrl: editing?.website_url || editing?.websiteUrl || "",
+    description: editing?.description || "",
+    seoTitle: editing?.seo_title || "",
+    seoDescription: editing?.seo_description || "",
+    sortOrder: editing?.sort_order ?? 0,
+    isActive: editing?.is_active ?? true,
+  }));
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [slugTouched, setSlugTouched] = useState(Boolean(editing?.slug));
+
+  const update = (field, value) =>
+    setForm((current) => ({ ...current, [field]: value }));
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setSaving(true);
+    try {
+      await authFetch(
+        editing?.id ? `/admin/brands/${editing.id}` : "/admin/brands",
+        {
+          method: editing?.id ? "PATCH" : "POST",
+          body: { ...form, sortOrder: Number(form.sortOrder) || 0 },
+        },
+      );
+      onSaved();
+    } catch (caught) {
+      setError(caught.message || "Unable to save this brand.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="catalog-modal-backdrop"
+      role="presentation"
+      onMouseDown={onClose}
+    >
+      <form
+        className="catalog-modal brand-editor"
+        onSubmit={submit}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="modal-heading">
+          <div>
+            <span className="section-kicker">CATALOG / BRANDS</span>
+            <h2>{editing?.id ? "Edit brand" : "Add a brand"}</h2>
+            <p>
+              Keep the identity, story and discovery details consistent across
+              your storefront.
+            </p>
+          </div>
+          <button
+            className="icon-button"
+            type="button"
+            onClick={onClose}
+            aria-label="Close editor"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="editor-grid">
+          <label>
+            <span className="field-label">
+              Brand name <b>*</b>
+            </span>
+            <input
+              value={form.name}
+              required
+              onChange={(event) => {
+                const name = event.target.value;
+                setForm((current) => ({
+                  ...current,
+                  name,
+                  ...(!slugTouched ? { slug: slugify(name) } : {}),
+                }));
+              }}
+              placeholder="e.g. Herb & Hearth"
+              autoFocus
+            />
+          </label>
+          <label>
+            URL slug
+            <input
+              value={form.slug}
+              onChange={(event) => {
+                const slug = event.target.value;
+                setSlugTouched(Boolean(slug.trim()));
+                update("slug", slug);
+              }}
+              onBlur={() => {
+                if (!form.slug.trim()) {
+                  setSlugTouched(false);
+                  update("slug", slugify(form.name));
+                }
+              }}
+              placeholder="auto-generated if blank"
+            />
+          </label>
+          <label>
+            Website URL
+            <input
+              type="url"
+              value={form.websiteUrl}
+              onChange={(event) => update("websiteUrl", event.target.value)}
+              placeholder="https://brand.example"
+            />
+          </label>
+          <label>
+            Sort order
+            <input
+              type="number"
+              min="0"
+              value={form.sortOrder}
+              onChange={(event) => update("sortOrder", event.target.value)}
+            />
+          </label>
+          <label className="field-wide">
+            Brand description
+            <textarea
+              value={form.description}
+              rows="4"
+              onChange={(event) => update("description", event.target.value)}
+              placeholder="A short editorial introduction for the brand page."
+            />
+          </label>
+          <label>
+            SEO title
+            <input
+              value={form.seoTitle}
+              onChange={(event) => update("seoTitle", event.target.value)}
+              placeholder="Brand name | Natural Beauty"
+            />
+          </label>
+          <label>
+            SEO description
+            <input
+              value={form.seoDescription}
+              onChange={(event) => update("seoDescription", event.target.value)}
+              placeholder="A concise search description"
+            />
+          </label>
+        </div>
+        <label className="switch-row">
+          <input
+            type="checkbox"
+            checked={form.isActive}
+            onChange={(event) => update("isActive", event.target.checked)}
+          />
+          <span>
+            <b>Visible in storefront</b>
+            <small>
+              Inactive brands stay saved but are hidden from customers.
+            </small>
+          </span>
+        </label>
+        {error && (
+          <div className="error" role="alert">
+            {error}
+          </div>
+        )}
+        <div className="modal-actions">
+          <button type="button" className="button-secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" disabled={saving}>
+            {saving && <LoaderCircle className="spin" size={16} />}
+            {saving ? "Saving…" : editing?.id ? "Save changes" : "Create brand"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function BrandsManager() {
+  const { authFetch } = useAuth();
+  const [rows, setRows] = useState([]);
+  const [query, setQuery] = useState("");
+  const [includeArchived, setIncludeArchived] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [busyId, setBusyId] = useState(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await authFetch(
+        `/admin/brands?q=${encodeURIComponent(query)}&deleted=${includeArchived}`,
+      );
+      setRows(response.data || []);
+    } catch (caught) {
+      setError(caught.message || "Unable to load brands.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, [query, includeArchived]);
+
+  const archive = async (brand) => {
+    if (
+      !window.confirm(
+        `Archive ${brand.name}? Products will keep their historical brand reference.`,
+      )
+    )
+      return;
+    setBusyId(brand.id);
+    try {
+      await authFetch(`/admin/brands/${brand.id}`, { method: "DELETE" });
+      setNotice(`${brand.name} was archived.`);
+      await load();
+    } catch (caught) {
+      setError(caught.message || "Unable to archive this brand.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const restore = async (brand) => {
+    setBusyId(brand.id);
+    try {
+      await authFetch(`/admin/brands/${brand.id}/restore`, { method: "POST" });
+      setNotice(`${brand.name} is visible again.`);
+      await load();
+    } catch (caught) {
+      setError(caught.message || "Unable to restore this brand.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const removePermanently = async (brand) => {
+    if (
+      !window.confirm(
+        `Permanently delete ${brand.name}? This cannot be undone.`,
+      )
+    )
+      return;
+    setBusyId(brand.id);
+    try {
+      await authFetch(`/admin/brands/${brand.id}/permanent`, {
+        method: "DELETE",
+      });
+      setNotice(`${brand.name} was permanently deleted.`);
+      await load();
+    } catch (caught) {
+      setError(caught.message || "Permanent deletion was blocked.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const upload = async (brand, file) => {
+    if (!file) return;
+    setBusyId(brand.id);
+    setError("");
+    try {
+      const body = new FormData();
+      body.append("image", file);
+      await authFetch(`/admin/brands/${brand.id}/image`, {
+        method: "POST",
+        body,
+        headers: {},
+      });
+      setNotice(`${brand.name} logo updated.`);
+      await load();
+    } catch (caught) {
+      setError(caught.message || "Unable to upload this logo.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <ProtectedCatalog>
+      <div className="page-head catalog-page-head">
+        <div>
+          <span className="section-kicker">CATALOG MANAGEMENT</span>
+          <h1>Brands</h1>
+          <p>
+            Build a considered brand directory with clean identity, imagery and
+            storefront visibility.
+          </p>
+        </div>
+        <button onClick={() => setEditing({})}>
+          <Plus size={17} /> Add brand
+        </button>
+      </div>
+      <div className="catalog-summary">
+        <div>
+          <span>Total brands</span>
+          <b>{rows.filter((row) => !row.deletedAt).length}</b>
+        </div>
+        <div>
+          <span>With logo</span>
+          <b>{rows.filter((row) => row.logo).length}</b>
+        </div>
+        <div>
+          <span>Products linked</span>
+          <b>
+            {rows.reduce(
+              (total, row) => total + Number(row.productCount || 0),
+              0,
+            )}
+          </b>
+        </div>
+      </div>
+      <div className="catalog-toolbar">
+        <div className="search-field">
+          <Search size={17} />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search brands by name or slug"
+          />
+        </div>
+        <label className="archive-toggle">
+          <input
+            type="checkbox"
+            checked={includeArchived}
+            onChange={(event) => setIncludeArchived(event.target.checked)}
+          />{" "}
+          Show archived
+        </label>
+      </div>
+      {notice && (
+        <div className="notice" role="status">
+          {notice}
+          <button
+            type="button"
+            onClick={() => setNotice("")}
+            aria-label="Dismiss notice"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
+      {error && (
+        <div className="error" role="alert">
+          {error}
+        </div>
+      )}
+      <div className="brand-list card">
+        {loading ? (
+          <div className="catalog-state">
+            <LoaderCircle className="spin" size={24} />
+            <p>Loading brands…</p>
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="catalog-state">
+            <LeafMark />
+            <h2>
+              {query ? "No brands found" : "Your brand directory is empty"}
+            </h2>
+            <p>
+              {query
+                ? "Try a different search term."
+                : "Add your first partner brand to start building the catalog."}
+            </p>
+            <button onClick={() => setEditing({})}>
+              <Plus size={16} /> Add brand
+            </button>
+          </div>
+        ) : (
+          <div className="brand-table">
+            {rows.map((brand) => (
+              <article
+                className={`brand-row ${brand.deletedAt ? "is-archived" : ""}`}
+                key={brand.id}
+              >
+                <div className="brand-identity">
+                  <div className="brand-logo-frame">
+                    {brand.logo ? (
+                      <img src={media(brand.logo)} alt={`${brand.name} logo`} />
+                    ) : (
+                      <LeafMark />
+                    )}
+                  </div>
+                  <div>
+                    <h2>{brand.name}</h2>
+                    <p>/{brand.slug}</p>
+                    {brand.deletedAt && (
+                      <span className="status-pill archived">Archived</span>
+                    )}
+                  </div>
+                </div>
+                <div className="brand-description">
+                  {brand.description || (
+                    <span className="muted-copy">No description added</span>
+                  )}
+                </div>
+                <div className="brand-stat">
+                  <span>Products</span>
+                  <b>{brand.productCount}</b>
+                </div>
+                <div className="brand-media">
+                  <label className="upload-control">
+                    <ImagePlus size={16} />
+                    <span>{brand.logo ? "Replace logo" : "Add logo"}</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(event) =>
+                        upload(brand, event.target.files?.[0])
+                      }
+                    />
+                  </label>
+                </div>
+                <div className="brand-actions">
+                  <button
+                    className="icon-button"
+                    onClick={() => setEditing(brand)}
+                    aria-label={`Edit ${brand.name}`}
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  {brand.deletedAt ? (
+                    <>
+                      <button
+                        className="icon-button"
+                        onClick={() => restore(brand)}
+                        disabled={busyId === brand.id}
+                        aria-label={`Restore ${brand.name}`}
+                      >
+                        <RotateCcw size={16} />
+                      </button>
+                      <button
+                        className="icon-button danger"
+                        onClick={() => removePermanently(brand)}
+                        disabled={busyId === brand.id}
+                        aria-label={`Permanently delete ${brand.name}`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="icon-button"
+                      onClick={() => archive(brand)}
+                      disabled={busyId === brand.id}
+                      aria-label={`Archive ${brand.name}`}
+                    >
+                      <Archive size={16} />
+                    </button>
+                  )}
+                  {brand.website_url && (
+                    <a
+                      className="icon-button"
+                      href={brand.website_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Open ${brand.name} website`}
+                    >
+                      <ExternalLink size={16} />
+                    </a>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+      {editing && (
+        <BrandEditor
+          editing={editing.id ? editing : null}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            setNotice(
+              editing.id
+                ? "Brand changes saved."
+                : "Brand created successfully.",
+            );
+            load();
+          }}
+        />
+      )}
+    </ProtectedCatalog>
+  );
+}
+
+function LeafMark() {
+  return (
+    <span className="brand-placeholder" aria-hidden="true">
+      NB
+    </span>
+  );
+}
 function ProtectedCatalog({ children }) {
   const { admin } = useAuth();
   return admin?.effectivePermissions?.includes("catalog.view") ? (
@@ -215,28 +737,31 @@ function ProtectedCatalog({ children }) {
     </div>
   );
 }
-export const BrandsPage = () => <Manager type="brands" />;
-export const CategoriesPage = () => <Manager type="categories" />;
+export const BrandsPage = () => <BrandsManager />;
+export { CategoriesPage } from "./categories";
 export function ProductsPage() {
   const { authFetch } = useAuth();
   const [deleted, setDeleted] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]),
     [q, setQ] = useState("");
   useEffect(() => {
+    setLoading(true);
+    setError("");
     authFetch(`/admin/products?q=${encodeURIComponent(q)}&deleted=${deleted}`)
-      .then((r) => setRows(r.data))
-      .catch((caught) =>
-        setError(caught.message || "Unable to load products."),
-      );
+      .then((r) => setRows(r.data || []))
+      .catch((caught) => setError(caught.message || "Unable to load products."))
+      .finally(() => setLoading(false));
   }, [q, deleted]);
   return (
     <ProtectedCatalog>
-      <div className="page-head">
+      <div className="page-head catalog-page-head product-list-head">
         <div>
+          <span className="section-kicker">CATALOG MANAGEMENT</span>
           <h1>Products</h1>
-          <p>Manage products and explicit sellable SKUs.</p>
-          <label>
+          <p>Manage products, content, media and explicit sellable SKUs.</p>
+          <label className="archive-toggle">
             <input
               type="checkbox"
               checked={deleted}
@@ -246,48 +771,80 @@ export function ProductsPage() {
           </label>
           {error && <p role="alert">{error}</p>}
         </div>
-        <a href="/catalog/products/new">
-          <button>Add product</button>
+        <a className="primary-link" href="/catalog/products/new">
+          Add product
         </a>
       </div>
-      <div className="toolbar">
-        <input
-          placeholder="Search products"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
+      <div className="catalog-toolbar product-list-toolbar">
+        <div className="search-field">
+          <Search size={17} />
+          <input
+            placeholder="Search products by name or slug"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
       </div>
-      <div className="card table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Brand</th>
-              <th>Status</th>
-              <th>SKUs</th>
-              <th>Updated</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td>
-                  <a href={`/catalog/products/${r.id}`}>{r.name}</a>
-                  <small>{r.slug}</small>
-                </td>
-                <td>{r.brand?.name || "—"}</td>
-                <td>
-                  {r.status}
-                  {r.is_active ? "" : " · inactive"}
-                </td>
-                <td>
-                  {r.activeSkuCount}/{r.skuCount}
-                </td>
-                <td>{new Date(r.updated_at).toLocaleDateString()}</td>
+      <div className="card table-wrap product-table-wrap">
+        {loading && (
+          <div className="catalog-state">
+            <LoaderCircle className="spin" size={24} />
+            <p>Loading products…</p>
+          </div>
+        )}
+        {!loading && !rows.length && (
+          <div className="catalog-state">
+            <Package size={26} />
+            <h2>{q ? "No products found" : "Your product catalog is empty"}</h2>
+            <p>
+              {q
+                ? "Try a different search term."
+                : "Create your first product to start selling."}
+            </p>
+            <a className="primary-link" href="/catalog/products/new">
+              Add product
+            </a>
+          </div>
+        )}
+        {!loading && rows.length > 0 && (
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Brand</th>
+                <th>Status</th>
+                <th>SKUs</th>
+                <th>Updated</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <td>
+                    {r.primaryImage && (
+                      <img
+                        className="product-list-thumb"
+                        src={media(r.primaryImage)}
+                        alt=""
+                      />
+                    )}
+                    <a href={`/catalog/products/${r.id}`}>{r.name}</a>
+                    <small>{r.slug}</small>
+                  </td>
+                  <td>{r.brand?.name || "—"}</td>
+                  <td>
+                    {r.status}
+                    {r.is_active ? "" : " · inactive"}
+                  </td>
+                  <td>
+                    {r.activeSkuCount}/{r.skuCount}
+                  </td>
+                  <td>{new Date(r.updated_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </ProtectedCatalog>
   );

@@ -1,4 +1,7 @@
+import { useStoreSettings } from "../../context/StoreSettingsContext";
+
 export function AnnouncementBar() {
+  const settings = useStoreSettings();
   return (
     <aside className="announcement">
       <div className="container">

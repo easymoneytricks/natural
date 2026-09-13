@@ -2,20 +2,15 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthContext";
 import * as cartApi from "../services/cartApi";
-import { products, newArrivals } from "../data/products";
 
 const CartContext = createContext(null);
-const catalog = [...products, ...newArrivals];
 const decorate = (lines) =>
   lines.map((line) => {
-    const match = catalog.find(
-      (product) => product.slug === line.product?.slug,
-    );
     return {
       ...line,
       name: line.product?.name || line.name,
       slug: line.product?.slug || line.slug,
-      image: line.image?.src || match?.image,
+      image: line.image?.src || line.image || line.product?.image || "",
       attributes: line.attributes || {},
       stock: line.availability?.available,
       availableStock: line.availability?.available,

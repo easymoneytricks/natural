@@ -1,6 +1,6 @@
 # Natural Beauty — Module Status
 
-Last audited: 2026-09-11  
+Last audited: 2026-09-14
 Audit basis: actual repository source code, routes, migrations, and frontend integration  
 Branch: `main`  
 Commit: `40e2e8b`
@@ -15,59 +15,59 @@ Commit: `40e2e8b`
 
 ## Executive Summary
 
-| Area | Status | Completion | Main Gap |
-|---|---|---:|---|
-| Workspace/backend foundation | ✅ COMPLETE | 100% | Runtime production deployment not proven |
-| Public catalog and commerce | 🟡 PARTIAL | ~80% | Fixtures and payment limitations remain |
-| Customer account | 🟡 PARTIAL | ~70% | Several pages still use demo data |
-| Admin operations | 🟡 PARTIAL | ~65% | Several Admin modules have API/list-only coverage |
-| Rewards | 🟡 PARTIAL | ~45% | No checkout redemption, reversals, or bonus rules |
-| CMS/settings/SEO | ❌ MISSING | ~20% | Mostly hardcoded or absent |
+| Area                         | Status      | Completion | Main Gap                                                                                     |
+| ---------------------------- | ----------- | ---------: | -------------------------------------------------------------------------------------------- |
+| Workspace/backend foundation | ✅ COMPLETE |       100% | Runtime production deployment not proven                                                     |
+| Public catalog and commerce  | 🟡 PARTIAL  |       ~82% | Shop/product runtime loading still needs live API verification                               |
+| Customer account             | 🟡 PARTIAL  |       ~78% | Account navigation/UI polished; some demo/fallback data remains                              |
+| Admin operations             | 🟡 PARTIAL  |       ~65% | Several Admin modules have API/list-only coverage                                            |
+| Rewards                      | 🟡 PARTIAL  |       ~45% | No checkout redemption, reversals, or bonus rules                                            |
+| CMS/settings/SEO             | 🟡 PARTIAL  |       ~60% | CMS Pages and settings foundations exist; legal migration and complete SEO publishing remain |
 
 ## Detailed Module Table
 
-| # | Module | Status | Completion | Evidence | Missing / Problems |
-|---:|---|---|---:|---|---|
-| 1 | Project / Workspace | ✅ COMPLETE | 100% | Root `package.json`, workspaces, scripts, `.gitignore`, README, `docs/` | Combined dev ports depend on local availability |
-| 2 | Backend Foundation | ✅ COMPLETE | 100% | `backend/src/app.js`, `config/env.js`, database pool, migrations, health route, error/not-found middleware | Production runtime not independently verified |
-| 3 | Catalog Database | ✅ COMPLETE | 100% | Migrations `002`–`004`: brands, categories, products, media, attributes, content | Product Admin editing remains partial |
-| 4 | Explicit SKU System | 🟡 PARTIAL | ~75% | `sku.service.js`, `product_skus`, `sku_attribute_values`, canonical key | Admin editor and some safe-delete flows incomplete |
-| 5 | Inventory Core | 🟡 PARTIAL | ~75% | `inventory.service.js`, movement/reservation code, Admin inventory service | Correction/idempotency/UI workflows incomplete |
-| 6 | Public Catalog API | ✅ COMPLETE | ~90% | `catalog.routes.js`, `catalog.service.js`, filters/pagination/SKU payload | Runtime regression suite not present |
-| 7 | Storefront Catalog Integration | 🟡 PARTIAL | ~75% | `catalogApi.js`, `Shop.jsx`, `ProductDetail.jsx`, `Home.jsx` | `src/data/products.js` and related fixtures remain |
-| 8 | Customer Authentication | 🟡 PARTIAL | ~85% | `auth.routes.js`, `auth.service.js`, tokens, sessions, `AuthContext.jsx` | Some reset UI is explicitly demo-only |
-| 9 | Customer Profile / Addresses | 🟡 PARTIAL | ~75% | customer controllers/services, account pages, checkout address flow | Some account address views retain local/demo behavior |
-| 10 | Cart | ✅ COMPLETE | ~85% | guest/local contexts plus `customerCart.service.js`, merge route, server quote | Full browser regression not automated |
-| 11 | Wishlist | 🟡 PARTIAL | ~75% | `customerWishlist.service.js`, PreferenceContext, Wishlist page | Some fixture fallback behavior remains |
-| 12 | Compare | 🟡 PARTIAL | ~70% | `Compare.jsx`, `CompareTray.jsx`, local preference state | Uses local catalog data in parts of the matrix |
-| 13 | Checkout Quote Engine | ✅ COMPLETE | ~90% | `checkoutPricing.service.js`, checkout routes, integer paise calculations | Rewards are not integrated into quote |
-| 14 | Coupons | 🟡 PARTIAL | ~60% | coupon schema, quote validation, redemptions, Admin promotion service | Restrictions/history/cancellation reversal and full UI incomplete |
-| 15 | Gift Cards | 🟡 PARTIAL | ~65% | hashed codes, balances, transactions, holds, quote/order use, Admin API | Full Admin generation/detail UI and reversal coverage incomplete |
-| 16 | Shipping | ✅ COMPLETE | ~80% | shipping methods migration, quote selection, order snapshot fields | No provider integration by design |
-| 17 | Orders | 🟡 PARTIAL | ~80% | order service, snapshots, idempotency, customer routes, Admin order service | Admin UI and some lifecycle edge cases incomplete |
-| 18 | COD | 🟡 PARTIAL | ~80% | `placeCodOrder`, reservations, payment state, Admin cancellation/delivery logic | Full end-to-end QA not automated |
-| 19 | Razorpay | 🟡 PARTIAL | ~35% | payment routes, raw webhook handling, signature code | Provider order/finalization is intentionally disabled/not production-complete |
-| 20 | Customer Account | 🟡 PARTIAL | ~65% | account routes/pages, orders/profile/rewards/gift-card routes | `AccountDashboard.jsx` still contains demo order/address/gift-card data |
-| 21 | Admin Foundation | ✅ COMPLETE | ~85% | `admin/main.jsx`, Admin auth routes, RBAC middleware, audit table | Some navigation modules are not wired |
-| 22 | Admin Premium UI System | 🟡 PARTIAL | ~65% | `admin/styles.css`, shell, shared card/table/form styles | No reusable component layer; several pages remain sparse/list-only |
-| 23 | Admin Brands | ✅ COMPLETE | ~85% | `adminCatalog.routes.js`, service/controller, `catalog.jsx`, media service | Deleted-record filtering/detail UX limited |
-| 24 | Admin Categories | ✅ COMPLETE | ~80% | hierarchy validation/cycle checks and Admin page | Full hierarchy editor and deleted-state UI limited |
-| 25 | Admin Products | 🟡 PARTIAL | Gate pending | Product/content transactions, allowed values, explicit SKU editor, media controls, archive/restore UI and seven passing local database test groups | Authenticated browser create/edit/reload/gallery/lifecycle/storefront gate remains; see 2026-09-13 evidence below |
-| 26 | Admin Inventory | 🟡 PARTIAL | ~80% | Admin inventory service/routes, `/inventory`, `/inventory/:skuId`, adjustment/correction UI, movement history | List filters/actions and idempotent adjustment key remain incomplete |
-| 27 | Admin Orders | 🟡 PARTIAL | ~55% | `adminOrder.service.js`, routes, migration `013` | Orders list/detail UI not implemented |
-| 28 | Admin Customers | 🟡 PARTIAL | ~60% | customer Admin service/routes and `admin/customer.jsx` | Detail/status controls and richer activity UI incomplete |
-| 29 | Admin Coupons | 🟡 PARTIAL | ~55% | promotion service/routes and Promotions page | Create/edit/status/history UI incomplete |
-| 30 | Admin Gift Cards | 🟡 PARTIAL | ~50% | secure generation/list/detail/status API | One-time reveal and transaction UI incomplete |
-| 31 | Rewards / Loyalty | 🟡 PARTIAL | ~45% | migration `014`, `reward.service.js`, customer rewards endpoint/page, order earn hook | No checkout redemption, reversal, bonus periods, or Admin settings UI |
-| 32 | CMS / Homepage | 🟡 PARTIAL | ~35% | `Home.jsx`, `data/home.js`, product/catalog integrations | Homepage content remains largely source/fixture driven |
-| 33 | Static Pages / CMS | 🟡 PARTIAL | ~45% | routes/pages in `storefront/src/pages` and App | Content is hardcoded; no CMS backing |
-| 34 | Settings | ❌ MISSING | ~10% | Placeholder navigation only | No persisted business/store/security settings module |
-| 35 | Media System | ✅ COMPLETE | ~75% | `mediaStorage.service.js`, `/uploads` static serving, brand/category usage | Deep file-signature validation and full product gallery incomplete |
-| 36 | SEO | 🟡 PARTIAL | ~40% | product/category/brand SEO columns and product responses | No complete metadata/canonical/sitemap Admin workflow |
-| 37 | Security | 🟡 PARTIAL | ~80% | Helmet, CORS, parameterized SQL, auth separation, RBAC, hashed tokens, upload restrictions | Some error contracts and production secret/runtime validation need hardening |
-| 38 | Deployment Readiness | 🟡 PARTIAL | ~65% | root scripts, env examples, cPanel docs, Vite builds | Live deployment and production secrets/media permissions unverified |
-| 39 | Testing / QA | 🟡 PARTIAL | ~30% | build checks, migration checks, manual smoke checks | No meaningful automated unit/integration/frontend test suite |
-| 40 | Documentation | 🟡 PARTIAL | ~70% | README and docs set including this audit | Earlier progress/API claims materially exceed actual UI completeness |
+|   # | Module                         | Status      |   Completion | Evidence                                                                                                                                           | Missing / Problems                                                                                                |
+| --: | ------------------------------ | ----------- | -----------: | -------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+|   1 | Project / Workspace            | ✅ COMPLETE |         100% | Root `package.json`, workspaces, scripts, `.gitignore`, README, `docs/`                                                                            | Combined dev ports depend on local availability                                                                   |
+|   2 | Backend Foundation             | ✅ COMPLETE |         100% | `backend/src/app.js`, `config/env.js`, database pool, migrations, health route, error/not-found middleware                                         | Production runtime not independently verified                                                                     |
+|   3 | Catalog Database               | ✅ COMPLETE |         100% | Migrations `002`–`004`: brands, categories, products, media, attributes, content                                                                   | Product Admin editing remains partial                                                                             |
+|   4 | Explicit SKU System            | 🟡 PARTIAL  |         ~75% | `sku.service.js`, `product_skus`, `sku_attribute_values`, canonical key                                                                            | Admin editor and some safe-delete flows incomplete                                                                |
+|   5 | Inventory Core                 | 🟡 PARTIAL  |         ~75% | `inventory.service.js`, movement/reservation code, Admin inventory service                                                                         | Correction/idempotency/UI workflows incomplete                                                                    |
+|   6 | Public Catalog API             | ✅ COMPLETE |         ~90% | `catalog.routes.js`, `catalog.service.js`, filters/pagination/SKU payload                                                                          | Runtime regression suite not present                                                                              |
+|   7 | Storefront Catalog Integration | 🟡 PARTIAL  |         ~75% | `catalogApi.js`, `Shop.jsx`, `ProductDetail.jsx`, `Home.jsx`                                                                                       | `src/data/products.js` and related fixtures remain                                                                |
+|   8 | Customer Authentication        | 🟡 PARTIAL  |         ~85% | `auth.routes.js`, `auth.service.js`, tokens, sessions, `AuthContext.jsx`                                                                           | Some reset UI is explicitly demo-only                                                                             |
+|   9 | Customer Profile / Addresses   | 🟡 PARTIAL  |         ~75% | customer controllers/services, account pages, checkout address flow                                                                                | Some account address views retain local/demo behavior                                                             |
+|  10 | Cart                           | ✅ COMPLETE |         ~85% | guest/local contexts plus `customerCart.service.js`, merge route, server quote                                                                     | Full browser regression not automated                                                                             |
+|  11 | Wishlist                       | 🟡 PARTIAL  |         ~75% | `customerWishlist.service.js`, PreferenceContext, Wishlist page                                                                                    | Some fixture fallback behavior remains                                                                            |
+|  12 | Compare                        | 🟡 PARTIAL  |         ~70% | `Compare.jsx`, `CompareTray.jsx`, local preference state                                                                                           | Uses local catalog data in parts of the matrix                                                                    |
+|  13 | Checkout Quote Engine          | ✅ COMPLETE |         ~90% | `checkoutPricing.service.js`, checkout routes, integer paise calculations                                                                          | Rewards are not integrated into quote                                                                             |
+|  14 | Coupons                        | 🟡 PARTIAL  |         ~75% | coupon schema, quote validation, redemptions, Admin create/edit UI, limits, date windows and activation                                            | Cancellation reversal and full browser gate remain                                                                |
+|  15 | Gift Cards                     | 🟡 PARTIAL  |         ~80% | hashed codes, balances, transactions, holds, quote/order use, Admin issue/reveal/list/status/detail UI                                             | Reversal coverage and full browser gate remain                                                                    |
+|  16 | Shipping                       | ✅ COMPLETE |         ~80% | shipping methods migration, quote selection, order snapshot fields                                                                                 | No provider integration by design                                                                                 |
+|  17 | Orders                         | 🟡 PARTIAL  |         ~80% | order service, snapshots, idempotency, customer routes, Admin order service                                                                        | Admin UI and some lifecycle edge cases incomplete                                                                 |
+|  18 | COD                            | 🟡 PARTIAL  |         ~80% | `placeCodOrder`, reservations, payment state, Admin cancellation/delivery logic                                                                    | Full end-to-end QA not automated                                                                                  |
+|  19 | Razorpay                       | 🟡 PARTIAL  |         ~35% | payment routes, raw webhook handling, signature code                                                                                               | Provider order/finalization is intentionally disabled/not production-complete                                     |
+|  20 | Customer Account               | 🟡 PARTIAL  |         ~65% | account routes/pages, orders/profile/rewards/gift-card routes                                                                                      | `AccountDashboard.jsx` still contains demo order/address/gift-card data                                           |
+|  21 | Admin Foundation               | ✅ COMPLETE |         ~85% | `admin/main.jsx`, Admin auth routes, RBAC middleware, audit table                                                                                  | Some navigation modules are not wired                                                                             |
+|  22 | Admin Premium UI System        | 🟡 PARTIAL  |         ~65% | `admin/styles.css`, shell, shared card/table/form styles                                                                                           | No reusable component layer; several pages remain sparse/list-only                                                |
+|  23 | Admin Brands                   | ✅ COMPLETE |         ~85% | `adminCatalog.routes.js`, service/controller, `catalog.jsx`, media service                                                                         | Deleted-record filtering/detail UX limited                                                                        |
+|  24 | Admin Categories               | ✅ COMPLETE |         ~80% | hierarchy validation/cycle checks and Admin page                                                                                                   | Full hierarchy editor and deleted-state UI limited                                                                |
+|  25 | Admin Products                 | 🟡 PARTIAL  | Gate pending | Product/content transactions, allowed values, explicit SKU editor, media controls, archive/restore UI and seven passing local database test groups | Authenticated browser create/edit/reload/gallery/lifecycle/storefront gate remains; see 2026-09-13 evidence below |
+|  26 | Admin Inventory                | 🟡 PARTIAL  |         ~80% | Admin inventory service/routes, `/inventory`, `/inventory/:skuId`, adjustment/correction UI, movement history                                      | List filters/actions and idempotent adjustment key remain incomplete                                              |
+|  27 | Admin Orders                   | 🟡 PARTIAL  |         ~85% | `adminOrder.service.js`, routes, migration `013`, `admin/src/orders.jsx`, status and fulfillment controls                                          | Full production browser regression and edge-case reconciliation remain                                            |
+|  28 | Admin Customers                | 🟡 PARTIAL  |         ~60% | customer Admin service/routes and `admin/customer.jsx`                                                                                             | Detail/status controls and richer activity UI incomplete                                                          |
+|  29 | Admin Coupons                  | 🟡 PARTIAL  |         ~85% | secure create/edit form, discount rules, usage limits, scheduling, activation and searchable table                                                 | Authenticated browser create/edit/reload gate remains                                                             |
+|  30 | Admin Gift Cards               | 🟡 PARTIAL  |         ~85% | secure issue flow with one-time reveal, balance/status table, enable/disable and transaction detail modal                                          | Authenticated browser issue/detail/reload gate remains                                                            |
+|  31 | Rewards / Loyalty              | 🟡 PARTIAL  |         ~45% | migration `014`, `reward.service.js`, customer rewards endpoint/page, order earn hook                                                              | No checkout redemption, reversal, bonus periods, or Admin settings UI                                             |
+|  32 | CMS / Homepage                 | 🟡 PARTIAL  |         ~35% | `Home.jsx`, `data/home.js`, product/catalog integrations                                                                                           | Homepage content remains largely source/fixture driven                                                            |
+|  33 | Static Pages / CMS             | 🟡 PARTIAL  |         ~45% | routes/pages in `storefront/src/pages` and App                                                                                                     | Content is hardcoded; no CMS backing                                                                              |
+|  34 | Settings                       | 🟡 PARTIAL  |         ~70% | Persisted branding, SEO, commerce, SMTP, homepage visibility, navigation/footer and store settings                                                 | SMTP transport wiring/test-send, richer homepage ordering/content controls and secret rotation remain             |
+|  35 | Media System                   | ✅ COMPLETE |         ~75% | `mediaStorage.service.js`, `/uploads` static serving, brand/category usage                                                                         | Deep file-signature validation and full product gallery incomplete                                                |
+|  36 | SEO                            | 🟡 PARTIAL  |         ~40% | product/category/brand SEO columns and product responses                                                                                           | No complete metadata/canonical/sitemap Admin workflow                                                             |
+|  37 | Security                       | 🟡 PARTIAL  |         ~80% | Helmet, CORS, parameterized SQL, auth separation, RBAC, hashed tokens, upload restrictions                                                         | Some error contracts and production secret/runtime validation need hardening                                      |
+|  38 | Deployment Readiness           | 🟡 PARTIAL  |         ~65% | root scripts, env examples, cPanel docs, Vite builds                                                                                               | Live deployment and production secrets/media permissions unverified                                               |
+|  39 | Testing / QA                   | 🟡 PARTIAL  |         ~30% | build checks, migration checks, manual smoke checks                                                                                                | No meaningful automated unit/integration/frontend test suite                                                      |
+|  40 | Documentation                  | 🟡 PARTIAL  |         ~70% | README and docs set including this audit                                                                                                           | Earlier progress/API claims materially exceed actual UI completeness                                              |
 
 ## Critical Incomplete Modules
 
@@ -87,7 +87,7 @@ Commit: `40e2e8b`
 
 - Admin Orders has no routed list/detail UI despite backend routes.
 - Inventory has a component but lacks adjustment/history interaction wiring.
-- Promotions UI is list-oriented and lacks complete forms and one-time gift-card reveal.
+- Promotions UI now has complete coupon and gift-card mutation/detail surfaces; authenticated browser persistence verification remains.
 - Customer Rewards and several account views previously relied on demo data; only Rewards now calls the backend.
 - Admin navigation contains only a subset of available backend modules.
 
@@ -127,18 +127,18 @@ Commit: `40e2e8b`
 
 ## PROGRESS.md Accuracy Check
 
-| Claimed Feature | PROGRESS.md Says | Actual Source Status | Difference |
-|---|---|---|---|
-| Storefront foundation/catalog/PDP | Completed | 🟡 PARTIAL | API integration exists, but catalog/account fixtures remain |
-| Customer auth/dashboard | Completed | 🟡 PARTIAL | Auth backend is real; dashboard/order surfaces retain demo data |
-| Persistent commerce foundations | Completed | 🟡 PARTIAL | Cart/wishlist services exist; UI fallbacks remain |
-| Admin Dashboard/RBAC | Completed | ✅ COMPLETE | Core routes/middleware/source support this |
-| Brands/Categories Admin | Completed | ✅ COMPLETE | CRUD/media APIs and pages exist |
-| Inventory API/UI | In Progress | 🟡 PARTIAL | API exists; UI is not fully wired |
-| Order Admin API/UI | In Progress | 🟡 PARTIAL | Backend exists; UI is absent |
-| Customer Admin API/UI | In Progress | 🟡 PARTIAL | List page/API exist; detail UI is absent |
-| Promotions API/UI | In Progress | 🟡 PARTIAL | APIs and list page exist; forms/history are incomplete |
-| Rewards API/UI | In Progress | 🟡 PARTIAL | Ledger and customer page exist; checkout/admin workflows are incomplete |
+| Claimed Feature                   | PROGRESS.md Says | Actual Source Status | Difference                                                                                                                            |
+| --------------------------------- | ---------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Storefront foundation/catalog/PDP | Completed        | 🟡 PARTIAL           | API integration exists, but catalog/account fixtures remain                                                                           |
+| Customer auth/dashboard           | Completed        | 🟡 PARTIAL           | Auth backend is real; dashboard/order surfaces retain demo data                                                                       |
+| Persistent commerce foundations   | Completed        | 🟡 PARTIAL           | Cart/wishlist services exist; UI fallbacks remain                                                                                     |
+| Admin Dashboard/RBAC              | Completed        | ✅ COMPLETE          | Core routes/middleware/source support this                                                                                            |
+| Brands/Categories Admin           | Completed        | ✅ COMPLETE          | CRUD/media APIs and pages exist                                                                                                       |
+| Inventory API/UI                  | In Progress      | 🟡 PARTIAL           | API exists; UI is not fully wired                                                                                                     |
+| Order Admin API/UI                | In Progress      | 🟡 PARTIAL           | Backend exists; UI is absent                                                                                                          |
+| Customer Admin API/UI             | In Progress      | 🟡 PARTIAL           | List page/API exist; detail UI is absent                                                                                              |
+| Promotions API/UI                 | In Progress      | 🟡 PARTIAL           | APIs, mutation forms, one-time reveal, status controls and gift-card history detail are implemented; browser persistence gate remains |
+| Rewards API/UI                    | In Progress      | 🟡 PARTIAL           | Ledger and customer page exist; checkout/admin workflows are incomplete                                                               |
 
 The current `PROGRESS.md` materially overstates completeness in a few broad “Completed” areas by not distinguishing backend implementation from end-to-end UI integration.
 
@@ -211,3 +211,86 @@ Test database fixtures were rolled back and generated test upload files cleaned 
 ### Remaining completion gate and immediate dependency
 
 The browser reached `http://localhost:5174/catalog/products` and displayed the admin login screen. An authenticated admin session is needed to verify actual create/edit/reload, gallery upload/order/primary/remove, duplicate errors, lifecycle dialogs and storefront preview interactions. The user was asked to sign in directly without sharing a password. Historical-order snapshot preservation also still needs explicit fixture evidence. Builds and database service checks are not substitutes for this gate.
+
+### Production secrets and deployment hardening - 2026-09-14
+
+- Added fail-fast production env validation for separate customer/admin JWT secrets, database password/TLS, HTTPS public URLs, exact HTTPS CORS origins, SMTP credentials, media URL and rejection of development seed credentials.
+- Added trusted-proxy and HTTPS enforcement middleware, production cookie domain support, and TLS database configuration.
+- Added `backend/.env.production.example`, `backup:production` and confirmation-gated `restore:production` commands, including database dump, persistent uploads copy and manifest.
+- Added [docs/DEPLOYMENT.md](DEPLOYMENT.md) with secrets, proxy, backup, rollback, storage and launch verification steps.
+- Provider configuration and a real encrypted backup/restore drill remain deployment evidence gates; no production credentials were added to the repository.
+
+## Storefront UI / UX Review - 2026-09-13
+
+### Completed in this review
+
+- Shared header, footer, logo placeholder, announcement bar and responsive navigation are present across storefront routes.
+- Homepage spacing, hero proportions, section heading scale, newsletter height and principles-strip rhythm were tightened.
+- Mega menu columns, wrapping, title treatment and feature panel were corrected for desktop.
+- Shop page header spacing and collection heading scale were reduced.
+- Product detail gallery now uses a square primary image with thumbnails below; the image viewer constrains the source image to the viewport.
+- Login/register forms were compacted and field underlines made consistent. Auth visual uses a local Natural Beauty product image.
+- Account dashboard, orders and wishlist use consistent vertical account navigation and restrained heading scales.
+- Contact page now has separate contact information, map and enquiry form blocks with responsive layout.
+- About, privacy, terms, shipping, returns, refund and cancellation routes have structured content and shared styling.
+- Footer is rendered globally for all storefront routes.
+
+### Runtime verification notes
+
+- Read-only browser review covered `/`, `/shop`, `/product/barrier-restore-moisturizer`, `/cart`, `/contact`, `/compare` and `/account`.
+- Header/footer and key controls rendered on reviewed routes.
+- `/shop` displayed `0 products` during the review; catalog API/data availability needs investigation before declaring storefront catalog complete.
+- Product detail briefly displayed its loading fallback during direct navigation; authenticated/API-backed loading and error states need a repeatable browser check.
+- No destructive actions or external form submissions were performed.
+
+### Updated module interpretation
+
+The storefront visual system is substantially improved but remains **PARTIAL** overall until live catalog loading, product hydration, seeded customer data and complete browser regression are verified. Static-page UI is implemented, but content remains source-driven rather than CMS-backed.
+
+## Pages CMS - 2026-09-14
+
+### Implemented
+
+- Added the admin **Pages** navigation and protected `/pages` workspace.
+- Added page CRUD for legal, help and editorial content with title, auto-generated editable slug, eyebrow, intro, publication status and SEO metadata.
+- Added structured editorial sections with heading/body rows and add/remove controls.
+- Added draft, published and archived lifecycle states with audit events for create/update operations.
+- Added public CMS rendering at `/pages/:slug`; only published records are exposed publicly.
+- Added migration `017_create_content_pages.sql` and applied it to the local database.
+
+### Verification
+
+- `npm run migrate` applied migration 017 successfully.
+- `npm run build` passed for storefront and admin.
+- `npm run format:check`, backend syntax checks and `git diff --check` passed.
+
+The existing source-driven legacy routes (`/privacy`, `/terms`, `/shipping`, etc.) remain available. New and migrated content can be published through `/pages/:slug`; wiring legacy routes to CMS records is the next content migration step if required.
+
+### Settings extensions - 2026-09-14
+
+- Added SMTP host, port, username, masked password, sender identity and secure-connection controls to admin Settings.
+- SMTP settings are excluded from public storefront settings and blank password submissions preserve the stored credential.
+- Added homepage section visibility controls for hero, trust, concerns, product blocks, editorial sections, routine, testimonials and newsletter. Storefront reads these controls and hides disabled sections.
+- Added Cashfree gateway configuration, server-side order-session creation, signed webhook handling, checkout handoff and admin enable/mode controls. This remains staging-ready until real Cashfree sandbox/live credentials and webhook callbacks are verified.
+- Added transactional email delivery with SMTP fallback/configuration, database delivery logs, three-attempt retry handling, customer/admin order notifications, and a permission-protected SMTP test-send action. Provider delivery is still pending real staging credentials and inbox verification.
+
+### Demo fallback removal and seed verification - 2026-09-14
+
+- Storefront commerce surfaces no longer import the legacy product, account, promotion or comparison fixture modules. API-backed loading and honest empty/error states are used instead.
+- Account overview now reads authenticated orders, addresses, rewards and wishlist counts. Wishlist, compare and related/recent product surfaces hydrate from the public catalog API.
+- The demo password-reset mutation and demo success message were removed. A real reset-token and transactional email endpoint remains a separate incomplete gap.
+- `npm run seed:dev` completed successfully against the configured local database. The seed is repeatable and covers catalog, explicit SKU inventory, shipping, staff RBAC, promotions and gift cards; no synthetic order/payment rows are generated.
+- `npm --workspace natural-beauty-api run remove:demo-data` removed the marked QA product/category records and opt-in development customer from the local database; real order rows were preserved.
+
+### Inventory/order transaction audit - 2026-09-14
+
+- Admin cancellation now releases reservations, updates order status, writes history and commits as one database transaction; a failure cannot leave a cancelled order with reserved stock.
+- Failed Cashfree payments now lock the order, mark payment/order state, write history and release reservations in the same transaction. Successful payment moves a pending online order to confirmed exactly once.
+- Online orders start in `pending`; COD orders start in `confirmed`, and reservation movement notes identify the payment path.
+- Duplicate idempotency races now return the original order when the request fingerprint matches, while mismatched reuse remains rejected.
+- Coupon usage limits are rechecked after the coupon row lock immediately before redemption, closing the concurrent checkout over-redemption window.
+- `inventory` reserved quantity remains constrained by database check and all stock mutation paths use `FOR UPDATE`. Full concurrent staging integration coverage is still a release gate.
+
+## Current audit correction - 2026-09-14
+
+The earlier historical sections above intentionally preserve prior evidence. For current planning, the latest status is superseded by the executive table and the detailed production gap register in [`docs/gaps.md`](gaps.md). In particular, Admin Orders now has a routed UI, Settings is a persisted partial module, Pages CMS is implemented for `/pages/:slug`, and SMTP configuration fields exist but SMTP transport/test-send is not yet production-proven.

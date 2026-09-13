@@ -128,26 +128,6 @@
 .method-row b {
   font-size: 12px;
 }
-.demo-payment {
-  background: #f6f5ef;
-  padding: 13px;
-  margin-top: 12px;
-  font-size: 11px;
-  color: var(--muted);
-}
-.demo-payment label {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-size: 9px;
-  letter-spacing: 0.08em;
-}
-.demo-payment select {
-  border: 1px solid var(--line);
-  padding: 5px;
-  background: var(--paper);
-  font-size: 11px;
-}
 .review-items {
   display: grid;
   gap: 12px;
@@ -224,10 +204,14 @@
   padding: clamp(100px, 16vh, 190px) 32px;
   min-height: 70vh;
 }
-.checkout-guard h1,
-.order-page h1 {
-  font: clamp(43px, 6vw, 78px)/1.05 var(--serif);
+.checkout-guard h1 {
+  font: var(--display-xl) / 1.05 var(--serif);
   letter-spacing: -0.045em;
+  margin: 0;
+}
+.order-page h1 {
+  font: var(--display-lg) / 1.08 var(--serif);
+  letter-spacing: -0.04em;
   margin: 0;
 }
 .checkout-guard p:not(.eyebrow),
@@ -397,9 +381,11 @@
   .order-page {
     padding-top: 55px;
   }
-  .order-page h1,
+  .order-page h1 {
+    font-size: var(--display-lg);
+  }
   .checkout-guard h1 {
-    font-size: 48px;
+    font-size: var(--display-xl);
   }
   .order-meta {
     gap: 14px;
