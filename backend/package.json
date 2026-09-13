@@ -11,6 +11,7 @@
     "seed:dev": "node scripts/seed-dev.js",
     "remove:demo-data": "node scripts/remove-demo-data.js",
     "backup:production": "node scripts/backup-production.js",
+    "backup:prune": "node scripts/prune-backups.js",
     "restore:production": "node scripts/restore-production.js",
     "inventory:adjust": "node scripts/inventory-adjust.js",
     "inventory:status": "node scripts/inventory-status.js",

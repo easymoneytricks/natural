@@ -5,6 +5,24 @@ Audit basis: actual repository source code, routes, migrations, and frontend int
 Branch: `main`  
 Commit: `40e2e8b`
 
+## Current readiness snapshot — 2026-09-14
+
+Overall production-readiness is **80%**. The progress is tracked in [PROGRESS.md](PROGRESS.md); this is a release-readiness estimate, not a screen-count percentage. Core product, customer, commerce, admin, CMS, SEO, tax, invoice and operational foundations are present. The remaining 20% is concentrated in live payment/refund settlement, production SMTP/deployment evidence, automated/concurrent QA, unsubscribe suppression and final legal sign-off.
+
+The older detailed tables below are historical module estimates. For launch decisions, use the current `Present in this repository`, `Remaining gaps` and `Release decision` sections in [gaps.md](gaps.md).
+
+### Superseding current module status
+
+| Module area                      | Current status | Readiness | Current note                                                                                                                 |
+| -------------------------------- | -------------- | --------: | ---------------------------------------------------------------------------------------------------------------------------- |
+| Storefront/catalog/checkout      | 🟡 Partial     |       88% | Core API-backed flows exist; automated browser regression and live payment proof remain.                                     |
+| Customer identity/account/orders | 🟡 Partial     |       88% | OTP, sessions, account controls, orders and invoices are implemented; production email/E2E proof remains.                    |
+| Inventory/order operations       | 🟡 Partial     |       86% | Reservations, audit, movement controls, fulfilment and refund states exist; concurrency/provider settlement proof remains.   |
+| Admin catalog/promotions/media   | 🟡 Partial     |       84% | CRUD and media/security foundations exist; browser completion gates and lifecycle evidence remain.                           |
+| CMS/legal/tax/SEO                | 🟡 Partial     |       86% | CMS versions, policies, GST snapshots and SEO routes exist; owner/legal sign-off remains.                                    |
+| Security/operations              | 🟡 Partial     |       80% | Secrets, HTTPS/CORS, rate limits, request IDs, logs, backups and consent foundations exist; production drills/alerts remain. |
+| Testing/QA                       | 🟡 Partial     |       45% | Critical-path test foundations exist; full API/browser, accessibility, visual and load suites remain.                        |
+
 ## Status Legend
 
 - ✅ COMPLETE — important functionality is implemented end-to-end
@@ -414,6 +432,7 @@ The earlier historical sections above intentionally preserve prior evidence. For
 - Added Product JSON-LD on product detail pages and CollectionPage/ItemList JSON-LD on catalog pages.
 - Added database-backed `/sitemap.xml` covering active products, categories and published CMS pages, plus `/robots.txt` with private route disallows.
 - Added `product_slug_redirects` migration and redirect persistence when an admin changes a product slug; storefront follows the canonical slug.
+- Migration `034_entity_seo_fields.sql` adds `seo_keywords` and `canonical_url` to products, categories and brands. Admin editors expose title, description, keywords and canonical URL fields; product metadata/JSON-LD now use the saved canonical URL with same-origin validation.
 - Validation passed: migration application, sitemap/robots HTTP smoke checks, frontend build and format checks.
 
 ## Pages and legal CMS migration - 2026-09-14
@@ -431,3 +450,11 @@ The earlier historical sections above intentionally preserve prior evidence. For
 - Added `npm --workspace natural-beauty-api run media:orphans` orphan report. It is dry-run by default and supports `--delete` only after review; order-item image snapshots are treated as referenced and retained.
 - Originals remain private to the managed storage root and only the configured `/uploads` public derivative path is served; no user-controlled filename is used in a filesystem path.
 - Fixed Admin Media Library request path to `/admin/media`; authenticated asset listing now loads instead of returning `API route not found`.
+
+## P2 scale and operational hardening - 2026-09-14
+
+- Added request IDs (`X-Request-ID`), structured JSON request/error logs, API-wide and route-specific rate limits, trusted-origin protection for browser unsafe requests, and immutable upload cache headers.
+- Added consent management UI with necessary-only and optional-analytics choices; optional analytics is not loaded without opt-in.
+- Added Admin Settings-controlled GA4 integration (`analytics.enabled`, `analytics.measurement_id`) with Measurement ID validation, route page-view events and consent-gated script loading.
+- Added retention-aware `backup:prune` tooling and documented backup, rollback, restore, incident, accessibility, performance and staging-load procedures in [docs/OPERATIONS.md](OPERATIONS.md).
+- Remaining evidence gate: run automated axe/Lighthouse and responsive visual regression suites, generate image derivatives/srcset, execute staging load/restore drills, connect uptime alerts, anonymise staging refreshes and implement a provider-backed marketing unsubscribe suppression list.

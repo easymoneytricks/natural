@@ -396,14 +396,19 @@ export async function getProduct(connection, slug) {
         : 0,
       reviewCount: reviews.length,
       reviews,
-      seo: { title: product.seo_title, description: product.seo_description },
+      seo: {
+        title: product.seo_title,
+        description: product.seo_description,
+        keywords: product.seo_keywords,
+        canonicalUrl: product.canonical_url,
+      },
     },
   };
 }
 
 export async function listCategories(connection) {
   const [rows] =
-    await connection.execute(`SELECT c.id, c.name, c.slug, c.description, c.image_path, c.parent_id, c.sort_order
+    await connection.execute(`SELECT c.id, c.name, c.slug, c.description, c.image_path, c.parent_id, c.sort_order, c.seo_title, c.seo_description, c.seo_keywords, c.canonical_url
     FROM categories c WHERE c.is_active = 1 AND c.deleted_at IS NULL ORDER BY c.sort_order, c.id`);
   return {
     data: rows.map((row) => ({
@@ -414,13 +419,19 @@ export async function listCategories(connection) {
       image: row.image_path,
       parentId: row.parent_id,
       sortOrder: row.sort_order,
+      seo: {
+        title: row.seo_title,
+        description: row.seo_description,
+        keywords: row.seo_keywords,
+        canonicalUrl: row.canonical_url,
+      },
     })),
   };
 }
 
 export async function getCategory(connection, slug) {
   const [rows] = await connection.execute(
-    `SELECT id, name, slug, description, image_path, parent_id, sort_order FROM categories WHERE slug = ? AND is_active = 1 AND deleted_at IS NULL`,
+    `SELECT id, name, slug, description, image_path, parent_id, sort_order, seo_title, seo_description, seo_keywords, canonical_url FROM categories WHERE slug = ? AND is_active = 1 AND deleted_at IS NULL`,
     [slug],
   );
   if (!rows.length)
@@ -435,13 +446,19 @@ export async function getCategory(connection, slug) {
       image: row.image_path,
       parentId: row.parent_id,
       sortOrder: row.sort_order,
+      seo: {
+        title: row.seo_title,
+        description: row.seo_description,
+        keywords: row.seo_keywords,
+        canonicalUrl: row.canonical_url,
+      },
     },
   };
 }
 
 export async function listBrands(connection) {
   const [rows] = await connection.execute(
-    "SELECT id, name, slug, description, logo_path, sort_order FROM brands WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order, id",
+    "SELECT id, name, slug, description, logo_path, sort_order, seo_title, seo_description, seo_keywords, canonical_url FROM brands WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order, id",
   );
   return {
     data: rows.map((row) => ({
@@ -451,13 +468,19 @@ export async function listBrands(connection) {
       description: row.description,
       logo: row.logo_path,
       sortOrder: row.sort_order,
+      seo: {
+        title: row.seo_title,
+        description: row.seo_description,
+        keywords: row.seo_keywords,
+        canonicalUrl: row.canonical_url,
+      },
     })),
   };
 }
 
 export async function getBrand(connection, slug) {
   const [rows] = await connection.execute(
-    "SELECT id, name, slug, description, logo_path, sort_order FROM brands WHERE slug = ? AND is_active = 1 AND deleted_at IS NULL",
+    "SELECT id, name, slug, description, logo_path, sort_order, seo_title, seo_description, seo_keywords, canonical_url FROM brands WHERE slug = ? AND is_active = 1 AND deleted_at IS NULL",
     [slug],
   );
   if (!rows.length)
@@ -471,6 +494,12 @@ export async function getBrand(connection, slug) {
       description: row.description,
       logo: row.logo_path,
       sortOrder: row.sort_order,
+      seo: {
+        title: row.seo_title,
+        description: row.seo_description,
+        keywords: row.seo_keywords,
+        canonicalUrl: row.canonical_url,
+      },
     },
   };
 }

@@ -44,6 +44,10 @@ const emptyProduct = {
   benefits: [],
   ingredients: [],
   attributes: [],
+  seoTitle: "",
+  seoDescription: "",
+  seoKeywords: "",
+  canonicalUrl: "",
 };
 
 const emptySku = {
@@ -154,6 +158,8 @@ export function ProductEditor() {
       isNewArrival: !!product.new_arrival,
       seoTitle: product.seo_title || "",
       seoDescription: product.seo_description || "",
+      seoKeywords: product.seo_keywords || "",
+      canonicalUrl: product.canonical_url || "",
       brandId: product.brand_id || "",
       categories: (product.categories || []).map((category) => ({
         id: category.id,
@@ -506,6 +512,27 @@ export function ProductEditor() {
                 onChange={(event) =>
                   updateForm("seoDescription", event.target.value)
                 }
+              />
+            </label>
+            <label>
+              SEO keywords
+              <input
+                value={form.seoKeywords || ""}
+                onChange={(event) =>
+                  updateForm("seoKeywords", event.target.value)
+                }
+                placeholder="hydration, barrier care, moisturizer"
+              />
+            </label>
+            <label>
+              Canonical URL
+              <input
+                type="url"
+                value={form.canonicalUrl || ""}
+                onChange={(event) =>
+                  updateForm("canonicalUrl", event.target.value)
+                }
+                placeholder="https://example.com/product/product-slug"
               />
             </label>
             {[

@@ -913,6 +913,66 @@ input:focus-visible {
   margin: 0 auto;
 }
 
+.consent-banner {
+  position: fixed;
+  z-index: 120;
+  right: 24px;
+  bottom: 24px;
+  width: min(560px, calc(100% - 48px));
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 18px 20px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 36px rgb(32 37 33 / 16%);
+}
+.consent-banner p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.consent-banner .eyebrow {
+  margin-bottom: 5px;
+}
+.consent-banner a {
+  color: var(--sage-dark);
+  text-decoration: underline;
+}
+.consent-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.consent-actions button {
+  padding: 10px 12px;
+  color: var(--sage-dark);
+  border: 1px solid var(--line);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.consent-actions .consent-primary {
+  color: #fff;
+  background: var(--sage-dark);
+  border-color: var(--sage-dark);
+}
+@media (max-width: 700px) {
+  .consent-banner {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100% - 24px);
+    display: block;
+  }
+  .consent-actions {
+    margin-top: 12px;
+  }
+  .consent-actions button {
+    flex: 1;
+  }
+}
+
 .homepage-hero {
   padding: 0;
   overflow: hidden;

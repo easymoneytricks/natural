@@ -7,6 +7,7 @@ const fail = (status, code, message) => {
 const groups = [
   "branding",
   "seo",
+  "analytics",
   "shipping",
   "tax",
   "homepage",

@@ -69,6 +69,7 @@ The following capabilities are implemented in source and local database migratio
 - Staff users, roles, permissions, session protection and audit logs.
 - Admin customers, promotions, gift cards, reviews, contact inbox, media library, reports, useful-info analytics, settings, system and Pages/CMS routes.
 - Storefront settings for branding, SEO/social image, shipping, tax, SMTP, homepage content, navigation/footer, payment gateway and maintenance mode.
+- Optional Google Analytics 4 integration is controlled by Admin Settings (`enabled` plus Measurement ID) and is loaded only after optional analytics consent.
 - Safe destructive operations and audit events across catalog/inventory/order operations.
 
 ### Content and SEO
@@ -81,6 +82,8 @@ The following capabilities are implemented in source and local database migratio
 - Database-backed `/sitemap.xml` for active products/categories and published CMS pages.
 - `/robots.txt` disallowing private account, checkout, cart, wishlist, compare and admin routes.
 - Product slug redirect table and storefront canonical navigation after slug changes.
+- Product, category and brand editors now support SEO title, description, comma-separated keywords and an optional same-origin canonical URL. Product detail metadata and JSON-LD consume the saved canonical URL; unsafe cross-origin canonical values safely fall back to the current site URL.
+- Product pages now publish a Schema.org `@graph` containing Product, Brand/category context, AggregateOffer, optional AggregateRating and BreadcrumbList. Shop pages publish CollectionPage, ItemList and BreadcrumbList JSON-LD.
 
 ## Remaining gaps
 
@@ -102,12 +105,8 @@ The following capabilities are implemented in source and local database migratio
 
 ### P2 — scale and operational hardening
 
-- Full accessibility audit: keyboard/focus, contrast, labels, screen-reader announcements and reduced motion.
-- Performance budgets, responsive visual regression, image srcset/derivatives, CDN/cache headers and load tests.
-- Structured logs, request IDs, uptime/alerting, payment/order dashboards and incident runbooks.
-- Backup retention, migration rollback notes, anonymised staging data and restore rehearsal automation.
-- Rate limits and abuse controls for reset, contact, coupons, gift cards and payment endpoints; review CSRF strategy.
-- Analytics/consent management, email unsubscribe compliance and operational reports for sales, tax, discounts, refunds, stock and cohorts.
+- Accessibility/performance/operations foundations are present: visible focus and reduced-motion CSS, labelled/live-region patterns, route/API rate limits, request IDs, structured JSON logs, cache headers, consent capture and backup-prune tooling. See [docs/OPERATIONS.md](OPERATIONS.md).
+- Remaining P2 evidence work is the automated axe/Lighthouse and responsive visual suite, generated image derivatives/srcset, staging load test, provider uptime/alert wiring, restore rehearsal, anonymised staging refresh and a real marketing unsubscribe/suppression workflow before campaigns. GA4 production reporting still requires the business owner to configure the Measurement ID and validate the consent/legal basis.
 
 ## Next execution sequence
 
@@ -117,14 +116,14 @@ The following capabilities are implemented in source and local database migratio
 4. Select Cashfree or Razorpay as the single launch provider; complete callback/webhook reconciliation, refund settlement and replay tests.
 5. Run concurrent quote/reservation/order/payment/refund tests against a dedicated staging dataset.
 6. Run browser E2E across customer and admin critical paths, including product lifecycle, inventory and order operations.
-7. Migrate approved legal content to Pages CMS and complete tax/privacy/retention review.
+7. Maintain legal CMS versions and complete tax/privacy/retention review with owner sign-off.
 8. Configure media scanning, private originals, derivatives/CDN and review orphan cleanup output.
 9. Add monitoring, alerts, backup/restore and rollback evidence.
 10. Promote only when every P0 item is green, evidence is recorded and business/payment/legal owners sign off.
 
 ## Evidence and limitations
 
-- Local migrations through `028_product_slug_redirects.sql` are applied.
+- Local migrations through `032_tax_setting_defaults.sql` are applied.
 - `npm run format:check` and full storefront/admin builds pass after the latest changes.
 - Sitemap, robots, invoice and media-orphan HTTP/CLI smoke checks pass locally.
 - Browser checks covered authenticated admin order operations and storefront password-recovery UI; they do not prove all responsive/accessibility states.

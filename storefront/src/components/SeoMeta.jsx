@@ -15,15 +15,30 @@ const upsert = (selector, attributes, content) => {
   element.setAttribute("content", content || "");
 };
 
+const resolveCanonical = (value) => {
+  if (!value) return `${siteUrl}${window.location.pathname}`;
+  try {
+    const url = new URL(value, siteUrl);
+    const allowedOrigin = new URL(siteUrl).origin;
+    return url.origin === allowedOrigin
+      ? url.href.replace(/\/$/, "")
+      : `${siteUrl}${window.location.pathname}`;
+  } catch {
+    return `${siteUrl}${window.location.pathname}`;
+  }
+};
+
 export function SeoMeta({
   title,
   description,
   image,
   type = "website",
   noindex = false,
+  keywords = "",
+  canonicalUrl = "",
 }) {
   useEffect(() => {
-    const canonical = `${siteUrl}${window.location.pathname}`;
+    const canonical = resolveCanonical(canonicalUrl);
     document.title = title ? `${title} | Natural Beauty` : "Natural Beauty";
     let link = document.head.querySelector("link[rel='canonical']");
     if (!link) {
@@ -37,6 +52,7 @@ export function SeoMeta({
       { name: "description" },
       description || "Thoughtfully formulated skincare for everyday rituals.",
     );
+    upsert("meta[name='keywords']", { name: "keywords" }, keywords || "");
     upsert(
       "meta[property='og:title']",
       { property: "og:title" },
@@ -70,7 +86,7 @@ export function SeoMeta({
       { name: "robots" },
       noindex ? "noindex,nofollow" : "index,follow",
     );
-  }, [title, description, image, type, noindex]);
+  }, [title, description, image, type, noindex, keywords, canonicalUrl]);
   return null;
 }
 

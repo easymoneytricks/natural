@@ -33,6 +33,8 @@ import { StoreSettingsProvider } from "./context/StoreSettingsContext";
 import { CmsPage } from "./pages/CmsPage";
 import { SeoMeta } from "./components/SeoMeta";
 import { useLocation } from "react-router-dom";
+import { ConsentBanner } from "./components/layout/ConsentBanner";
+import { Analytics } from "./components/Analytics";
 
 const informationalRoutes = [
   "/about",
@@ -154,6 +156,8 @@ export default function App() {
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
       <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <ConsentBanner />
+      <Analytics />
     </StoreSettingsProvider>
   );
 }

@@ -114,6 +114,8 @@ export async function save(pool, type, input, id, adminId, req) {
           Number(input.sortOrder || 0),
           input.seoTitle || null,
           input.seoDescription || null,
+          input.seoKeywords || null,
+          input.canonicalUrl || null,
         ]
       : [
           parentId,
@@ -124,13 +126,15 @@ export async function save(pool, type, input, id, adminId, req) {
           Number(input.sortOrder || 0),
           input.seoTitle || null,
           input.seoDescription || null,
+          input.seoKeywords || null,
+          input.canonicalUrl || null,
         ];
   try {
     if (id) {
       const cols =
         type === "brands"
-          ? "name=?,slug=?,description=?,website_url=?,is_active=?,sort_order=?,seo_title=?,seo_description=?"
-          : "parent_id=?,name=?,slug=?,description=?,is_active=?,sort_order=?,seo_title=?,seo_description=?";
+          ? "name=?,slug=?,description=?,website_url=?,is_active=?,sort_order=?,seo_title=?,seo_description=?,seo_keywords=?,canonical_url=?"
+          : "parent_id=?,name=?,slug=?,description=?,is_active=?,sort_order=?,seo_title=?,seo_description=?,seo_keywords=?,canonical_url=?";
       const [result] = await pool.execute(
         `UPDATE ${table} SET ${cols} WHERE id=? AND deleted_at IS NULL`,
         [...values, id],
@@ -140,8 +144,8 @@ export async function save(pool, type, input, id, adminId, req) {
     } else {
       const cols =
         type === "brands"
-          ? "name,slug,description,website_url,is_active,sort_order,seo_title,seo_description"
-          : "parent_id,name,slug,description,is_active,sort_order,seo_title,seo_description";
+          ? "name,slug,description,website_url,is_active,sort_order,seo_title,seo_description,seo_keywords,canonical_url"
+          : "parent_id,name,slug,description,is_active,sort_order,seo_title,seo_description,seo_keywords,canonical_url";
       await pool.execute(
         `INSERT INTO ${table} (${cols}) VALUES (${values.map(() => "?").join(",")})`,
         values,

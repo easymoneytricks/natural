@@ -287,25 +287,76 @@ export function ProductDetail() {
             description={product.shortDescription || product.description}
             image={product.image}
             type="product"
+            keywords={product.seo?.keywords}
+            canonicalUrl={product.seo?.canonicalUrl}
           />
           <StructuredData
             data={{
               "@context": "https://schema.org",
-              "@type": "Product",
-              name: product.name,
-              description: product.shortDescription || product.description,
-              image: product.gallery?.map((item) => item.src || item) || [
-                product.image,
+              "@graph": [
+                {
+                  "@type": "Product",
+                  "@id": `${window.location.origin}/product/${product.slug}#product`,
+                  name: product.name,
+                  url:
+                    product.seo?.canonicalUrl ||
+                    `${window.location.origin}/product/${product.slug}`,
+                  description: product.shortDescription || product.description,
+                  image: (product.gallery || [product.image]).filter(Boolean),
+                  sku: detail?.skus?.[0]?.sku,
+                  brand: product.brand?.name
+                    ? { "@type": "Brand", name: product.brand.name }
+                    : undefined,
+                  category: product.category || undefined,
+                  offers: {
+                    "@type": "AggregateOffer",
+                    priceCurrency: "INR",
+                    lowPrice: product.price,
+                    highPrice: product.maxPrice || product.price,
+                    offerCount: detail?.skus?.length || 1,
+                    availability: product.available
+                      ? "https://schema.org/InStock"
+                      : "https://schema.org/OutOfStock",
+                    url:
+                      product.seo?.canonicalUrl ||
+                      `${window.location.origin}/product/${product.slug}`,
+                  },
+                  ...(product.reviews > 0 && product.rating > 0
+                    ? {
+                        aggregateRating: {
+                          "@type": "AggregateRating",
+                          ratingValue: product.rating,
+                          reviewCount: product.reviews,
+                        },
+                      }
+                    : {}),
+                },
+                {
+                  "@type": "BreadcrumbList",
+                  itemListElement: [
+                    {
+                      "@type": "ListItem",
+                      position: 1,
+                      name: "Home",
+                      item: window.location.origin,
+                    },
+                    {
+                      "@type": "ListItem",
+                      position: 2,
+                      name: "Shop",
+                      item: `${window.location.origin}/shop`,
+                    },
+                    {
+                      "@type": "ListItem",
+                      position: 3,
+                      name: product.name,
+                      item:
+                        product.seo?.canonicalUrl ||
+                        `${window.location.origin}/product/${product.slug}`,
+                    },
+                  ],
+                },
               ],
-              sku: detail?.skus?.[0]?.sku,
-              offers: {
-                "@type": "AggregateOffer",
-                priceCurrency: "INR",
-                lowPrice: product.price,
-                highPrice: product.price,
-                availability: "https://schema.org/InStock",
-                url: `${window.location.origin}/product/${product.slug}`,
-              },
             }}
           />
         </>

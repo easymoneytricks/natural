@@ -235,6 +235,8 @@ function BrandEditor({ editing, onClose, onSaved }) {
     description: editing?.description || "",
     seoTitle: editing?.seo_title || "",
     seoDescription: editing?.seo_description || "",
+    seoKeywords: editing?.seo_keywords || "",
+    canonicalUrl: editing?.canonical_url || "",
     sortOrder: editing?.sort_order ?? 0,
     isActive: editing?.is_active ?? true,
   }));
@@ -373,6 +375,23 @@ function BrandEditor({ editing, onClose, onSaved }) {
               value={form.seoDescription}
               onChange={(event) => update("seoDescription", event.target.value)}
               placeholder="A concise search description"
+            />
+          </label>
+          <label>
+            SEO keywords
+            <input
+              value={form.seoKeywords}
+              onChange={(event) => update("seoKeywords", event.target.value)}
+              placeholder="hydration, moisturizer, skincare"
+            />
+          </label>
+          <label>
+            Canonical URL
+            <input
+              type="url"
+              value={form.canonicalUrl}
+              onChange={(event) => update("canonicalUrl", event.target.value)}
+              placeholder="https://example.com/brands/brand-name"
             />
           </label>
         </div>

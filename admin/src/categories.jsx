@@ -49,6 +49,8 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
     description: editing?.description || "",
     seoTitle: editing?.seo_title || "",
     seoDescription: editing?.seo_description || "",
+    seoKeywords: editing?.seo_keywords || "",
+    canonicalUrl: editing?.canonical_url || "",
     sortOrder: editing?.sort_order ?? 0,
     isActive: editing?.is_active ?? true,
   });
@@ -198,6 +200,23 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
               value={form.seoDescription}
               onChange={(event) => update("seoDescription", event.target.value)}
               placeholder="A concise search description"
+            />
+          </label>
+          <label>
+            SEO keywords
+            <input
+              value={form.seoKeywords}
+              onChange={(event) => update("seoKeywords", event.target.value)}
+              placeholder="cleanser, sensitive skin, skincare"
+            />
+          </label>
+          <label>
+            Canonical URL
+            <input
+              type="url"
+              value={form.canonicalUrl}
+              onChange={(event) => update("canonicalUrl", event.target.value)}
+              placeholder="https://example.com/shop/category"
             />
           </label>
         </div>

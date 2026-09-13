@@ -158,6 +158,8 @@ async function saveProduct(pool, input, id, adminId, req) {
     input.isActive !== false,
     input.seoTitle || null,
     input.seoDescription || null,
+    input.seoKeywords || null,
+    input.canonicalUrl || null,
   ];
   try {
     let pid = id;
@@ -167,7 +169,7 @@ async function saveProduct(pool, input, id, adminId, req) {
         [id],
       );
       const [r] = await pool.execute(
-        "UPDATE products SET brand_id=?,name=?,slug=?,short_description=?,description=?,ingredients_text=?,how_to_use=?,texture=?,usage_time=?,status=?,product_type=?,base_price=?,base_mrp=?,featured=?,best_seller=?,new_arrival=?,is_active=?,seo_title=?,seo_description=? WHERE id=? AND deleted_at IS NULL",
+        "UPDATE products SET brand_id=?,name=?,slug=?,short_description=?,description=?,ingredients_text=?,how_to_use=?,texture=?,usage_time=?,status=?,product_type=?,base_price=?,base_mrp=?,featured=?,best_seller=?,new_arrival=?,is_active=?,seo_title=?,seo_description=?,seo_keywords=?,canonical_url=? WHERE id=? AND deleted_at IS NULL",
         [...vals, id],
       );
       if (!r.affectedRows) fail(404, "PRODUCT_NOT_FOUND", "Product not found.");
@@ -178,7 +180,7 @@ async function saveProduct(pool, input, id, adminId, req) {
         );
     } else {
       const [r] = await pool.execute(
-        "INSERT INTO products (brand_id,name,slug,short_description,description,ingredients_text,how_to_use,texture,usage_time,status,product_type,base_price,base_mrp,featured,best_seller,new_arrival,is_active,seo_title,seo_description) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO products (brand_id,name,slug,short_description,description,ingredients_text,how_to_use,texture,usage_time,status,product_type,base_price,base_mrp,featured,best_seller,new_arrival,is_active,seo_title,seo_description,seo_keywords,canonical_url) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         vals,
       );
       pid = r.insertId;

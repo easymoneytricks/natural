@@ -36,6 +36,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { notFound } from "./middleware/notFound.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import crypto from "node:crypto";
+import rateLimit from "express-rate-limit";
+import { logger } from "./utils/logger.js";
+import { csrfOriginGuard } from "./middleware/csrfOriginGuard.js";
 
 export function createApp() {
   const backendRoot = path.resolve(
@@ -47,6 +51,35 @@ export function createApp() {
   app.set("trust proxy", env.trustProxy);
   app.use(helmet());
   app.use(cors({ origin: env.corsOrigins, credentials: true }));
+  app.use((req, res, next) => {
+    const requestId = req.get("x-request-id") || crypto.randomUUID();
+    req.requestId = requestId;
+    res.setHeader("X-Request-ID", requestId);
+    const started = Date.now();
+    res.on("finish", () =>
+      logger.info("http.request", {
+        requestId,
+        method: req.method,
+        path: req.originalUrl,
+        status: res.statusCode,
+        durationMs: Date.now() - started,
+      }),
+    );
+    next();
+  });
+  app.use(
+    "/api/v1",
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: 600,
+      standardHeaders: "draft-7",
+      legacyHeaders: false,
+      message: {
+        error: { code: "RATE_LIMITED", message: "Too many requests." },
+      },
+    }),
+  );
+  app.use(csrfOriginGuard);
   app.use((req, res, next) => {
     if (
       env.requireHttps &&
@@ -120,6 +153,9 @@ export function createApp() {
     express.static(path.resolve(backendRoot, "storage", "uploads"), {
       dotfiles: "deny",
       index: false,
+      setHeaders: (res) => {
+        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      },
     }),
   );
   app.use(notFound);

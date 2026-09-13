@@ -13,6 +13,10 @@ const defaults = {
     meta_description: "Thoughtfully formulated skincare for everyday rituals.",
     og_image_url: "",
   },
+  analytics: {
+    enabled: "false",
+    measurement_id: "",
+  },
   shipping: {
     free_threshold: "999",
     default_rate: "149",
@@ -305,6 +309,32 @@ export function SettingsPage() {
               name="og_image_url"
               state={state}
               setState={setState}
+            />
+          </SettingsGroup>
+          <SettingsGroup
+            icon={Globe2}
+            title="Analytics"
+            description="Connect Google Analytics 4 without loading it before visitor consent."
+          >
+            <Field
+              label="Enable Google Analytics"
+              group="analytics"
+              name="enabled"
+              state={state}
+              setState={setState}
+              options={[
+                ["false", "Disabled"],
+                ["true", "Enabled"],
+              ]}
+              help="The storefront still waits for optional analytics consent."
+            />
+            <Field
+              label="GA4 Measurement ID"
+              group="analytics"
+              name="measurement_id"
+              state={state}
+              setState={setState}
+              help="Example: G-XXXXXXXXXX"
             />
           </SettingsGroup>
           <SettingsGroup

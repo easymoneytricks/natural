@@ -6,7 +6,10 @@ const codes = new Set(
   ),
 );
 export function errorHandler(error, req, res, next) {
-  logger.error(`${req.method} ${req.originalUrl}: ${error.message}`);
+  logger.error(`${req.method} ${req.originalUrl}: ${error.message}`, {
+    requestId: req.requestId,
+    stack: env.nodeEnv === "development" ? error.stack : undefined,
+  });
   let status = Number(error.statusCode || error.status || 500);
   if (error.code === "LIMIT_FILE_SIZE") {
     status = 413;
@@ -21,6 +24,7 @@ export function errorHandler(error, req, res, next) {
           ? "INTERNAL_ERROR"
           : "REQUEST_ERROR",
       message: status === 500 ? "Something went wrong." : error.message,
+      requestId: req.requestId,
       ...(env.nodeEnv === "development" && status === 500
         ? { details: error.message }
         : {}),

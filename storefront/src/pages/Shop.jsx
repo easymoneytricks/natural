@@ -263,18 +263,42 @@ export function Shop() {
       <StructuredData
         data={{
           "@context": "https://schema.org",
-          "@type": "CollectionPage",
-          name: selected.category?.[0] || "Skincare collection",
-          url: window.location.href,
-          mainEntity: {
-            "@type": "ItemList",
-            itemListElement: products.slice(0, 24).map((item, index) => ({
-              "@type": "ListItem",
-              position: index + 1,
-              url: `${window.location.origin}/product/${item.slug}`,
-              name: item.name,
-            })),
-          },
+          "@graph": [
+            {
+              "@type": "CollectionPage",
+              "@id": `${window.location.origin}/shop#collection`,
+              name: selected.category?.[0] || "Skincare collection",
+              url: window.location.href,
+              mainEntity: { "@id": `${window.location.origin}/shop#items` },
+            },
+            {
+              "@type": "ItemList",
+              "@id": `${window.location.origin}/shop#items`,
+              itemListElement: products.slice(0, 24).map((item, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                url: `${window.location.origin}/product/${item.slug}`,
+                name: item.name,
+              })),
+            },
+            {
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                {
+                  "@type": "ListItem",
+                  position: 1,
+                  name: "Home",
+                  item: window.location.origin,
+                },
+                {
+                  "@type": "ListItem",
+                  position: 2,
+                  name: "Shop",
+                  item: `${window.location.origin}/shop`,
+                },
+              ],
+            },
+          ],
         }}
       />
       <section className="shop-page-header homepage-container">
