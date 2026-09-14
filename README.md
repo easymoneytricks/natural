@@ -24,4 +24,4 @@ Individual commands: `npm run dev:storefront`, `npm run dev:admin`, `npm run dev
 
 Build with `npm run build`, or use `npm run build:storefront` and `npm run build:admin`. Migration and seed commands delegate to the backend package.
 
-Read [Architecture](docs/ARCHITECTURE.md) and [Progress](docs/PROGRESS.md) before substantial changes.
+Read [Architecture](docs/ARCHITECTURE.md) and [Progress](docs/PROGRESS.md) before substantial changes. For the first hosted environment, follow [Production deployment](docs/PRODUCTION_DEPLOYMENT.md), then complete [Production checklist](docs/PRODUCTION_CHECKLIST.md). Environment names and secret boundaries are documented in [Environment reference](docs/ENVIRONMENT.md).

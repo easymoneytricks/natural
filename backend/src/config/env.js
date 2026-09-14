@@ -2,7 +2,9 @@ import "dotenv/config";
 
 const isProduction = process.env.NODE_ENV === "production";
 const isPlaceholder = (value = "") =>
-  /replace|change-me|example|development|secret$/i.test(value);
+  /replace|change-me|example|development|secret$|generate|store-in-secret-manager|your-domain|managed-mariadb|password123|^secret$/i.test(
+    value,
+  );
 const csv = (value) =>
   String(value || "")
     .split(",")
@@ -31,6 +33,7 @@ if (isProduction) {
     "ADMIN_JWT_ACCESS_SECRET",
     "CORS_ORIGINS",
     "STOREFRONT_URL",
+    "ADMIN_URL",
     "PUBLIC_API_URL",
     "MEDIA_STORAGE_ROOT",
     "MEDIA_PUBLIC_BASE_URL",
@@ -55,6 +58,7 @@ if (isProduction) {
     throw new Error("Production CORS_ORIGINS must contain only HTTPS origins.");
   for (const key of [
     "STOREFRONT_URL",
+    "ADMIN_URL",
     "PUBLIC_API_URL",
     "MEDIA_PUBLIC_BASE_URL",
   ])
@@ -103,7 +107,17 @@ export const env = {
     password: process.env.DB_PASSWORD || "",
   },
   corsOrigins: csv(process.env.CORS_ORIGINS || "http://localhost:5173"),
-  trustProxy: process.env.TRUST_PROXY || (isProduction ? "1" : false),
+  trustProxy: (() => {
+    const value = String(process.env.TRUST_PROXY || (isProduction ? "1" : "0"))
+      .trim()
+      .toLowerCase();
+    if (value === "false" || value === "0") return false;
+    if (/^\d+$/.test(value)) return Number(value);
+    if (["loopback", "linklocal", "uniquelocal"].includes(value)) return value;
+    throw new Error(
+      "TRUST_PROXY must be a trusted proxy hop count, false, or an Express trust-proxy subnet name.",
+    );
+  })(),
   requireHttps: isProduction && process.env.REQUIRE_HTTPS !== "false",
   media: {
     root: process.env.MEDIA_STORAGE_ROOT || "",

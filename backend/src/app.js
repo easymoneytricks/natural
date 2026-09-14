@@ -48,6 +48,9 @@ export function createApp() {
     path.dirname(fileURLToPath(import.meta.url)),
     "..",
   );
+  const uploadsRoot = path.resolve(
+    env.media.root || path.resolve(backendRoot, "storage", "uploads"),
+  );
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", env.trustProxy);
@@ -169,7 +172,7 @@ export function createApp() {
   app.use("/api/v1/admin", adminReviewRoutes);
   app.use(
     "/uploads",
-    express.static(path.resolve(backendRoot, "storage", "uploads"), {
+    express.static(uploadsRoot, {
       dotfiles: "deny",
       index: false,
       setHeaders: (res) => {

@@ -1,5 +1,7 @@
 # Operations and release hardening
 
+The practical first-hosted-deployment sequence and checkboxes are in [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md) and [PRODUCTION_CHECKLIST.md](PRODUCTION_CHECKLIST.md). Keep the store closed/coming soon and payment providers in sandbox/test mode for that inspection pass.
+
 ## Observability
 
 Every API response includes an `X-Request-ID`. The API emits JSON logs with timestamp, method, path, status and duration; error responses include the same request ID for support correlation. Forward these logs to the host's central log service and alert on 5xx rate, 429 rate, health failures, payment callback failures and order status lag.

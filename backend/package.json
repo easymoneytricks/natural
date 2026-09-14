@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "validate:production": "node scripts/validate-production.js",
     "migrate": "node scripts/migrate.js",
     "migrate:status": "node scripts/migrate.js --status",
     "seed:dev": "node scripts/seed-dev.js",

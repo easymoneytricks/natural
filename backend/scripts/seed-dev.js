@@ -9,6 +9,10 @@ import {
 import { hashPassword } from "../src/utils/password.js";
 import crypto from "node:crypto";
 
+if (process.env.NODE_ENV === "production") {
+  throw new Error("seed:dev is disabled when NODE_ENV=production.");
+}
+
 const categories = [
   "Cleansers",
   "Toners & Mists",
