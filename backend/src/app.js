@@ -49,7 +49,22 @@ export function createApp() {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", env.trustProxy);
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          "script-src": [
+            "'self'",
+            "https://www.google.com/recaptcha/",
+            "https://www.gstatic.com/recaptcha/",
+          ],
+          "frame-src": ["'self'", "https://www.google.com/recaptcha/"],
+          "style-src": ["'self'", "https:", "'unsafe-inline'"],
+          "img-src": ["'self'", "data:", "https:"],
+        },
+      },
+    }),
+  );
   app.use(cors({ origin: env.corsOrigins, credentials: true }));
   app.use((req, res, next) => {
     const requestId = req.get("x-request-id") || crypto.randomUUID();

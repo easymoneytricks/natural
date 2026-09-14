@@ -266,7 +266,6 @@ export function Register() {
           onChange={(value) => update("password", value)}
           autoComplete="new-password"
         />
-        <RecaptchaWidget onToken={setRecaptchaToken} />
         <p className="password-note">
           Use at least 8 characters with uppercase, lowercase and a number.
         </p>
@@ -298,6 +297,7 @@ export function Register() {
           />{" "}
           Send me Natural Beauty skincare notes and offers.
         </label>
+        <RecaptchaWidget onToken={setRecaptchaToken} />
         <button className="button" type="submit" disabled={loading}>
           {loading ? "Creating account..." : "Create an account"}
         </button>

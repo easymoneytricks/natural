@@ -129,6 +129,7 @@ function Field({
   setState,
   help,
   options,
+  placeholder,
 }) {
   const value = state[group]?.[name] ?? "";
   const update = (next) =>
@@ -161,6 +162,7 @@ function Field({
             type={type}
             value={value}
             onChange={(event) => update(event.target.value)}
+            placeholder={placeholder}
           />
         )}
       </div>
@@ -230,7 +232,7 @@ export function SettingsPage() {
     setNotice("");
     setError("");
     try {
-      await authFetch("/system/email-test", {
+      await authFetch("/admin/system/email-test", {
         method: "POST",
         body: { recipient: testRecipient },
       });
@@ -284,7 +286,8 @@ export function SettingsPage() {
               name="logo_url"
               state={state}
               setState={setState}
-              help="Use a hosted image or a path from the media library."
+              placeholder="https://… (recommended: 240 × 64 px, transparent PNG/SVG)"
+              help="Recommended: 240 × 64 px with transparent background for a crisp header logo."
             />
             <Field
               label="Favicon URL"
@@ -292,6 +295,8 @@ export function SettingsPage() {
               name="favicon_url"
               state={state}
               setState={setState}
+              placeholder="https://… (recommended: 48 × 48 px PNG/ICO)"
+              help="Recommended: square 48 × 48 px PNG or ICO."
             />
             <Field
               label="Footer logo URL"
@@ -299,7 +304,8 @@ export function SettingsPage() {
               name="footer_logo_url"
               state={state}
               setState={setState}
-              help="Optional separate logo for the footer. Leave blank to reuse the header logo."
+              placeholder="https://… (recommended: 240 × 64 px, transparent PNG/SVG)"
+              help="Recommended: 240 × 64 px transparent logo; leave blank to reuse the header logo."
             />
             <Field
               label="Announcement message"
@@ -768,6 +774,8 @@ export function SettingsPage() {
               name="hero_image_url"
               state={state}
               setState={setState}
+              placeholder="https://… (recommended: 1600 × 700 px landscape)"
+              help="Recommended: 1600 × 700 px landscape image (roughly 2.3:1) for desktop and mobile crops."
             />
             <Field
               label="Primary CTA label"

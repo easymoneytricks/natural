@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Image, LoaderCircle, Search } from "lucide-react";
+import { Image, LoaderCircle, Search, Upload } from "lucide-react";
 import { useAuth } from "./main";
 
 const assetUrl = (path) => {
@@ -18,6 +18,30 @@ export function MediaLibrary() {
   const [type, setType] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
+  const uploadFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    setUploadMessage("");
+    try {
+      const form = new FormData();
+      form.append("image", file);
+      const response = await authFetch("/admin/media", {
+        method: "POST",
+        body: form,
+      });
+      setAssets((current) => [response.data, ...current]);
+      setUploadMessage("Image uploaded to the library.");
+    } catch (caught) {
+      setError(caught.message || "Unable to upload image.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -41,9 +65,21 @@ export function MediaLibrary() {
             gallery asset.
           </p>
         </div>
-        <div className="media-library-count">
-          <b>{assets.length}</b>
-          <span>visible assets</span>
+        <div className="media-library-actions">
+          <label className="button media-upload-button">
+            <Upload size={16} /> {uploading ? "Uploading…" : "Upload image"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={uploadFile}
+              disabled={uploading}
+              hidden
+            />
+          </label>
+          <div className="media-library-count">
+            <b>{assets.length}</b>
+            <span>visible assets</span>
+          </div>
         </div>
       </div>
       <div className="media-library-toolbar">
@@ -85,6 +121,11 @@ export function MediaLibrary() {
       {error && (
         <div className="error" role="alert">
           {error}
+        </div>
+      )}
+      {uploadMessage && (
+        <div className="notice" role="status">
+          {uploadMessage}
         </div>
       )}
       <div className="media-library-grid">

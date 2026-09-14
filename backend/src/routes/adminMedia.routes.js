@@ -3,9 +3,16 @@ import {
   requireAdminAuth,
   requireAdminPermission,
 } from "../middleware/adminAuth.js";
-import { list } from "../controllers/adminMedia.controller.js";
+import { list, upload } from "../controllers/adminMedia.controller.js";
+import { upload as uploadMiddleware } from "../services/mediaStorage.service.js";
 
 const router = Router();
 router.use(requireAdminAuth);
 router.get("/media", requireAdminPermission("catalog.view"), list);
+router.post(
+  "/media",
+  requireAdminPermission("catalog.manage"),
+  uploadMiddleware.single("image"),
+  upload,
+);
 export default router;

@@ -2,17 +2,51 @@ import { useEffect, useRef } from "react";
 import { useStoreSettings } from "../context/StoreSettingsContext";
 
 let scriptPromise;
+
+const waitForCaptcha = (resolve, reject) => {
+  const startedAt = Date.now();
+  const check = () => {
+    if (window.grecaptcha?.render) {
+      window.grecaptcha.ready(() => resolve(window.grecaptcha));
+      return;
+    }
+    if (Date.now() - startedAt > 10000) {
+      reject(new Error("reCAPTCHA did not initialize."));
+      return;
+    }
+    window.setTimeout(check, 50);
+  };
+  check();
+};
+
 const loadScript = () => {
-  if (window.grecaptcha) return Promise.resolve(window.grecaptcha);
+  if (window.grecaptcha?.render)
+    return new Promise((resolve) =>
+      window.grecaptcha.ready(() => resolve(window.grecaptcha)),
+    );
   if (!scriptPromise) {
     scriptPromise = new Promise((resolve, reject) => {
-      const script = document.createElement("script");
+      const existingScript = document.querySelector(
+        "script[data-natural-beauty-recaptcha]",
+      );
+      const script = existingScript || document.createElement("script");
+      let started = false;
+      const finish = () => {
+        if (started) return;
+        started = true;
+        waitForCaptcha(resolve, reject);
+      };
+      script.dataset.naturalBeautyRecaptcha = "true";
       script.src = "https://www.google.com/recaptcha/api.js?render=explicit";
       script.async = true;
       script.defer = true;
-      script.onload = () => resolve(window.grecaptcha);
-      script.onerror = reject;
-      document.head.appendChild(script);
+      script.addEventListener("load", finish, { once: true });
+      script.onerror = () => {
+        scriptPromise = null;
+        reject(new Error("reCAPTCHA script could not load."));
+      };
+      if (!script.parentNode) document.head.appendChild(script);
+      if (existingScript) finish();
     });
   }
   return scriptPromise;
@@ -39,9 +73,14 @@ export function RecaptchaWidget({ onToken }) {
           "error-callback": () => onToken(""),
         });
       })
-      .catch(() => onToken(""));
+      .catch(() => {
+        scriptPromise = null;
+        onToken("");
+      });
     return () => {
       cancelled = true;
+      if (elementRef.current) elementRef.current.innerHTML = "";
+      widgetRef.current = null;
     };
   }, [enabled, onToken, siteKey]);
 

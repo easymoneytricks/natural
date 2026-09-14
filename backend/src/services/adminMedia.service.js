@@ -3,7 +3,7 @@ export async function list(pool, query = {}) {
     .trim()
     .toLowerCase();
   const type = query.type && query.type !== "all" ? query.type : "all";
-  const [brands, categories, products] = await Promise.all([
+  const [brands, categories, products, unassigned] = await Promise.all([
     pool.execute(
       "SELECT id,name,logo_path file_path,updated_at FROM brands WHERE logo_path IS NOT NULL AND deleted_at IS NULL",
     ),
@@ -12,6 +12,9 @@ export async function list(pool, query = {}) {
     ),
     pool.execute(
       "SELECT pm.id,p.name,pm.file_path,pm.alt_text,pm.is_primary,pm.updated_at FROM product_media pm JOIN products p ON p.id=pm.product_id WHERE pm.deleted_at IS NULL AND p.deleted_at IS NULL",
+    ),
+    pool.execute(
+      "SELECT id,file_path,alt_text,created_at updated_at FROM media_assets WHERE deleted_at IS NULL",
     ),
   ]);
   const assets = [
@@ -29,6 +32,11 @@ export async function list(pool, query = {}) {
       ...row,
       asset_type: "product",
       asset_name: row.name,
+    })),
+    ...unassigned[0].map((row) => ({
+      ...row,
+      asset_type: "unassigned",
+      asset_name: row.file_path.split("/").pop(),
     })),
   ];
   return assets
