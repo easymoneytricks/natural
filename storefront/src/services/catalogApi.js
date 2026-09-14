@@ -42,7 +42,7 @@ export async function getProductBySlug(slug, options) {
     `/products/${encodeURIComponent(slug)}`,
     options,
   );
-  const product = payload.data;
+  const product = payload.data?.data || payload.data;
   return {
     ...product,
     image: normalizeImage(product.gallery?.[0], product.slug),

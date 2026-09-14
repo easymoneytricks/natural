@@ -23,7 +23,7 @@ const money = (value) => `₹${value.toLocaleString("en-IN")}`;
 const slugify = (value) => value.toUpperCase().replace(/[^A-Z0-9]+/g, "-");
 
 function makeVariants(product, detail) {
-  if (detail.skus)
+  if (detail?.skus?.length)
     return detail.skus.map((sku) => ({
       skuId: sku.id,
       sku: sku.sku,
@@ -38,7 +38,7 @@ function makeVariants(product, detail) {
       stock: sku.stock.available ?? 999,
       image: sku.primaryImage || product.image,
     }));
-  if (detail.variants)
+  if (detail?.variants?.length)
     return detail.variants.map(
       ([sku, size, skinType, concern, mrp, price, stock]) => ({
         sku,
@@ -49,7 +49,7 @@ function makeVariants(product, detail) {
         image: product.image,
       }),
     );
-  return product.sizes.map((size) => ({
+  return (product.sizes?.length ? product.sizes : ["Standard"]).map((size) => ({
     sku: `NB-${slugify(product.slug)}-${slugify(size)}`,
     attributes: { size },
     mrp: product.mrp,
@@ -80,9 +80,13 @@ export function ProductDetail() {
           navigate(`/product/${apiProduct.slug}`, { replace: true });
           return;
         }
-        setProduct(apiProduct);
+        setProduct({
+          ...apiProduct,
+          name: apiProduct.name || apiProduct.title || slug,
+        });
         setDetail({
           ...apiProduct,
+          name: apiProduct.name || apiProduct.title || slug,
           positioning: apiProduct.shortDescription,
           benefits: (apiProduct.benefits || []).map((benefit) => [benefit, ""]),
           ingredients: (apiProduct.keyIngredients || []).map((ingredient) => [
@@ -211,13 +215,16 @@ export function ProductDetail() {
       </section>
     );
 
-  const selectedVariant = variants.find((variant) =>
-    dimensions.every(
-      (dimension) =>
-        selection[dimension] &&
-        variant.attributes[dimension] === selection[dimension],
-    ),
-  );
+  const selectedVariant =
+    variants.length === 1
+      ? variants[0]
+      : variants.find((variant) =>
+          dimensions.every(
+            (dimension) =>
+              selection[dimension] &&
+              variant.attributes[dimension] === selection[dimension],
+          ),
+        );
   const gallery = product.gallery?.length
     ? product.gallery
     : [product.image, product.hoverImage].filter(Boolean);
