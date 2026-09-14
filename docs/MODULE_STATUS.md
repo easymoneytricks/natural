@@ -7,7 +7,7 @@ Commit: `40e2e8b`
 
 ## Current readiness snapshot — 2026-09-14
 
-Overall production-readiness is **80%**. The progress is tracked in [PROGRESS.md](PROGRESS.md); this is a release-readiness estimate, not a screen-count percentage. Core product, customer, commerce, admin, CMS, SEO, tax, invoice and operational foundations are present. The remaining 20% is concentrated in live payment/refund settlement, production SMTP/deployment evidence, automated/concurrent QA, unsubscribe suppression and final legal sign-off.
+Overall production-readiness is **82%**. The progress is tracked in [PROGRESS.md](PROGRESS.md); this is a release-readiness estimate, not a screen-count percentage. Core product, customer, commerce, admin, CMS, SEO, tax, invoice, guest tracking and operational foundations are present. The remaining 18% is concentrated in live payment/refund settlement, production SMTP/deployment evidence, automated/concurrent QA, unsubscribe suppression and final legal sign-off.
 
 The older detailed tables below are historical module estimates. For launch decisions, use the current `Present in this repository`, `Remaining gaps` and `Release decision` sections in [gaps.md](gaps.md).
 
@@ -458,3 +458,17 @@ The earlier historical sections above intentionally preserve prior evidence. For
 - Added Admin Settings-controlled GA4 integration (`analytics.enabled`, `analytics.measurement_id`) with Measurement ID validation, route page-view events and consent-gated script loading.
 - Added retention-aware `backup:prune` tooling and documented backup, rollback, restore, incident, accessibility, performance and staging-load procedures in [docs/OPERATIONS.md](OPERATIONS.md).
 - Remaining evidence gate: run automated axe/Lighthouse and responsive visual regression suites, generate image derivatives/srcset, execute staging load/restore drills, connect uptime alerts, anonymise staging refreshes and implement a provider-backed marketing unsubscribe suppression list.
+
+## Current module updates — 2026-09-14
+
+These entries supersede older historical estimates where implementation has since moved forward:
+
+| Module | Status | Current implementation | Remaining verification |
+| --- | --- | --- | --- |
+| Guest track order | Present | Public order/tracking-ID plus checkout-email lookup, rate-limited API, status timeline and error/empty states. | Courier-provider tracking sync and production abuse monitoring. |
+| FAQ content | Present | Eight realistic FAQ records seeded into CMS Pages, editable in Admin Pages, with FAQPage JSON-LD. | Business-owner copy approval and browser regression on all breakpoints. |
+| About content | Present | About page migrated to CMS records with structured sections, navigation, SEO metadata and version history. | Final editorial approval. |
+| Contact/footer controls | Present | Contact copy, hours, map URL, footer logo and social links are controlled from Admin Settings. | Production branding assets and link validation. |
+| SEO structured data | Present | Product, CollectionPage, ItemList, BreadcrumbList and FAQPage JSON-LD plus canonical metadata and sitemap/robots support. | Rendered-DOM checks on deployed routes and Search Console validation. |
+
+The release estimate is now **82%**. This reflects completed repository work only; it does not convert local implementation into proof of live payment settlement, email delivery, deployment durability or full automated QA.

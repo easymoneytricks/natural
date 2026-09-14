@@ -150,10 +150,11 @@ export async function placeCodOrder(pool, input = {}, customer) {
         );
     }
     const p = calculated.pricing;
+    const createdOrderNumber = orderNumber();
     const [created] = await connection.execute(
       `INSERT INTO orders (order_number,idempotency_key,request_fingerprint,customer_id,customer_email,customer_phone,status,payment_method,payment_status,items_subtotal,mrp_total,product_discount,coupon_discount,shipping_amount,tax_amount,tax_rate,tax_label,tax_type,tax_cgst,tax_sgst,tax_igst,hsn_sac,seller_gstin,seller_legal_name,seller_address,seller_state_code,place_of_supply,reverse_charge,gift_card_amount,grand_total,coupon_code,shipping_method_code,shipping_method_name,shipping_estimated_days_min,shipping_estimated_days_max,customer_note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
-        orderNumber(),
+        createdOrderNumber,
         input.idempotencyKey,
         fingerprint,
         customer?.id || null,
@@ -194,6 +195,12 @@ export async function placeCodOrder(pool, input = {}, customer) {
       ],
     );
     const orderId = created.insertId;
+    if (input.abandonedSessionKey) {
+      await connection.execute(
+        "UPDATE abandoned_checkouts SET status='converted',converted_order_number=?,last_seen_at=NOW() WHERE session_key=?",
+        [createdOrderNumber, input.abandonedSessionKey],
+      );
+    }
     for (const item of calculated.items) {
       await connection.execute(
         "INSERT INTO order_items (order_id,product_id,sku_id,sku_code,product_name,product_slug,variant_title,attributes_json,image_path,quantity,unit_price,unit_mrp,line_subtotal,line_mrp_total,line_product_discount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",

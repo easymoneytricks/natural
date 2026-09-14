@@ -6,6 +6,7 @@ import {
 } from "../controllers/checkout.controller.js";
 import { paymentMethods } from "../controllers/payment.controller.js";
 import rateLimit from "express-rate-limit";
+import { capture } from "../controllers/abandonedCheckout.controller.js";
 const router = Router();
 const quoteLimit = rateLimit({
   windowMs: 5 * 60 * 1000,
@@ -16,4 +17,5 @@ const quoteLimit = rateLimit({
 router.get("/shipping-methods", getShippingMethods);
 router.get("/payment-methods", paymentMethods);
 router.post("/quote", quoteLimit, optionalCustomerAuth, getQuote);
+router.post("/abandoned", quoteLimit, optionalCustomerAuth, capture);
 export default router;

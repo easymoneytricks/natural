@@ -4,13 +4,13 @@ Last updated: 2026-09-14
 
 ## Production-readiness progress
 
-<progress value="80" max="100">80%</progress>
+<progress value="82" max="100">82%</progress>
 
-**80% — strong controlled-staging foundation; public paid checkout is not approved yet.**
+**82% — strong controlled-staging foundation; public paid checkout is not approved yet.**
 
-`████████████████░░░░` 80%
+`█████████████████░░░` 82%
 
-This percentage represents production readiness, not the number of screens. Core catalog, customer account, checkout/COD, inventory, orders, admin control plane, CMS, SEO, tax snapshots, invoices, security controls and operational foundations are implemented. The remaining 20% is primarily provider/deployment proof and launch evidence.
+This percentage represents production readiness, not the number of screens. Core catalog, customer account, checkout/COD, inventory, orders, admin control plane, CMS, SEO, tax snapshots, invoices, guest order tracking, FAQ/About content and operational foundations are implemented. The remaining 18% is primarily provider/deployment proof and launch evidence.
 
 ## Present and validated
 
@@ -22,7 +22,7 @@ This percentage represents production readiness, not the number of screens. Core
 - Content/SEO: CMS legal records with version history, per-product/category/brand title-description-keywords-canonical fields, route-aware metadata, Product/CollectionPage/BreadcrumbList JSON-LD, sitemap, robots policy and slug redirects.
 - Security/operations: production secret validation, HTTPS/CORS/cookie boundaries, upload validation, request IDs, structured logs, rate limits, origin protection, cache headers, consent capture and backup/restore tooling.
 
-## Remaining launch blockers
+## Remaining launch blockers (18%)
 
 1. Finish and evidence one live Cashfree payment path, including callback reconciliation, replay/idempotency handling and provider-backed refunds.
 2. Configure production SMTP and prove OTP, order, status, reset and admin notification delivery with monitoring.

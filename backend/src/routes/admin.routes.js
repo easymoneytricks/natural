@@ -14,6 +14,7 @@ import {
 } from "../middleware/adminAuth.js";
 import { pool } from "../config/database.js";
 import * as auditService from "../services/adminAudit.service.js";
+import * as abandonedCheckout from "../controllers/abandonedCheckout.controller.js";
 const router = Router();
 router.use(cookieParser());
 const limit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20 });
@@ -78,5 +79,17 @@ router.get(
       next(e);
     }
   },
+);
+router.get(
+  "/abandoned-checkouts",
+  requireAdminAuth,
+  requireAdminPermission("orders.view"),
+  abandonedCheckout.list,
+);
+router.get(
+  "/abandoned-checkouts/:id",
+  requireAdminAuth,
+  requireAdminPermission("orders.view"),
+  abandonedCheckout.detail,
 );
 export default router;

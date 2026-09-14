@@ -44,6 +44,7 @@ import { ReportsPage, SystemPage } from "./systemReports";
 import { SettingsPage } from "./settings";
 import { PagesPage } from "./pages";
 import { UsefulInfoPage } from "./usefulInfo";
+import { AbandonedCheckoutsPage } from "./abandonedCheckouts";
 import "./styles.css";
 import "./workspace.css";
 const API = (
@@ -199,6 +200,7 @@ const nav = [
   ["Categories", "/catalog/categories", Layers, "catalog.view"],
   ["Brands", "/catalog/brands", Leaf, "catalog.view"],
   ["Orders", "/orders", ShoppingBag, "orders.view"],
+  ["Abandoned checkouts", "/abandoned-checkouts", ShoppingBag, "orders.view"],
   ["Customers", "/customers", Users, "customers.view"],
   ["Useful Info", "/useful-info", BarChart3, "dashboard.view"],
   ["Reviews", "/reviews", MessageSquare, "reviews.view"],
@@ -459,6 +461,14 @@ function App() {
         element={
           <Protected permission="orders.view">
             <OrdersPage />
+          </Protected>
+        }
+      />
+      <Route
+        path="/abandoned-checkouts"
+        element={
+          <Protected permission="orders.view">
+            <AbandonedCheckoutsPage />
           </Protected>
         }
       />

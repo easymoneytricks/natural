@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS abandoned_checkouts (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  session_key VARCHAR(100) NOT NULL,
+  customer_id BIGINT UNSIGNED NULL,
+  email VARCHAR(255) NULL,
+  phone VARCHAR(40) NULL,
+  status ENUM('active','converted','expired') NOT NULL DEFAULT 'active',
+  cart_json JSON NOT NULL,
+  checkout_json JSON NULL,
+  subtotal DECIMAL(12,2) NOT NULL DEFAULT 0,
+  estimated_total DECIMAL(12,2) NOT NULL DEFAULT 0,
+  converted_order_number VARCHAR(40) NULL,
+  last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_abandoned_checkout_session (session_key),
+  KEY idx_abandoned_checkout_status_seen (status,last_seen_at),
+  KEY idx_abandoned_checkout_customer (customer_id),
+  CONSTRAINT fk_abandoned_checkout_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

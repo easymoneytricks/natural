@@ -9,6 +9,7 @@ import { getAddresses } from "../services/authApi";
 import { getQuote } from "../services/checkoutApi";
 import { createOrder } from "../services/orderApi";
 import { createCashfreeOrder } from "../services/paymentApi";
+import { apiRequest } from "../lib/api";
 import "./Checkout.css";
 
 const money = (value) => `₹${Math.max(0, value).toLocaleString("en-IN")}`;
@@ -79,6 +80,13 @@ export function Checkout() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [, setQuoteError] = useState("");
   const [placing, setPlacing] = useState(false);
+  const [abandonedSessionKey] = useState(() => {
+    const existing = localStorage.getItem("natural-beauty-abandoned-checkout");
+    if (existing) return existing;
+    const created = crypto.randomUUID();
+    localStorage.setItem("natural-beauty-abandoned-checkout", created);
+    return created;
+  });
   const idempotencyRef = useRef(null);
   const subtotal =
     quote?.pricing?.subtotal ??
@@ -129,6 +137,38 @@ export function Checkout() {
       JSON.stringify(draft),
     );
   }, [draft]);
+  useEffect(() => {
+    if (!items.length) return undefined;
+    const timer = window.setTimeout(() => {
+      const payload = {
+        sessionKey: abandonedSessionKey,
+        email: draft.email,
+        phone: draft.mobile,
+        estimatedTotal: total,
+        items: items.map((item) => ({
+          skuId: item.skuId,
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price,
+          image: item.image,
+        })),
+        checkout: {
+          shippingMethod: draft.shippingMethod,
+          payment: draft.payment,
+          address: draft.address,
+        },
+      };
+      const request = isAuthenticated
+        ? authFetch("/checkout/abandoned", { method: "POST", body: payload })
+        : apiRequest("/checkout/abandoned", {
+            method: "POST",
+            body: payload,
+            credentials: "include",
+          });
+      request.catch(() => {});
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [abandonedSessionKey, authFetch, draft, isAuthenticated, items, total]);
   useEffect(() => {
     if (!isAuthenticated)
       sessionStorage.setItem("natural-beauty-auth-return", "/checkout");
@@ -331,6 +371,7 @@ export function Checkout() {
         countryCode: "IN",
       },
       contact: { email: draft.email, phone: draft.mobile },
+      abandonedSessionKey,
       couponCode: coupon?.code,
       giftCardCode: gift?.code,
       ...(serverMode
@@ -370,6 +411,7 @@ export function Checkout() {
           paymentSessionId: cashfreeOrder.data.paymentSessionId,
           redirectTarget: "_self",
         });
+        localStorage.removeItem("natural-beauty-abandoned-checkout");
         return;
       }
       sessionStorage.setItem(
@@ -396,6 +438,7 @@ export function Checkout() {
       sessionStorage.removeItem("natural-beauty-coupon");
       sessionStorage.removeItem("natural-beauty-gift");
       await clearCart();
+      localStorage.removeItem("natural-beauty-abandoned-checkout");
       idempotencyRef.current = null;
       navigate("/order-success");
     } catch (error) {

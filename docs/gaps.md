@@ -8,7 +8,7 @@ Audit basis: source code, database migrations, registered routes, local MariaDB,
 
 The repository now contains the core storefront, customer, catalog, inventory, order, admin and SEO foundations. The remaining work is primarily production proof and provider/deployment integration: real payment settlement/refunds, real SMTP delivery, staging concurrency, backups, observability, compliance review and release regression.
 
-Current readiness: **strong controlled-staging foundation; not yet approved for public paid checkout.**
+Current readiness: **82% — strong controlled-staging foundation; not yet approved for public paid checkout.**
 
 ## Present in this repository
 
@@ -84,6 +84,14 @@ The following capabilities are implemented in source and local database migratio
 - Product slug redirect table and storefront canonical navigation after slug changes.
 - Product, category and brand editors now support SEO title, description, comma-separated keywords and an optional same-origin canonical URL. Product detail metadata and JSON-LD consume the saved canonical URL; unsafe cross-origin canonical values safely fall back to the current site URL.
 - Product pages now publish a Schema.org `@graph` containing Product, Brand/category context, AggregateOffer, optional AggregateRating and BreadcrumbList. Shop pages publish CollectionPage, ItemList and BreadcrumbList JSON-LD.
+
+### Recent completed modules — 2026-09-14
+
+- **Guest track order:** public lookup by order number or tracking ID plus checkout email, with rate limiting, validation, timeline and clear empty/error states. Courier-provider status sync remains a launch gap.
+- **FAQ:** eight realistic FAQ records are seeded in the CMS, editable from Admin Pages, and exposed with FAQPage structured data.
+- **About:** migrated to CMS records with structured sections, on-page navigation, SEO metadata and version history.
+- **Contact and footer controls:** contact copy, hours, address, map URL, footer logo and social links are all controlled through Admin Settings.
+- **SEO structured data:** Product, CollectionPage, ItemList, BreadcrumbList and FAQPage JSON-LD are implemented alongside canonical metadata, sitemap and robots support.
 
 ## Remaining gaps
 
