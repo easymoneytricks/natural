@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { IconButton } from "../ui/IconButton";
 import { MegaMenu } from "../navigation/MegaMenu";
-import { menus } from "../../data/navigation";
+import { menus, parseMegaMenu } from "../../data/navigation";
 import { useCart } from "../../context/CartContext";
 import { useCompare, useWishlist } from "../../context/PreferenceContext";
 import { useAuth } from "../../context/AuthContext";
@@ -59,7 +59,12 @@ export function Header({ onSearch, onCart, onMenu }) {
                   {name}
                   <ChevronDown size={14} />
                 </button>
-                <MegaMenu item={menus[name]} />
+                <MegaMenu
+                  item={parseMegaMenu(
+                    settings.mega_menu?.[name.toLowerCase()],
+                    menus[name],
+                  )}
+                />
               </li>
             ))}
             <li>
@@ -95,7 +100,7 @@ export function Header({ onSearch, onCart, onMenu }) {
           <Link
             className="with-badge"
             aria-label={`Wishlist, ${wishlistCount} items`}
-            to="/wishlist"
+            to="/account/wishlist"
           >
             <Heart />
             {wishlistCount > 0 && <i>{wishlistCount}</i>}

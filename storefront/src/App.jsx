@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Component, useEffect, useState } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { AnnouncementBar } from "./components/layout/AnnouncementBar";
 import { StoreAvailabilityNotice } from "./components/layout/StoreAvailabilityNotice";
 import { Header } from "./components/layout/Header";
@@ -37,6 +37,21 @@ import { ConsentBanner } from "./components/layout/ConsentBanner";
 import { Analytics } from "./components/Analytics";
 import { ArrowUp } from "lucide-react";
 
+class RenderBoundary extends Component {
+  state = { failed: false, message: "" };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error) {
+    this.setState({ message: error?.message || "Unknown render error" });
+  }
+  render() {
+    return this.state.failed
+      ? <p className="route-error">We could not load this page: {this.state.message || "Please refresh and try again."}</p>
+      : this.props.children;
+  }
+}
+
 const informationalRoutes = [
   "/about",
   "/journal",
@@ -57,6 +72,7 @@ const informationalRoutes = [
 ];
 const cmsRoutes = new Set([
   "/about",
+  "/journal",
   "/privacy",
   "/terms",
   "/shipping",
@@ -125,12 +141,12 @@ export default function App() {
       />
       <StoreAvailabilityNotice />
       <main>
-        <Routes>
+        <RenderBoundary><Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
-          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
           <Route path="/compare" element={<Compare />} />
           <Route path="/pages/:slug" element={<CmsPage />} />
           <Route path="/checkout" element={<Checkout />} />
@@ -143,6 +159,7 @@ export default function App() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/account" element={<AccountOverview />} />
           <Route path="/account/orders" element={<CustomerOrders />} />
+          <Route path="/account/wishlist" element={<Wishlist />} />
           <Route
             path="/account/orders/:orderNumber"
             element={<CustomerOrderDetail />}
@@ -164,7 +181,7 @@ export default function App() {
               }
             />
           ))}
-        </Routes>
+        </Routes></RenderBoundary>
       </main>
       <Footer />
       <CompareTray />

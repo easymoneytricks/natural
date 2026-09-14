@@ -24,6 +24,8 @@ import {
   KeyRound,
   ClipboardList,
   MessageSquare,
+  Star,
+  Settings,
   Settings2,
   BarChart3,
   FileText,
@@ -203,7 +205,7 @@ const nav = [
   ["Abandoned checkouts", "/abandoned-checkouts", ShoppingBag, "orders.view"],
   ["Customers", "/customers", Users, "customers.view"],
   ["Useful Info", "/useful-info", BarChart3, "dashboard.view"],
-  ["Reviews", "/reviews", MessageSquare, "reviews.view"],
+  ["Reviews", "/reviews", Star, "reviews.view"],
   ["Contact", "/contact", MessageSquare, "customers.view"],
   ["Promotions", "/promotions", Tags, "promotions.view"],
   ["Media library", "/media", Images, "catalog.view"],
@@ -214,16 +216,70 @@ const nav = [
   ["Role permissions", "/staff/permissions", KeyRound, "staff.view"],
   ["Settings", "/settings", Settings2, "settings.view"],
   ["Audit log", "/audit-logs", ClipboardList, "audit.view"],
-  ["System", "/system", Settings2, "settings.view"],
+  ["System", "/system", Settings, "settings.view"],
 ];
+const dashboardCardCopy = {
+  Products: "Curate your product catalogue →",
+  Inventory: "Track stock and fulfilment →",
+  Categories: "Organise paths to discovery →",
+  Brands: "Shape your brand directory →",
+  Orders: "Review and fulfil customer orders →",
+  "Abandoned checkouts": "Recover unfinished checkouts →",
+  Customers: "Understand customer relationships →",
+  "Useful Info": "See what shoppers prefer →",
+  Reviews: "Moderate customer feedback →",
+  Contact: "Respond to customer enquiries →",
+  Promotions: "Create offers and gift cards →",
+  "Media library": "Manage your visual assets →",
+  Reports: "Measure store performance →",
+  Pages: "Publish storefront content →",
+  Users: "Manage staff access →",
+  Roles: "Define staff roles →",
+  "Role permissions": "Control module permissions →",
+  Settings: "Configure storefront and commerce →",
+  "Audit log": "Review every admin action →",
+  System: "Monitor platform health →",
+};
 function Shell({ children }) {
-  const { admin, logout } = useAuth();
+  const { admin, logout, authFetch } = useAuth();
   const location = useLocation();
+  const [storeSettings, setStoreSettings] = useState({});
+  const [logoFailed, setLogoFailed] = useState(false);
+
+  useEffect(() => {
+    authFetch("/admin/settings")
+      .then((response) => setStoreSettings(response.data || {}))
+      .catch(() => setStoreSettings({}));
+  }, []);
+
+  const branding = storeSettings.branding || {};
+  const logoUrl = branding.logo_url;
+  const showLogo = Boolean(logoUrl) && !logoFailed;
+  const businessName =
+    storeSettings.store?.store_name ||
+    storeSettings.seo?.site_title ||
+    "Natural Beauty";
+
+  useEffect(() => {
+    document.title = "Admin Panel";
+    const favicon = document.head.querySelector("link[rel='icon']");
+    if (favicon) favicon.href = branding.favicon_url || "/favicon.svg";
+  }, [branding.favicon_url]);
   return (
     <div className="shell">
       <aside>
         <div className="brand">
-          Natural Beauty<small>Admin Panel</small>
+          {showLogo ? (
+            <img
+              className="admin-brand-logo"
+              src={logoUrl}
+              alt={businessName}
+              onError={() => setLogoFailed(true)}
+            />
+          ) : (
+            businessName
+          )}
+          <small>Admin Panel</small>
         </div>
         <nav>
           {nav
@@ -250,11 +306,15 @@ function Shell({ children }) {
         </button>
       </aside>
       <main className="main">
-        <header>
-          Admin workspace{" "}
-          <strong>
-            {admin?.firstName} {admin?.lastName}
-          </strong>
+        <header className="admin-topbar">
+          <div className="admin-topbar-context">
+            <span className="admin-topbar-kicker">NATURAL BEAUTY / ADMIN</span>
+          </div>
+          <div className="admin-topbar-account">
+            <span className="admin-topbar-user">
+              {admin?.firstName} {admin?.lastName}
+            </span>
+          </div>
         </header>
         {children}
       </main>
@@ -280,10 +340,14 @@ function Dashboard() {
     <Protected permission="dashboard.view">
       <div className="page-head">
         <div>
-          <span className="section-kicker">YOUR STORE WORKSPACE</span>
-          <h1>Welcome back{admin?.firstName ? `, ${admin.firstName}` : ""}.</h1>
+          <span className="section-kicker">TODAY AT A GLANCE</span>
+          <h1>
+            {admin?.firstName
+              ? `Good to see you, ${admin.firstName}.`
+              : "Your store, at a glance."}
+          </h1>
           <p>
-            Keep your catalog, customers, and daily operations in one place.
+            Manage products, customers, fulfilment, and growth from one place.
           </p>
         </div>
       </div>
@@ -299,7 +363,10 @@ function Dashboard() {
               <Icon size={28} aria-hidden="true" />
               <div>
                 <strong>{label}</strong>
-                <small>Open {label.toLowerCase()} workspace →</small>
+                <small>
+                  {dashboardCardCopy[label] ||
+                    `Manage ${label.toLowerCase()} →`}
+                </small>
               </div>
             </Link>
           ))}

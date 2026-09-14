@@ -209,6 +209,7 @@ export function Checkout() {
           }),
       ...(coupon?.code ? { couponCode: coupon.code } : {}),
       ...(gift?.code ? { giftCardCode: gift.code } : {}),
+      ...(gift?.id ? { giftCardId: gift.id } : {}),
     };
     getQuote(body, serverMode ? authFetch : null)
       .then((result) => {
@@ -374,6 +375,7 @@ export function Checkout() {
       abandonedSessionKey,
       couponCode: coupon?.code,
       giftCardCode: gift?.code,
+      giftCardId: gift?.id,
       ...(serverMode
         ? {}
         : {

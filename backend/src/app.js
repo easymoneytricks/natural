@@ -23,6 +23,7 @@ import adminPromotionRoutes from "./routes/adminPromotion.routes.js";
 import adminStaffRoutes from "./routes/adminStaff.routes.js";
 import adminMediaRoutes from "./routes/adminMedia.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
+import newsletterRoutes from "./routes/newsletter.routes.js";
 import adminContactRoutes from "./routes/adminContact.routes.js";
 import adminSystemRoutes from "./routes/adminSystem.routes.js";
 import storeSettingsRoutes from "./routes/storeSettings.routes.js";
@@ -31,6 +32,7 @@ import rewardRoutes from "./routes/reward.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import seoRoutes from "./routes/seo.routes.js";
 import adminRewardRoutes from "./routes/adminReward.routes.js";
+import customerGiftCardRoutes from "./routes/customerGiftCard.routes.js";
 import adminReviewRoutes from "./routes/adminReview.routes.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -148,6 +150,7 @@ export function createApp() {
   app.use("/api/v1", orderRoutes);
   app.use("/api/v1", reviewRoutes);
   app.use("/api/v1", contactRoutes);
+  app.use("/api/v1", newsletterRoutes);
   app.use("/api/v1/payments", paymentRoutes);
   app.use("/api/v1/admin", adminRoutes);
   app.use("/api/v1/admin", adminCatalogRoutes);
@@ -161,6 +164,7 @@ export function createApp() {
   app.use("/api/v1/admin", adminContactRoutes);
   app.use("/api/v1/admin", adminSystemRoutes);
   app.use("/api/v1/customer", rewardRoutes);
+  app.use("/api/v1/customer", customerGiftCardRoutes);
   app.use("/api/v1/admin", adminRewardRoutes);
   app.use("/api/v1/admin", adminReviewRoutes);
   app.use(

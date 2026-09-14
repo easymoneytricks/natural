@@ -74,7 +74,7 @@ function Shell({ children, active }) {
           {[
             ["Overview", "/account"],
             ["Orders", "/account/orders"],
-            ["Wishlist", "/wishlist"],
+            ["Wishlist", "/account/wishlist"],
             ["Addresses", "/account/addresses"],
             ["Profile", "/account/profile"],
             ["Rewards", "/account/rewards"],
@@ -150,6 +150,10 @@ export function CustomerProfile() {
       return;
     try {
       await deleteAccount(authFetch, accountPassword);
+      setStatus(
+        "Your account closure request was submitted. You have been signed out; an administrator will review it.",
+      );
+      setAccountPassword("");
       await logout();
     } catch (requestError) {
       setError(internalError(requestError));
@@ -160,26 +164,35 @@ export function CustomerProfile() {
       <Shell active="Profile">
         <p className="eyebrow">Your details</p>
         <h2 className="account-title">Profile</h2>
+        <p className="profile-intro">
+          Keep your contact details current so we can keep every order and update connected.
+        </p>
         <form className="profile-form" onSubmit={submit}>
-          {[
-            ["firstName", "First name"],
-            ["lastName", "Last name"],
-            ["phone", "Phone"],
-          ].map(([key, label]) => (
-            <label key={key}>
-              {label}
+          <div className="profile-fields">
+            {["firstName", "lastName", "phone"].map((key) => (
+              <label key={key}>
+                {key === "firstName"
+                  ? "First name"
+                  : key === "lastName"
+                    ? "Last name"
+                    : "Phone"}
               <input
+                type={key === "phone" ? "tel" : "text"}
+                inputMode={key === "phone" ? "numeric" : undefined}
+                maxLength={key === "phone" ? 10 : undefined}
+                pattern={key === "phone" ? "[0-9]{10}" : undefined}
                 value={form[key] || form.mobile || ""}
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
-                    [key]: event.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
-          ))}
+                    [key]: key === "phone" ? event.target.value.replace(/\D/g, "").slice(0, 10) : event.target.value,
+                    }))
+                  }
+                  required
+                />
+              </label>
+            ))}
+          </div>
           <label>
             Email address
             <input value={form.email || ""} readOnly />
@@ -208,21 +221,21 @@ export function CustomerProfile() {
           >
             Download my data
           </button>
-          <label>
-            Confirm password to delete account
-            <input
-              type="password"
-              value={accountPassword}
-              onChange={(event) => setAccountPassword(event.target.value)}
-            />
-          </label>
-          <button
-            type="button"
-            className="account-action danger"
-            onClick={removeAccount}
-          >
-            Delete account
-          </button>
+          <div className="profile-danger-zone">
+            <strong>Close your account</strong>
+            <p>This sends a request to our team and locks sign-in while it is reviewed.</p>
+            <label>
+              Confirm your password
+              <input
+                type="password"
+                value={accountPassword}
+                onChange={(event) => setAccountPassword(event.target.value)}
+              />
+            </label>
+            <button type="button" className="account-action danger" onClick={removeAccount}>
+              Request account closure
+            </button>
+          </div>
         </form>
       </Shell>
     </Guard>
@@ -295,6 +308,18 @@ export function CustomerAddresses() {
   };
   const update = (key, value) =>
     setForm((current) => ({ ...current, [key]: value }));
+  const addressLabels = {
+    label: "Address label",
+    firstName: "First name",
+    lastName: "Last name",
+    phone: "Phone number",
+    addressLine1: "Address line 1",
+    addressLine2: "Address line 2 (optional)",
+    landmark: "Landmark (optional)",
+    city: "City",
+    state: "State",
+    postalCode: "Postal code",
+  };
   return (
     <Guard>
       <Shell active="Addresses">
@@ -370,10 +395,14 @@ export function CustomerAddresses() {
               "postalCode",
             ].map((key) => (
               <label key={key}>
-                {key}
+                {addressLabels[key]}
                 <input
+                  type={key === "phone" || key === "postalCode" ? "tel" : "text"}
+                  inputMode={key === "phone" || key === "postalCode" ? "numeric" : undefined}
+                  maxLength={key === "phone" ? 10 : key === "postalCode" ? 6 : undefined}
+                  pattern={key === "phone" ? "[0-9]{10}" : key === "postalCode" ? "[0-9]{6}" : undefined}
                   value={form[key] || ""}
-                  onChange={(event) => update(key, event.target.value)}
+                  onChange={(event) => update(key, ["phone", "postalCode"].includes(key) ? event.target.value.replace(/\D/g, "").slice(0, key === "phone" ? 10 : 6) : event.target.value)}
                   required={!["addressLine2", "landmark"].includes(key)}
                 />
               </label>

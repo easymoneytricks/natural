@@ -1,35 +1,7 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MapPin, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useStoreSettings } from "../../context/StoreSettingsContext";
-
-const groups = {
-  Shop: [
-    "Shop All",
-    "New Arrivals",
-    "Best Sellers",
-    "Skin Types",
-    "Concerns",
-    "Gift Cards",
-  ],
-  "Customer Care": [
-    "Contact Us",
-    "FAQs",
-    "Shipping",
-    "Returns & Refunds",
-    "Track Order",
-    "My Account",
-  ],
-  About: ["Our Story", "Ingredients", "Journal", "Contact"],
-  Legal: [
-    "Privacy Policy",
-    "Terms & Conditions",
-    "Shipping Policy",
-    "Return Policy",
-    "Refund Policy",
-    "Cancellation Policy",
-  ],
-};
 
 const routeMap = {
   "Shop All": "/shop",
@@ -55,6 +27,49 @@ const routeMap = {
   "Refund Policy": "/refund-policy",
   "Cancellation Policy": "/cancellation-policy",
 };
+
+const defaultFooterLinks = {
+  Shop: [
+    ["Shop All", "/shop"],
+    ["New Arrivals", "/new-arrivals"],
+    ["Best Sellers", "/best-sellers"],
+    ["Skin Types", "/skin-types"],
+    ["Concerns", "/concerns"],
+    ["Gift Cards", "/gift-cards"],
+  ],
+  "Customer Care": [
+    ["Contact Us", "/contact"],
+    ["FAQs", "/faq"],
+    ["Shipping", "/shipping"],
+    ["Returns & Refunds", "/returns"],
+    ["Track Order", "/track-order"],
+    ["My Account", "/account"],
+  ],
+  About: [
+    ["Our Story", "/about"],
+    ["Ingredients", "/about"],
+    ["Journal", "/journal"],
+    ["Contact", "/contact"],
+  ],
+  Legal: [
+    ["Privacy Policy", "/privacy"],
+    ["Terms & Conditions", "/terms"],
+    ["Shipping Policy", "/shipping"],
+    ["Return Policy", "/returns"],
+    ["Refund Policy", "/refund-policy"],
+    ["Cancellation Policy", "/cancellation-policy"],
+  ],
+};
+
+function parseFooterLinks(value, fallback) {
+  if (!value || typeof value !== "string") return fallback;
+  const parsed = value
+    .split(/\r?\n/)
+    .map((line) => line.split("|").map((part) => part.trim()))
+    .filter(([label, path]) => label && path)
+    .map(([label, path]) => [label, path]);
+  return parsed.length ? parsed : fallback;
+}
 
 function SocialIcon({ name }) {
   const commonProps = {
@@ -105,6 +120,24 @@ export function Footer() {
     settings.branding?.footer_logo_url ||
     settings.branding?.logo_url ||
     "https://www.svgrepo.com/show/42722/skincare.svg";
+  const footerLinks = {
+    Shop: parseFooterLinks(
+      settings.footer?.shop_links,
+      defaultFooterLinks.Shop,
+    ),
+    "Customer Care": parseFooterLinks(
+      settings.footer?.customer_care_links,
+      defaultFooterLinks["Customer Care"],
+    ),
+    About: parseFooterLinks(
+      settings.footer?.about_links,
+      defaultFooterLinks.About,
+    ),
+    Legal: parseFooterLinks(
+      settings.footer?.legal_links,
+      defaultFooterLinks.Legal,
+    ),
+  };
 
   return (
     <footer className="site-footer">
@@ -146,7 +179,7 @@ export function Footer() {
           </div>
         </div>
         <div className="footer-links">
-          {Object.entries(groups).map(([group, links]) => (
+          {Object.entries(footerLinks).map(([group, links]) => (
             <section
               key={group}
               className={openGroup === group ? "is-open" : ""}
@@ -159,9 +192,12 @@ export function Footer() {
                 <ChevronDown size={16} />
               </button>
               <div>
-                {links.map((link) => (
-                  <Link key={link} to={routeMap[link] || "/about"}>
-                    {link}
+                {links.map(([label, path]) => (
+                  <Link
+                    key={`${label}-${path}`}
+                    to={path || routeMap[label] || "/about"}
+                  >
+                    {label}
                   </Link>
                 ))}
               </div>
@@ -170,9 +206,22 @@ export function Footer() {
         </div>
         <div className="footer-contact">
           <p className="eyebrow">Customer care</p>
-          <a href="mailto:hello@naturalbeauty.example">
-            hello@naturalbeauty.example
+          <a
+            href={`mailto:${settings.footer?.support_email || "hello@naturalbeauty.example"}`}
+          >
+            {settings.footer?.support_email || "hello@naturalbeauty.example"}
           </a>
+          <a
+            className="footer-contact-detail"
+            href={`tel:${settings.footer?.support_phone || ""}`}
+          >
+            <Phone size={14} />
+            {settings.footer?.support_phone || "Add support number"}
+          </a>
+          <span className="footer-contact-detail">
+            <MapPin size={14} />
+            {settings.footer?.location || "Bengaluru, Karnataka"}
+          </span>
           <span>
             Mon–Sat
             <br />

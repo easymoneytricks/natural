@@ -21,3 +21,8 @@ export const status = w(async (req, res) =>
     ),
   }),
 );
+export const remove = w(async (req, res) =>
+  res.json({
+    data: await s.deletePermanently(pool, req.params.id, req.admin.id, req),
+  }),
+);

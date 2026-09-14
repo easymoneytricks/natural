@@ -1,0 +1,3 @@
+ALTER TABLE reward_config
+  ADD COLUMN expiry_enabled TINYINT(1) NOT NULL DEFAULT 0,
+  ADD COLUMN expiry_days INT UNSIGNED NULL;

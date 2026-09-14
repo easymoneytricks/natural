@@ -71,6 +71,7 @@ export async function placeCodOrder(pool, input = {}, customer) {
     contact: input.contact,
     couponCode: input.couponCode || "",
     giftCardCode: input.giftCardCode || "",
+    giftCardId: input.giftCardId || "",
     items: customer ? undefined : input.items,
   });
   const existingConnection = await pool.getConnection();
@@ -97,6 +98,7 @@ export async function placeCodOrder(pool, input = {}, customer) {
     shippingMethod: input.shippingMethod,
     couponCode: input.couponCode,
     giftCardCode: input.giftCardCode,
+    giftCardId: input.giftCardId,
     shippingAddress: address,
   });
   if (!calculated.checkoutReady)
@@ -128,14 +130,24 @@ export async function placeCodOrder(pool, input = {}, customer) {
       }
     }
     let gift = null;
-    if (input.giftCardCode) {
-      const digest = crypto
-        .createHash("sha256")
-        .update(String(input.giftCardCode).trim().toUpperCase())
-        .digest("hex");
+    if (input.giftCardCode || input.giftCardId) {
+      const digest = input.giftCardCode
+        ? crypto
+            .createHash("sha256")
+            .update(String(input.giftCardCode).trim().toUpperCase())
+            .digest("hex")
+        : null;
       const [rows] = await connection.execute(
-        'SELECT * FROM gift_cards WHERE code_hash=? AND status="active" AND deleted_at IS NULL FOR UPDATE',
-        [digest],
+        input.giftCardId && customer?.id
+          ? 'SELECT gc.* FROM gift_cards gc JOIN customer_gift_cards cgc ON cgc.gift_card_id=gc.id AND cgc.customer_id=? WHERE gc.id=? AND gc.status="active" AND gc.deleted_at IS NULL FOR UPDATE'
+          : customer?.id
+          ? 'SELECT gc.* FROM gift_cards gc LEFT JOIN customer_gift_cards cgc ON cgc.gift_card_id=gc.id AND cgc.customer_id=? WHERE gc.code_hash=? AND gc.status="active" AND gc.deleted_at IS NULL AND (cgc.id IS NOT NULL OR NOT EXISTS (SELECT 1 FROM customer_gift_cards WHERE gift_card_id=gc.id)) FOR UPDATE'
+          : 'SELECT * FROM gift_cards WHERE code_hash=? AND status="active" AND deleted_at IS NULL FOR UPDATE',
+        input.giftCardId && customer?.id
+          ? [customer.id, input.giftCardId]
+          : customer?.id
+            ? [customer.id, digest]
+            : [digest],
       );
       gift = rows[0];
       if (

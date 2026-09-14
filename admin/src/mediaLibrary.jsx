@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Image, LoaderCircle, Search, Upload } from "lucide-react";
+import {
+  Eye,
+  Image,
+  LoaderCircle,
+  Search,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { useAuth } from "./main";
 
 const assetUrl = (path) => {
@@ -20,6 +28,8 @@ export function MediaLibrary() {
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
+  const [selected, setSelected] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const uploadFile = async (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -40,6 +50,31 @@ export function MediaLibrary() {
       setError(caught.message || "Unable to upload image.");
     } finally {
       setUploading(false);
+    }
+  };
+  const deleteAsset = async () => {
+    if (!selected || deleting) return;
+    if (!window.confirm(`Delete “${selected.name}” from the media library?`)) {
+      return;
+    }
+    setDeleting(true);
+    setError("");
+    try {
+      await authFetch(`/admin/media/${selected.id}?type=${selected.type}`, {
+        method: "DELETE",
+      });
+      setAssets((current) =>
+        current.filter(
+          (asset) =>
+            !(asset.id === selected.id && asset.type === selected.type),
+        ),
+      );
+      setSelected(null);
+      setUploadMessage("Image deleted from the library.");
+    } catch (caught) {
+      setError(caught.message || "Unable to delete image.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -149,12 +184,29 @@ export function MediaLibrary() {
               className="media-library-card"
               key={`${asset.type}-${asset.id}`}
             >
-              <div className="media-library-preview">
+              <button
+                className="media-library-preview"
+                type="button"
+                onClick={() => setSelected(asset)}
+                aria-label={`View details for ${asset.name}`}
+              >
                 <img
                   src={assetUrl(asset.path)}
                   alt={asset.altText || asset.name}
+                  onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                    event.currentTarget.nextElementSibling?.classList.add(
+                      "is-visible",
+                    );
+                  }}
                 />
-              </div>
+                <span className="media-image-fallback" aria-hidden="true">
+                  {asset.name.slice(0, 1).toUpperCase()}
+                </span>
+                <span className="media-preview-overlay">
+                  <Eye size={18} /> View details
+                </span>
+              </button>
               <div className="media-library-meta">
                 <div>
                   <span className={`media-type-pill ${asset.type}`}>
@@ -172,6 +224,85 @@ export function MediaLibrary() {
           ))
         )}
       </div>
+      {selected && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => !deleting && setSelected(null)}
+        >
+          <section
+            className="modal-card media-detail-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="media-detail-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              type="button"
+              onClick={() => setSelected(null)}
+              aria-label="Close media details"
+            >
+              <X size={20} />
+            </button>
+            <div className="media-detail-image">
+              <img
+                src={assetUrl(selected.path)}
+                alt={selected.altText || selected.name}
+                onError={(event) => {
+                  event.currentTarget.style.display = "none";
+                  event.currentTarget.nextElementSibling?.classList.add(
+                    "is-visible",
+                  );
+                }}
+              />
+              <span className="media-image-fallback" aria-hidden="true">
+                {selected.name.slice(0, 1).toUpperCase()}
+              </span>
+            </div>
+            <span className={`media-type-pill ${selected.type}`}>
+              {selected.type}
+            </span>
+            <h2 id="media-detail-title">{selected.name}</h2>
+            <dl className="media-detail-meta">
+              <div>
+                <dt>Alt text</dt>
+                <dd>{selected.altText || "Not provided"}</dd>
+              </div>
+              <div>
+                <dt>File path</dt>
+                <dd>{selected.path}</dd>
+              </div>
+              <div>
+                <dt>Updated</dt>
+                <dd>
+                  {selected.updatedAt
+                    ? new Date(selected.updatedAt).toLocaleString("en-IN")
+                    : "—"}
+                </dd>
+              </div>
+            </dl>
+            <div className="modal-actions media-detail-actions">
+              <button
+                className="button-secondary"
+                type="button"
+                onClick={() => setSelected(null)}
+                disabled={deleting}
+              >
+                Close
+              </button>
+              <button
+                className="danger-action"
+                type="button"
+                onClick={deleteAsset}
+                disabled={deleting}
+              >
+                <Trash2 size={15} /> {deleting ? "Deleting…" : "Delete image"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

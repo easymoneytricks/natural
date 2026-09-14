@@ -30,7 +30,9 @@ export async function list(pool, type, q = "", includeDeleted = false) {
   const f = fields[type];
   const search = q ? ` AND (name LIKE ? OR slug LIKE ?)` : "",
     params = q ? [`%${q}%`, `%${q}%`] : [];
-  const lifecycle = includeDeleted ? "" : " AND x.deleted_at IS NULL";
+  const lifecycle = includeDeleted
+    ? " AND x.deleted_at IS NOT NULL"
+    : " AND x.deleted_at IS NULL";
   const count =
     type === "brands"
       ? "(SELECT COUNT(*) FROM products p WHERE p.brand_id=x.id AND p.deleted_at IS NULL)"

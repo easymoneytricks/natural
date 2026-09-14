@@ -41,3 +41,11 @@ export async function upload(req, res, next) {
     next(error);
   }
 }
+
+export async function remove(req, res, next) {
+  try {
+    res.json({ data: await media.remove(pool, req.params.id, req.query.type) });
+  } catch (error) {
+    next(error);
+  }
+}

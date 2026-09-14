@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowDownToLine, ArrowRight } from "lucide-react";
+import { ArrowDownToLine, ArrowRight, Check, Circle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import "./AccountDashboard.css";
 function Guard({ children }) {
@@ -31,7 +31,7 @@ function Shell({ children }) {
       </p>
       <header className="account-header">
         <p className="eyebrow">My account</p>
-        <h1>Welcome back, {user.firstName}.</h1>
+        <h1>Welcome back, {user?.firstName || "there"}.</h1>
       </header>
       <div className="account-layout">
         <nav className="account-nav" aria-label="Account navigation">
@@ -123,6 +123,7 @@ export function CustomerOrderDetail() {
   const { authFetch, authDownload } = useAuth();
   const [order, setOrder] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  const statusSteps = ["confirmed", "processing", "shipped", "delivered"];
   useEffect(() => {
     authFetch(`/customer/orders/${orderNumber}`)
       .then((r) => setOrder(r.data.order))
@@ -171,7 +172,7 @@ export function CustomerOrderDetail() {
               {downloading ? "Preparing invoice…" : "Download invoice PDF"}
             </button>
             <div className="detail-items">
-              {order.items.map((item) => (
+              {(Array.isArray(order.items) ? order.items : []).map((item) => (
                 <div key={item.sku}>
                   <span>
                     <strong>{item.name}</strong>
@@ -179,24 +180,56 @@ export function CustomerOrderDetail() {
                       SKU: {item.sku} · Qty {item.quantity}
                     </small>
                   </span>
-                  <b>₹{item.lineSubtotal.toLocaleString("en-IN")}</b>
+                  <b>₹{Number(item.lineSubtotal || 0).toLocaleString("en-IN")}</b>
                 </div>
               ))}
             </div>
             <section className="detail-address">
               <p className="eyebrow">Delivering to</p>
               <span>
-                {order.shippingAddress.first_name}{" "}
-                {order.shippingAddress.last_name}
+                {order.shippingAddress
+                  ? `${order.shippingAddress.first_name} ${order.shippingAddress.last_name}`
+                  : "Address not available"}
               </span>
-              <span>
-                {order.shippingAddress.address_line_1},{" "}
-                {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
-                {order.shippingAddress.postal_code}
-              </span>
+              {order.shippingAddress && (
+                <span>
+                  {order.shippingAddress.address_line_1},{" "}
+                  {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
+                  {order.shippingAddress.postal_code}
+                </span>
+              )}
             </section>
-            <p>Total ₹{order.pricing.total.toLocaleString("en-IN")}</p>
-            {order.timeline.map((event) => (
+            <p>Total ₹{Number(order.pricing?.total || 0).toLocaleString("en-IN")}</p>
+            <section className="order-progress" aria-label="Order progress">
+              <p className="eyebrow">Order progress</p>
+              <div className="order-timeline">
+                {statusSteps.map((step, index) => {
+                  const event = (Array.isArray(order.timeline) ? order.timeline : []).find(
+                    (entry) => entry.status === step,
+                  );
+                  const currentIndex = statusSteps.indexOf(order.status);
+                  const complete = Boolean(event) || index < currentIndex;
+                  const current = step === order.status;
+                  return (
+                    <div
+                      className={`order-timeline-step${complete ? " complete" : ""}${current ? " current" : ""}`}
+                      key={step}
+                    >
+                      <span className="order-timeline-icon" aria-hidden="true">
+                        {complete ? <Check size={15} strokeWidth={2.5} /> : <Circle size={10} />}
+                      </span>
+                      <div>
+                        <strong>{step[0].toUpperCase() + step.slice(1)}</strong>
+                        <small>
+                          {event?.note || (current ? "In progress" : "Not reached yet")}
+                        </small>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+            {[].map((event) => (
               <p key={`${event.status}-${event.createdAt}`}>
                 {event.status} · {event.note}
               </p>

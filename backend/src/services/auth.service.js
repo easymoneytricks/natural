@@ -482,9 +482,9 @@ export async function exportCustomerData(pool, customerId) {
   };
 }
 
-export async function deleteCustomerAccount(pool, customerId, password) {
+export async function requestCustomerAccountDeletion(pool, customerId, password) {
   const [[account]] = await pool.execute(
-    "SELECT password_hash FROM customers WHERE id=? AND deleted_at IS NULL",
+    "SELECT password_hash,status FROM customers WHERE id=? AND deleted_at IS NULL",
     [customerId],
   );
   if (
@@ -496,6 +496,12 @@ export async function deleteCustomerAccount(pool, customerId, password) {
       "INVALID_CREDENTIALS",
       "Your password is incorrect.",
     );
+  if (account.status === "deletion_requested")
+    throw new AuthError(
+      409,
+      "ACCOUNT_DELETION_ALREADY_REQUESTED",
+      "Your account closure request is already under review.",
+    );
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -504,7 +510,7 @@ export async function deleteCustomerAccount(pool, customerId, password) {
       [customerId],
     );
     await connection.execute(
-      "UPDATE customers SET status='disabled',deleted_at=NOW() WHERE id=? AND deleted_at IS NULL",
+      "UPDATE customers SET status='deletion_requested',deletion_requested_at=NOW() WHERE id=? AND deleted_at IS NULL",
       [customerId],
     );
     await connection.commit();

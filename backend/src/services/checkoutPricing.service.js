@@ -129,6 +129,7 @@ export async function quote(
     shippingMethod = "STANDARD",
     couponCode,
     giftCardCode,
+    giftCardId,
     shippingAddress,
   } = {},
 ) {
@@ -236,10 +237,18 @@ export async function quote(
   const sgst = taxType === "cgst_sgst" ? taxAmount - cgst : 0;
   const igst = taxType === "igst" ? taxAmount : 0;
   let giftCard = null;
-  if (giftCardCode) {
+  if (giftCardCode || giftCardId) {
     const [rows] = await pool.execute(
-      "SELECT * FROM gift_cards WHERE code_hash=? AND deleted_at IS NULL LIMIT 1",
-      [hash(giftCardCode)],
+      giftCardId && customerId
+        ? "SELECT gc.* FROM gift_cards gc JOIN customer_gift_cards cgc ON cgc.gift_card_id=gc.id AND cgc.customer_id=? WHERE gc.id=? AND gc.deleted_at IS NULL LIMIT 1"
+        : customerId
+        ? "SELECT gc.* FROM gift_cards gc LEFT JOIN customer_gift_cards cgc ON cgc.gift_card_id=gc.id AND cgc.customer_id=? WHERE gc.code_hash=? AND gc.deleted_at IS NULL AND (cgc.id IS NOT NULL OR NOT EXISTS (SELECT 1 FROM customer_gift_cards WHERE gift_card_id=gc.id)) LIMIT 1"
+        : "SELECT * FROM gift_cards WHERE code_hash=? AND deleted_at IS NULL LIMIT 1",
+      giftCardId && customerId
+        ? [customerId, giftCardId]
+        : customerId
+          ? [customerId, hash(giftCardCode)]
+          : [hash(giftCardCode)],
     );
     const card = rows[0];
     if (!card)

@@ -73,6 +73,24 @@
 .detail-items + .detail-address {
   margin-top: 24px;
 }
+.order-progress { border-top: 1px solid var(--line); margin-top: 28px; padding-top: 24px; }
+.order-timeline { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 16px; }
+.order-timeline-step { position: relative; display: grid; justify-items: center; gap: 9px; color: #a4aaa1; text-align: center; }
+.order-timeline-step::before { content: ""; position: absolute; top: 13px; right: 50%; width: 100%; height: 1px; background: var(--line); }
+.order-timeline-step:first-child::before { display: none; }
+.order-timeline-icon { position: relative; z-index: 1; display: grid; place-items: center; width: 27px; height: 27px; border: 1px solid var(--line); border-radius: 50%; background: var(--paper); }
+.order-timeline-step > div { display: grid; gap: 3px; }
+.order-timeline-step strong { font-size: 12px; font-weight: 600; }
+.order-timeline-step small { max-width: 130px; color: inherit; font-size: 10px; }
+.order-timeline-step.complete, .order-timeline-step.current { color: var(--sage-dark); }
+.order-timeline-step.complete .order-timeline-icon, .order-timeline-step.current .order-timeline-icon { border-color: var(--sage-dark); background: #e5efe4; }
+.order-timeline-step.complete::before { background: var(--sage-dark); }
+@media (max-width: 640px) {
+  .order-timeline { grid-template-columns: 1fr; gap: 13px; }
+  .order-timeline-step { grid-template-columns: 27px 1fr; justify-items: start; text-align: left; }
+  .order-timeline-step::before { top: 27px; left: 13px; right: auto; width: 1px; height: calc(100% + 13px); }
+  .order-timeline-step:last-child::before { display: none; }
+}
 .account-content > .button-secondary {
   width: auto;
   display: inline-flex;
@@ -332,9 +350,24 @@
 .profile-form {
   display: grid;
   gap: 14px;
-  max-width: 520px;
+  max-width: 720px;
   margin: 22px 0;
 }
+.address-add { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 24px; border: 1px solid var(--line); background: #fbfaf6; }
+.address-add > label:nth-of-type(5),
+.address-add > label:nth-of-type(6) { grid-column: 1 / -1; }
+.address-add label { display: grid; gap: 0; }
+.address-add select { display: block; width: 100%; margin-top: 5px; padding: 11px; border: 1px solid var(--line); background: var(--paper); }
+.address-add input[type="checkbox"] { display: inline-block; width: auto; margin: 0 8px 0 0; accent-color: var(--sage-dark); }
+.address-add > label:has(input[type="checkbox"]) { display: flex; align-items: center; color: var(--ink); }
+.profile-intro { max-width: 620px; color: var(--muted); font-size: 13px; margin: -3px 0 18px; }
+.profile-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.profile-fields label:last-child { grid-column: 1 / -1; }
+.profile-form > label { display: grid; gap: 0; }
+.profile-danger-zone { display: grid; gap: 10px; border-top: 1px solid var(--line); margin-top: 10px; padding-top: 22px; }
+.profile-danger-zone strong { font: 22px var(--serif); color: var(--ink); }
+.profile-danger-zone p { margin: 0; }
+.profile-danger-zone .danger { justify-self: start; }
 .address-add label,
 .profile-form label {
   font-size: 11px;
@@ -357,9 +390,17 @@
   color: var(--muted);
   font-size: 11px;
 }
+@media (max-width: 640px) {
+  .profile-fields { grid-template-columns: 1fr; }
+  .profile-fields label:last-child { grid-column: auto; }
+  .address-add { grid-template-columns: 1fr; }
+  .address-add > label:nth-of-type(5),
+  .address-add > label:nth-of-type(6) { grid-column: auto; }
+}
 .rewards-balance {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
   margin-top: 27px;
 }
 .rewards-balance span,
@@ -375,6 +416,19 @@
   font: 38px var(--serif);
   color: var(--ink);
 }
+.rewards-empty { padding: 24px; margin-top: 24px; }
+.rewards-empty strong { font: 24px var(--serif); }
+.rewards-empty p { color: var(--muted); font-size: 13px; }
+.rewards-history { margin-top: 32px; border-top: 1px solid var(--line); }
+.rewards-history-head { display: flex; justify-content: space-between; align-items: end; gap: 18px; padding: 22px 0 14px; }
+.rewards-history-head h3 { margin: 0; font: 24px var(--serif); }
+.rewards-history-head span { color: var(--muted); font-size: 11px; }
+.reward-history-row { display: flex; justify-content: space-between; gap: 20px; padding: 15px 0; border-top: 1px solid var(--line); }
+.reward-history-row span { display: grid; gap: 4px; }
+.reward-history-row small { color: var(--muted); font-size: 11px; }
+.reward-history-row b { color: var(--sage-dark); }
+.reward-history-row .points-negative { color: #9b3f36; }
+@media (max-width: 640px) { .rewards-balance { grid-template-columns: 1fr; } .rewards-history-head { display: grid; } }
 .rewards-stats {
   display: flex;
   gap: 50px;
@@ -410,6 +464,16 @@
   max-width: 500px;
   margin: 24px 0;
 }
+.gift-card-claim { display: flex; align-items: end; gap: 12px; max-width: 620px; margin: 24px 0; padding: 20px; border: 1px solid var(--line); background: #fbfaf6; }
+.gift-card-claim label { flex: 1 1 auto; min-width: 0; color: var(--muted); font-size: 11px; }
+.gift-card-claim input { display: block; width: 100%; margin-top: 5px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); letter-spacing: .12em; font: 600 14px var(--sans); }
+.gift-card-claim .button { flex: 0 0 auto; width: auto; min-width: 155px; white-space: nowrap; }
+.gift-card-list { display: grid; gap: 12px; max-width: 620px; margin-top: 24px; }
+.gift-card-list article { display: grid; grid-template-columns: 1fr auto; gap: 6px 18px; padding: 18px 20px; border: 1px solid var(--line); background: #fbfaf6; }
+.gift-card-list article span { color: var(--sage-dark); font-weight: 700; letter-spacing: .08em; }
+.gift-card-list article strong { font: 24px var(--serif); }
+.gift-card-list article small { color: var(--muted); font-size: 11px; }
+@media (max-width: 640px) { .gift-card-claim { display: grid; align-items: stretch; } }
 .gift-add input {
   margin: 0;
 }

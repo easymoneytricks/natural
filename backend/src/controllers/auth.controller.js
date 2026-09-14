@@ -12,7 +12,7 @@ import {
   requestPasswordReset,
   resetPassword,
   exportCustomerData,
-  deleteCustomerAccount,
+  requestCustomerAccountDeletion,
 } from "../services/auth.service.js";
 import {
   emailVerificationEmail,
@@ -141,7 +141,10 @@ export async function me(req, res) {
 export async function forgotPassword(req, res, next) {
   try {
     const result = await requestPasswordReset(pool, req.body?.email);
-    if (result) await sendEmail(passwordResetEmail(result));
+    if (result)
+      await sendEmail(
+        passwordResetEmail({ recipient: result.email, token: result.token }),
+      );
     res.status(202).json({ data: { accepted: true } });
   } catch (error) {
     next(error);
@@ -167,9 +170,9 @@ export async function exportAccount(req, res, next) {
 
 export async function deleteAccount(req, res, next) {
   try {
-    await deleteCustomerAccount(pool, req.customer.id, req.body?.password);
+    await requestCustomerAccountDeletion(pool, req.customer.id, req.body?.password);
     clearRefreshCookie(res);
-    res.json({ data: { deleted: true } });
+    res.json({ data: { requested: true } });
   } catch (error) {
     next(error);
   }

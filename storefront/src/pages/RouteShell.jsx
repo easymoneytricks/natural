@@ -18,6 +18,30 @@ import { useStoreSettings } from "../context/StoreSettingsContext";
 import heroImage from "../assets/natural-beauty-hero.png";
 
 const content = {
+  "gift-cards": {
+    eyebrow: "Give the ritual",
+    title: "Gift cards for thoughtful care.",
+    intro:
+      "Let someone choose the formulas that feel right for them. Natural Beauty gift cards are ideal for birthdays, milestones and everyday acts of care.",
+    sections: [
+      [
+        "Choose a considered amount",
+        "Gift cards are available in flexible values from ₹500. Our care team can help you choose an amount that suits a complete routine or a single favourite formula.",
+      ],
+      [
+        "How it works",
+        "Contact our care team with the recipient name, email address and value you would like to gift. We will issue a secure code and share it with you after payment is confirmed.",
+      ],
+      [
+        "Simple to redeem",
+        "The recipient can enter their gift card code in the cart at checkout. Any remaining balance stays available for a future Natural Beauty order until the card expires.",
+      ],
+      [
+        "Need help choosing?",
+        "Our team is available Monday–Saturday, 10:00 AM–6:00 PM. Reach out through Contact Us and we will make gifting feel effortless.",
+      ],
+    ],
+  },
   about: {
     eyebrow: "Our approach",
     title: "Skincare, made considered.",
@@ -155,6 +179,11 @@ export function RouteShell({ title }) {
           </article>
         ))}
       </div>
+      {title === "gift-cards" && (
+        <Link className="button route-cta" to="/contact">
+          Request a gift card <ArrowRight size={15} />
+        </Link>
+      )}
     </section>
   );
 }

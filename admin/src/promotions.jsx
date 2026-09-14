@@ -93,7 +93,7 @@ function CouponEditor({ editing, onClose, onSaved }) {
           <div>
             <span className="section-kicker">PROMOTIONS / COUPONS</span>
             <h2>{editing ? "Edit coupon" : "Create coupon"}</h2>
-            <p>Set clear rules your customers can understand at checkout.</p>
+            <p>Create a clear offer with rules your customers can trust.</p>
           </div>
           <button
             className="icon-button"
@@ -301,7 +301,7 @@ function GiftCardEditor({ onClose, onCreated }) {
           <div>
             <span className="section-kicker">PROMOTIONS / GIFT CARDS</span>
             <h2>Issue a gift card</h2>
-            <p>A secure one-time code will be generated after creation.</p>
+            <p>Generate a secure gift card code for customer purchases.</p>
           </div>
           <button
             className="icon-button"

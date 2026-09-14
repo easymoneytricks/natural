@@ -31,7 +31,7 @@ export function AbandonedCheckoutsPage() {
     <div>
       <div className="page-head catalog-page-head">
         <div>
-          <span className="section-kicker">RECOVERY WORKSPACE</span>
+          <span className="section-kicker">CHECKOUT RECOVERY</span>
           <h1>Abandoned checkouts</h1>
           <p>See what shoppers left behind before placing an order.</p>
         </div>
@@ -72,37 +72,52 @@ export function AbandonedCheckoutsPage() {
         </div>
       ) : (
         <div className="card abandoned-table">
-          <div className="abandoned-table-head">
-            <span>SHOPPER</span>
-            <span>ITEMS</span>
-            <span>ESTIMATED TOTAL</span>
-            <span>LAST ACTIVE</span>
-          </div>
-          {rows.map((row) => (
-            <button
-              className="abandoned-row"
-              key={row.id}
-              onClick={() => open(row.id)}
-              type="button"
-            >
-              <span>
-                <strong>
-                  {row.first_name || row.last_name
-                    ? `${row.first_name || ""} ${row.last_name || ""}`.trim()
-                    : row.email || "Guest shopper"}
-                </strong>
-                <small>{row.email || row.phone || "Contact not entered"}</small>
-              </span>
-              <span>{row.items}</span>
-              <span>{money(row.estimatedTotal)}</span>
-              <span>
-                {new Date(row.last_seen_at).toLocaleString("en-IN", {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
-              </span>
-            </button>
-          ))}
+          <table>
+            <thead>
+              <tr>
+                <th>SHOPPER</th>
+                <th>ITEMS</th>
+                <th>ESTIMATED TOTAL</th>
+                <th>LAST ACTIVE</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr
+                  className="abandoned-row"
+                  key={row.id}
+                  onClick={() => open(row.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      open(row.id);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <td>
+                    <strong>
+                      {row.first_name || row.last_name
+                        ? `${row.first_name || ""} ${row.last_name || ""}`.trim()
+                        : row.email || "Guest shopper"}
+                    </strong>
+                    <small>
+                      {row.email || row.phone || "Contact not entered"}
+                    </small>
+                  </td>
+                  <td>{row.items}</td>
+                  <td>{money(row.estimatedTotal)}</td>
+                  <td>
+                    {new Date(row.last_seen_at).toLocaleString("en-IN", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
       {selected && (

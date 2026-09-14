@@ -109,7 +109,10 @@ export async function setStatus(pool, id, status, adminId, req) {
     [id],
   );
   if (!c) fail(404, "CUSTOMER_NOT_FOUND", "Customer not found.");
-  await pool.execute("UPDATE customers SET status=? WHERE id=?", [status, id]);
+  await pool.execute(
+    "UPDATE customers SET status=?,deletion_requested_at=CASE WHEN ?='active' THEN NULL ELSE deletion_requested_at END WHERE id=?",
+    [status, status, id],
+  );
   if (status === "disabled") await revokeAllSessions(pool, id);
   await audit(
     pool,
@@ -120,4 +123,19 @@ export async function setStatus(pool, id, status, adminId, req) {
     req,
   );
   return { status };
+}
+
+export async function deletePermanently(pool, id, adminId, req) {
+  const [[customer]] = await pool.execute(
+    "SELECT id FROM customers WHERE id=? AND deleted_at IS NULL",
+    [id],
+  );
+  if (!customer) fail(404, "CUSTOMER_NOT_FOUND", "Customer not found.");
+  await revokeAllSessions(pool, id);
+  await pool.execute(
+    "UPDATE customers SET status='disabled',deleted_at=NOW() WHERE id=? AND deleted_at IS NULL",
+    [id],
+  );
+  await audit(pool, adminId, "customer.deleted", "customers", id, req);
+  return { deleted: true };
 }

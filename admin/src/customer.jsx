@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "./main";
 export function CustomersPage() {
   const { authFetch } = useAuth();
@@ -47,7 +47,13 @@ export function CustomersPage() {
             {rows.map((r) => (
               <tr key={r.id}>
                 <td>
-                  <Link to={`/customers/${r.id}`}>
+                  <Link
+                    className="customer-name-link"
+                    to={`/customers/${r.id}`}
+                  >
+                    <span className="customer-avatar" aria-hidden="true">
+                      {(r.name || "?").trim().charAt(0).toUpperCase()}
+                    </span>
                     <b>{r.name}</b>
                   </Link>
                   <small>
@@ -77,8 +83,11 @@ export function CustomersPage() {
 export function CustomerDetailPage() {
   const { id } = useParams();
   const { authFetch } = useAuth();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [actionBusy, setActionBusy] = useState(false);
   useEffect(() => {
     authFetch(`/admin/customers/${id}`)
       .then((response) => setData(response.data))
@@ -89,9 +98,39 @@ export function CustomerDetailPage() {
   if (error) return <p className="error">{error}</p>;
   if (!data) return <p>Loading customer profile…</p>;
   const { customer, addresses, orders, wishlist, cart, commerce } = data;
+  const updateStatus = async (status) => {
+    setActionBusy(true);
+    setActionError("");
+    try {
+      await authFetch(`/admin/customers/${id}/status`, {
+        method: "PATCH",
+        body: { status },
+      });
+      setData((current) => ({
+        ...current,
+        customer: { ...current.customer, status },
+      }));
+    } catch (caught) {
+      setActionError(caught.message || "Unable to update this account.");
+    } finally {
+      setActionBusy(false);
+    }
+  };
+  const removeCustomer = async () => {
+    if (!window.confirm("Permanently remove this customer account?")) return;
+    setActionBusy(true);
+    setActionError("");
+    try {
+      await authFetch(`/admin/customers/${id}`, { method: "DELETE" });
+      navigate("/customers", { replace: true });
+    } catch (caught) {
+      setActionError(caught.message || "Unable to delete this account.");
+      setActionBusy(false);
+    }
+  };
   return (
     <div>
-      <div className="page-head">
+      <div className="page-head customer-profile-head">
         <div>
           <Link to="/customers">← Customer directory</Link>
           <span className="section-kicker">CUSTOMER PROFILE</span>
@@ -100,10 +139,32 @@ export function CustomerDetailPage() {
             {customer.email} · {customer.phone}
           </p>
         </div>
-        <span className={`status-pill status-${customer.status}`}>
-          {customer.status}
-        </span>
+        <div className="customer-admin-actions">
+          <span className={`status-pill status-${customer.status}`}>
+            {customer.status.replaceAll("_", " ")}
+          </span>
+          {customer.status !== "active" && (
+            <>
+              <button
+                type="button"
+                disabled={actionBusy}
+                onClick={() => updateStatus("active")}
+              >
+                Reactivate account
+              </button>
+              <button
+                type="button"
+                className="danger"
+                disabled={actionBusy}
+                onClick={removeCustomer}
+              >
+                Delete permanently
+              </button>
+            </>
+          )}
+        </div>
       </div>
+      {actionError && <p className="error customer-action-error">{actionError}</p>}
       <div className="customer-detail-grid">
         <section className="card customer-detail-card">
           <h2>Saved addresses</h2>

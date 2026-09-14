@@ -3,9 +3,10 @@ import {
   requireAdminAuth,
   requireAdminPermission,
 } from "../middleware/adminAuth.js";
-import { customer, config } from "../controllers/adminReward.controller.js";
+import { customer, config, updateConfig } from "../controllers/adminReward.controller.js";
 const r = Router();
-r.use(requireAdminAuth, requireAdminPermission("customers.view"));
-r.get("/rewards/config", config);
-r.get("/customers/:customerId/rewards", customer);
+r.use(requireAdminAuth);
+r.get("/rewards/config", requireAdminPermission("customers.view"), config);
+r.patch("/rewards/config", requireAdminPermission("customers.manage"), updateConfig);
+r.get("/customers/:customerId/rewards", requireAdminPermission("customers.view"), customer);
 export default r;

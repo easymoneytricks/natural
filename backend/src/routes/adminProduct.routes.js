@@ -14,6 +14,7 @@ r.get("/products", view, c.list);
 r.get("/products/:id", view, c.detail);
 r.post("/products", manage, c.save);
 r.patch("/products/:id", manage, c.save);
+r.delete("/products/:id/permanent", manage, e.permanentlyRemove);
 r.delete("/products/:id", manage, e.remove);
 r.post("/products/:id/restore", manage, e.restore);
 r.put("/products/:id/content", manage, e.content);

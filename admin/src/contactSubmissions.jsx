@@ -3,6 +3,7 @@ import {
   Check,
   Eye,
   LoaderCircle,
+  RefreshCw,
   Mail,
   MapPin,
   MessageSquare,
@@ -19,6 +20,7 @@ function SubmissionDetail({ submission, onClose, onUpdated }) {
   const { authFetch } = useAuth();
   const [status, setStatus] = useState(submission.status);
   const [adminNote, setAdminNote] = useState(submission.adminNote || "");
+  const [replyMessage, setReplyMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const save = async (event) => {
@@ -28,7 +30,7 @@ function SubmissionDetail({ submission, onClose, onUpdated }) {
     try {
       await authFetch(`/admin/contact-submissions/${submission.id}`, {
         method: "PATCH",
-        body: { status, adminNote },
+        body: { status, adminNote, replyMessage },
       });
       onUpdated();
     } catch (caught) {
@@ -91,6 +93,14 @@ function SubmissionDetail({ submission, onClose, onUpdated }) {
             </select>
           </label>
           <label>
+            Message to customer
+            <textarea
+              value={replyMessage}
+              onChange={(event) => setReplyMessage(event.target.value)}
+              placeholder="Write a helpful reply for the customer"
+            />
+          </label>
+          <label>
             Internal note
             <textarea
               value={adminNote}
@@ -104,7 +114,7 @@ function SubmissionDetail({ submission, onClose, onUpdated }) {
             </div>
           )}
           <button disabled={saving}>
-            {saving && <LoaderCircle className="spin" size={15} />} Save message
+            {saving && <LoaderCircle className="spin" size={15} />} Send message
           </button>
         </form>
       </section>
@@ -163,7 +173,7 @@ export function ContactSubmissionsPage() {
           </p>
         </div>
         <button className="button-secondary" onClick={load}>
-          <LoaderCircle size={16} className={loading ? "spin" : ""} /> Refresh
+          <RefreshCw size={16} className={loading ? "spin" : ""} /> Refresh
         </button>
       </div>
       <div className="contact-summary">

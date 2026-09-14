@@ -559,7 +559,7 @@ export function Account() {
             Overview
           </Link>
           <Link to="/account/orders">Orders</Link>
-          <Link to="/wishlist">Wishlist</Link>
+          <Link to="/account/wishlist">Wishlist</Link>
           <Link to="/account/addresses">Addresses</Link>
           <Link to="/account/profile">Profile</Link>
           <Link to="/account/rewards">Rewards</Link>
@@ -595,7 +595,7 @@ export function Account() {
                 {wishlistCount} {wishlistCount === 1 ? "product" : "products"}{" "}
                 in your wishlist.
               </h2>
-              <Link to="/wishlist">
+              <Link to="/account/wishlist">
                 View wishlist <ArrowRight size={14} />
               </Link>
             </article>

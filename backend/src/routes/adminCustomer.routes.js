@@ -12,4 +12,5 @@ r.get("/customers", v, c.list);
 r.get("/customers/summary", v, c.summary);
 r.get("/customers/:id", v, c.detail);
 r.patch("/customers/:id/status", m, c.status);
+r.delete("/customers/:id", m, c.remove);
 export default r;

@@ -48,6 +48,16 @@ export const remove = w(async (req, res) => {
   await s.removeProduct(pool, req.params.id, req.admin.id, req);
   res.json({ data: { success: true } });
 });
+export const permanentlyRemove = w(async (req, res) => {
+  res.json({
+    data: await s.permanentlyDeleteProduct(
+      pool,
+      req.params.id,
+      req.admin.id,
+      req,
+    ),
+  });
+});
 export const restore = w(async (req, res) => {
   await s.restoreProduct(pool, req.params.id, req.admin.id, req);
   res.json({ data: { success: true } });

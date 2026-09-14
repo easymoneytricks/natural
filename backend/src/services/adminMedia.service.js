@@ -1,3 +1,5 @@
+import { removeManagedFile } from "./mediaStorage.service.js";
+
 export async function list(pool, query = {}) {
   const search = String(query.q || "")
     .trim()
@@ -58,4 +60,71 @@ export async function list(pool, query = {}) {
       primary: Boolean(asset.is_primary),
       updatedAt: asset.updated_at,
     }));
+}
+
+export async function remove(pool, id, type) {
+  const assetId = Number(id);
+  if (!Number.isInteger(assetId) || assetId <= 0) {
+    const error = new Error("A valid media asset is required.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const connection = await pool.getConnection();
+  let filePath = null;
+  try {
+    await connection.beginTransaction();
+    if (type === "product") {
+      const [[asset]] = await connection.execute(
+        "SELECT file_path FROM product_media WHERE id=? AND deleted_at IS NULL",
+        [assetId],
+      );
+      if (!asset)
+        throw Object.assign(new Error("Media asset not found."), {
+          statusCode: 404,
+        });
+      filePath = asset.file_path;
+      await connection.execute(
+        "UPDATE product_media SET deleted_at=NOW(),is_primary=0 WHERE id=?",
+        [assetId],
+      );
+    } else if (type === "brand" || type === "category") {
+      const table = type === "brand" ? "brands" : "categories";
+      const column = type === "brand" ? "logo_path" : "image_path";
+      const [[asset]] = await connection.execute(
+        `SELECT ${column} file_path FROM ${table} WHERE id=? AND deleted_at IS NULL`,
+        [assetId],
+      );
+      if (!asset)
+        throw Object.assign(new Error("Media asset not found."), {
+          statusCode: 404,
+        });
+      filePath = asset.file_path;
+      await connection.execute(
+        `UPDATE ${table} SET ${column}=NULL WHERE id=?`,
+        [assetId],
+      );
+    } else {
+      const [[asset]] = await connection.execute(
+        "SELECT file_path FROM media_assets WHERE id=? AND deleted_at IS NULL",
+        [assetId],
+      );
+      if (!asset)
+        throw Object.assign(new Error("Media asset not found."), {
+          statusCode: 404,
+        });
+      filePath = asset.file_path;
+      await connection.execute(
+        "UPDATE media_assets SET deleted_at=NOW() WHERE id=?",
+        [assetId],
+      );
+    }
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+  await removeManagedFile(filePath);
+  return { id: assetId, deleted: true };
 }

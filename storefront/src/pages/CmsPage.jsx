@@ -61,7 +61,9 @@ export function CmsPage({ slug: routeSlug }) {
           }}
         />
       )}
-      <article className="cms-page">
+      <article
+        className={`cms-page ${slug === "journal" ? "journal-page" : ""}`}
+      >
         <div className="cms-page-header">
           {page.eyebrow && (
             <span className="section-kicker">{page.eyebrow}</span>

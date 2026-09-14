@@ -249,6 +249,31 @@
   line-height: 1.72;
   white-space: pre-line;
 }
+.journal-page .cms-page-header {
+  max-width: 980px;
+  padding: 48px 52px 42px;
+  border: 1px solid #dfe8dc;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #eef5eb, #fbfaf6 72%);
+}
+.journal-page .cms-page-layout {
+  grid-template-columns: 210px minmax(0, 860px);
+  gap: 54px;
+  padding-top: 44px;
+}
+.journal-page .cms-page-content section {
+  margin-bottom: 14px;
+  padding: 28px 30px 32px;
+  border: 1px solid #e1e8df;
+  border-radius: 14px;
+  background: #fff;
+}
+.journal-page .cms-page-content section:last-child {
+  margin-bottom: 0;
+}
+.journal-page .cms-page-content h2 {
+  font-size: 29px;
+}
 .cms-state {
   max-width: 1180px;
   margin: 0 auto;
@@ -295,6 +320,12 @@
   }
   .cms-page-header h1 {
     font-size: 40px;
+  }
+  .journal-page .cms-page-header {
+    padding: 30px 24px;
+  }
+  .journal-page .cms-page-content section {
+    padding: 22px 20px 24px;
   }
   .cms-page-layout {
     display: block;
@@ -959,6 +990,12 @@ input:focus-visible {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.7;
+}
+.route-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
 }
 .store-availability-notice {
   padding: 0.7rem 1rem;
@@ -2864,6 +2901,24 @@ body {
   color: rgba(255, 255, 255, 0.55);
   font-size: 11px;
   line-height: 1.7;
+}
+.footer-contact-detail {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 !important;
+  color: rgba(255, 255, 255, 0.68) !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  text-decoration: none;
+}
+.footer-contact-detail svg {
+  flex: 0 0 auto;
+  color: #c8d3c3;
+}
+.footer-contact-detail:hover {
+  color: #fff !important;
 }
 .footer-bottom {
   display: flex;

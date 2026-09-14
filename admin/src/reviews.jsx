@@ -31,7 +31,7 @@ export function ReviewsPage() {
           <span className="section-kicker">CUSTOMER VOICE</span>
           <h1>Reviews</h1>
           <p>
-            Approve verified-purchase reviews before they appear on the
+            Review customer feedback and publish approved reviews to the
             storefront.
           </p>
         </div>

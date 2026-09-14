@@ -257,3 +257,63 @@ export async function restoreProduct(pool, id, adminId, req) {
   );
   await audit(pool, adminId, "product.restored", "products", id, req);
 }
+
+export async function permanentlyDeleteProduct(pool, id, adminId, req) {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [[product]] = await connection.execute(
+      "SELECT id,name,deleted_at FROM products WHERE id=? FOR UPDATE",
+      [id],
+    );
+    if (!product) fail(404, "PRODUCT_NOT_FOUND", "Product not found.");
+    if (!product.deleted_at)
+      fail(
+        409,
+        "PRODUCT_MUST_BE_ARCHIVED",
+        "Archive the product before permanently deleting it.",
+      );
+
+    const [[reserved]] = await connection.execute(
+      "SELECT COALESCE(SUM(reserved_quantity),0) AS quantity FROM inventory i JOIN product_skus s ON s.id=i.sku_id WHERE s.product_id=?",
+      [id],
+    );
+    if (Number(reserved.quantity) > 0)
+      fail(
+        409,
+        "PRODUCT_HAS_RESERVED_STOCK",
+        "Release all reserved stock before permanently deleting this product.",
+      );
+
+    const [[skuSummary]] = await connection.execute(
+      "SELECT COUNT(*) AS count FROM product_skus WHERE product_id=?",
+      [id],
+    );
+    const [result] = await connection.execute(
+      "DELETE FROM products WHERE id=? AND deleted_at IS NOT NULL",
+      [id],
+    );
+    if (!result.affectedRows)
+      fail(404, "PRODUCT_NOT_FOUND", "Product not found.");
+    await connection.commit();
+    await audit(
+      pool,
+      adminId,
+      "product.permanently_deleted",
+      "products",
+      id,
+      req,
+    );
+    return {
+      id: Number(id),
+      deleted: true,
+      preservedSkuCount: Number(skuSummary.count || 0),
+      orderSnapshotsPreserved: true,
+    };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}

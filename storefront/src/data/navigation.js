@@ -134,3 +134,53 @@ export const menus = {
     },
   },
 };
+
+const menuText = (menu) =>
+  menu.columns
+    .map((column) => `${column.title} :: ${column.links.join(", ")}`)
+    .concat(
+      `feature|${menu.feature.title}|${menu.feature.text}|${menu.feature.cta}|${menu.feature.image}`,
+    )
+    .join("\n");
+
+export const megaMenuDefaults = Object.fromEntries(
+  Object.entries(menus).map(([name, menu]) => [
+    name.toLowerCase(),
+    menuText(menu),
+  ]),
+);
+
+export function parseMegaMenu(value, fallback) {
+  if (!value || typeof value !== "string") return fallback;
+  const columns = [];
+  let feature = fallback.feature;
+  value
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      if (line.toLowerCase().startsWith("feature|")) {
+        const [, title, text, cta, image] = line.split("|");
+        feature = {
+          title: title?.trim() || fallback.feature.title,
+          text: text?.trim() || fallback.feature.text,
+          cta: cta?.trim() || fallback.feature.cta,
+          image: image?.trim() || fallback.feature.image,
+        };
+        return;
+      }
+      const separator = line.indexOf("::");
+      if (separator < 0) return;
+      const title = line.slice(0, separator).trim();
+      const links = line
+        .slice(separator + 2)
+        .split(",")
+        .map((link) => link.trim())
+        .filter(Boolean);
+      if (title && links.length) columns.push({ title, links });
+    });
+  return {
+    columns: columns.length ? columns : fallback.columns,
+    feature,
+  };
+}

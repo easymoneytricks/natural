@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ClipboardList, Eye, LoaderCircle, Search, X } from "lucide-react";
+import {
+  ClipboardList,
+  Eye,
+  LoaderCircle,
+  RefreshCw,
+  Search,
+  X,
+} from "lucide-react";
 import { useAuth } from "./main";
 
 const formatDate = (value) =>
@@ -118,7 +125,7 @@ export function AuditPage() {
           </p>
         </div>
         <button className="button-secondary" onClick={load}>
-          <LoaderCircle size={16} className={loading ? "spin" : ""} /> Refresh
+          <RefreshCw size={16} className={loading ? "spin" : ""} /> Refresh
         </button>
       </div>
       <div className="audit-summary">

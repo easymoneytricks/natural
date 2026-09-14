@@ -12,11 +12,13 @@ const groups = [
   "tax",
   "homepage",
   "navigation",
+  "mega_menu",
   "footer",
   "contact",
   "store",
   "smtp",
   "homepage_sections",
+  "homepage_positions",
   "payments",
   "recaptcha",
 ];

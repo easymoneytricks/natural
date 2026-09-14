@@ -186,6 +186,29 @@ export function contactAdminEmail({ submission }) {
   };
 }
 
+export function contactResponseEmail({
+  recipient,
+  name,
+  message,
+  submissionId,
+}) {
+  const body = `${paragraph(`Hi ${esc(name || "there")},`)}${paragraph("Thank you for contacting Natural Beauty. Here is a message from our care team:")}<div style="margin:22px 0;padding:20px;background:#edf1e8;border-left:3px solid #385941;color:#52665a;font-size:16px;white-space:pre-line">${esc(message)}</div>${paragraph("If you need anything else, simply reply to this email and our team will be happy to help.")}${button("Continue shopping", `${process.env.STOREFRONT_URL || "http://localhost:5173"}/shop`)}`;
+  return {
+    eventType: "contact.response",
+    to: recipient,
+    subject: "A note from Natural Beauty customer care",
+    referenceType: "contact_submission",
+    referenceId: submissionId,
+    text: `Hi ${name || "there"},\n\n${message}\n\nReply to this email if you need more help.`,
+    html: shell({
+      eyebrow: "Customer care",
+      title: "A note from our care team",
+      preview: "You have a new message from Natural Beauty customer care.",
+      body,
+    }),
+  };
+}
+
 export async function sendTestEmail(recipient) {
   return sendEmail({
     eventType: "smtp.test",

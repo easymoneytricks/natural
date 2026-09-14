@@ -5,6 +5,7 @@ import {
   Eye,
   LoaderCircle,
   PackageCheck,
+  RefreshCw,
   Search,
   Truck,
   X,
@@ -515,7 +516,7 @@ export function OrdersPage() {
           </p>
         </div>
         <button className="button-secondary" onClick={load}>
-          <LoaderCircle size={16} className={loading ? "spin" : ""} /> Refresh
+          <RefreshCw size={16} className={loading ? "spin" : ""} /> Refresh
         </button>
       </div>
       <div className="order-summary-grid">

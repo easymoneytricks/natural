@@ -323,6 +323,19 @@ export function ProductEditor() {
       },
     });
 
+  const permanentlyDeleteProduct = () =>
+    setConfirmation({
+      title: "Permanently delete this product?",
+      description:
+        "This removes the product from the catalogue and preserves order snapshots, sales history, and inventory movements. This action cannot be undone.",
+      onConfirm: async () => {
+        await authFetch(`/admin/products/${id}/permanent`, {
+          method: "DELETE",
+        });
+        navigate("/catalog/products");
+      },
+    });
+
   if (loading) return <div className="loading">Loading product editor…</div>;
   return (
     <div className="product-editor-page">
@@ -339,6 +352,15 @@ export function ProductEditor() {
         {id && canManage && (
           <button type="button" onClick={changeProductLifecycle}>
             {deleted ? "Restore product" : "Archive product"}
+          </button>
+        )}
+        {id && deleted && canManage && (
+          <button
+            type="button"
+            className="danger-action"
+            onClick={permanentlyDeleteProduct}
+          >
+            Permanently delete
           </button>
         )}
         {id &&

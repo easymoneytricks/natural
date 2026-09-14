@@ -1,24 +1,62 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Minus, Plus, Trash2, Heart, ArrowRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ProductCard } from "../components/product/ProductCard";
 import { useCart } from "../context/CartContext";
 import { shippingRules } from "../config/commerce";
 import { useWishlist } from "../context/PreferenceContext";
+import { useAuth } from "../context/AuthContext";
 import "./Cart.css";
 
 const money = (value) => `₹${Math.max(0, value).toLocaleString("en-IN")}`;
 
+const readSavedCoupon = () => {
+  try {
+    const saved = sessionStorage.getItem("natural-beauty-coupon");
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+};
+const readSavedGift = () => {
+  try {
+    const saved = sessionStorage.getItem("natural-beauty-gift");
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+};
+
 export function Cart() {
   const { items, updateQuantity, removeItem, clearCart } = useCart();
   const { toggle: toggleWishlist } = useWishlist();
-  const [couponInput, setCouponInput] = useState("");
-  const [coupon, setCoupon] = useState(null);
+  const { authStatus, authFetch } = useAuth();
+  const [coupon, setCoupon] = useState(readSavedCoupon);
+  const [couponInput, setCouponInput] = useState(
+    () => readSavedCoupon()?.code || "",
+  );
   const [couponMessage, setCouponMessage] = useState("");
-  const [giftInput, setGiftInput] = useState("");
-  const [gift, setGift] = useState(null);
+  const [gift, setGift] = useState(readSavedGift);
+  const [giftInput, setGiftInput] = useState(
+    () => readSavedGift()?.code || "",
+  );
   const [giftMessage, setGiftMessage] = useState("");
   const [wishlistMessage, setWishlistMessage] = useState("");
+  useEffect(() => {
+    if (authStatus !== "authenticated" || gift) return;
+    authFetch("/customer/gift-cards")
+      .then((response) => {
+        const card = (response.data || []).find(
+          (entry) => entry.status === "active" && entry.currentBalance > 0,
+        );
+        if (card) {
+          const saved = { id: card.id, balance: card.currentBalance };
+          sessionStorage.setItem("natural-beauty-gift", JSON.stringify(saved));
+          setGift(saved);
+        }
+      })
+      .catch(() => {});
+  }, [authStatus, authFetch, gift]);
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
@@ -45,10 +83,32 @@ export function Cart() {
   const recommendations = [];
 
   const applyCoupon = () => {
-    setCouponMessage("Coupons are validated securely at checkout.");
+    const code = couponInput.trim().toUpperCase();
+    if (!code) {
+      setCouponMessage("Enter a coupon code first.");
+      return;
+    }
+    const saved = {
+      code,
+      label: "Applied · validated at checkout",
+      type: "flat",
+      value: 0,
+      minimum: 0,
+    };
+    sessionStorage.setItem("natural-beauty-coupon", JSON.stringify(saved));
+    setCoupon(saved);
+    setCouponMessage("Coupon saved and will stay applied until you remove it.");
   };
   const redeemGift = () => {
-    setGiftMessage("Gift cards are validated securely at checkout.");
+    const code = giftInput.trim().toUpperCase();
+    if (!code) {
+      setGiftMessage("Enter a gift card code first.");
+      return;
+    }
+    const saved = { code, balance: 0 };
+    sessionStorage.setItem("natural-beauty-gift", JSON.stringify(saved));
+    setGift(saved);
+    setGiftMessage("Gift card saved and will stay applied until you remove it.");
   };
   const moveToWishlist = (item) => {
     toggleWishlist(item, {
@@ -117,7 +177,12 @@ export function Cart() {
                 onAction={applyCoupon}
                 message={couponMessage}
                 applied={coupon}
-                onRemove={() => setCoupon(null)}
+                onRemove={() => {
+                  sessionStorage.removeItem("natural-beauty-coupon");
+                  setCoupon(null);
+                  setCouponInput("");
+                  setCouponMessage("");
+                }}
                 saved={couponDiscount}
               />
               <PromoBox
@@ -128,7 +193,12 @@ export function Cart() {
                 onAction={redeemGift}
                 message={giftMessage}
                 applied={gift}
-                onRemove={() => setGift(null)}
+                onRemove={() => {
+                  sessionStorage.removeItem("natural-beauty-gift");
+                  setGift(null);
+                  setGiftInput("");
+                  setGiftMessage("");
+                }}
                 gift
                 saved={giftApplied}
               />

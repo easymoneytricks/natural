@@ -3,19 +3,45 @@ import { useState } from "react";
 export function Newsletter() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!email) {
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
       setMessage("Please enter your email address.");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
       setMessage("Please enter a valid email address.");
       return;
     }
-    setMessage("You’re on the list. Welcome to the Natural Beauty note.");
-    setEmail("");
+    setSubmitting(true);
+    setMessage("");
+    try {
+      const api = (
+        import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1"
+      ).replace(/\/$/, "");
+      const response = await fetch(`${api}/newsletter-subscriptions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ email: normalizedEmail, source: "homepage" }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok)
+        throw new Error(
+          payload?.error?.message || "We could not add you to the list.",
+        );
+      setMessage("You’re on the list. Welcome to the Natural Beauty note.");
+      setEmail("");
+    } catch (error) {
+      setMessage(error.message || "We could not add you to the list.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -42,14 +68,18 @@ export function Newsletter() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="Your email address"
+              required
               aria-describedby="newsletter-message newsletter-privacy"
             />
-            <button type="submit">Join the list</button>
+            <button type="submit" disabled={submitting}>
+              {submitting ? "Joining…" : "Join the list"}
+            </button>
           </div>
           <p
             id="newsletter-message"
             className="newsletter-message"
             role="status"
+            aria-live="polite"
           >
             {message}
           </p>

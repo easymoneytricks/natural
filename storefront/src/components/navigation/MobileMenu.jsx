@@ -93,7 +93,7 @@ export function MobileMenu({ open, onClose }) {
           <Link to={isAuthenticated ? "/account" : "/login"} onClick={onClose}>
             <UserRound /> {isAuthenticated ? "My account" : "Sign in"}
           </Link>
-          <Link to="/wishlist" onClick={onClose}>
+          <Link to="/account/wishlist" onClick={onClose}>
             <Heart /> Wishlist {wishlistCount > 0 && <i>{wishlistCount}</i>}
           </Link>
           <Link to="/compare" onClick={onClose}>

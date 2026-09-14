@@ -117,7 +117,12 @@ export function InventoryPage() {
         <div className="inventory-filters">
           <button
             className={`filter-chip ${stockStatus === "low_stock" ? "active" : ""}`}
-            onClick={() => setStockStatus("low_stock")}
+            aria-pressed={stockStatus === "low_stock"}
+            onClick={() =>
+              setStockStatus((current) =>
+                current === "low_stock" ? "all" : "low_stock",
+              )
+            }
           >
             <AlertTriangle size={15} /> Low stock
           </button>
@@ -195,7 +200,13 @@ export function InventoryPage() {
                     </span>
                   </td>
                   <td>
-                    <Link to={`/inventory/${row.sku_id}`}>Manage</Link>
+                    <Link
+                      className="inventory-manage-link"
+                      to={`/inventory/${row.sku_id}`}
+                    >
+                      Manage
+                      <span aria-hidden="true">→</span>
+                    </Link>
                   </td>
                 </tr>
               ))}
