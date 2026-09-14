@@ -1,6 +1,6 @@
 # Natural Beauty — Production Ecommerce Gap Report
 
-Last audited: 2026-09-14
+Last audited: 2026-09-15
 
 Audit basis: source code, database migrations, registered routes, local MariaDB, build/format checks, HTTP smoke checks and authenticated browser verification where noted.
 
@@ -8,7 +8,7 @@ Audit basis: source code, database migrations, registered routes, local MariaDB,
 
 The repository now contains the core storefront, customer, catalog, inventory, order, admin and SEO foundations. The remaining work is primarily production proof and provider/deployment integration: real payment settlement/refunds, real SMTP delivery, staging concurrency, backups, observability, compliance review and release regression.
 
-Current readiness: **82% — strong controlled-staging foundation; not yet approved for public paid checkout.**
+Current readiness: **90% — feature-complete controlled-staging foundation; production launch verification remains.**
 
 ## Present in this repository
 
@@ -61,7 +61,7 @@ The following capabilities are implemented in source and local database migratio
 - Refund amount/reason validation and immutable after-sale record display.
 - Authenticated PDF invoice download for customers and admins; customer downloads are constrained to the signed-in customer's own order and use immutable order snapshots, including tax breakdown where configured.
 - Customer status/return email triggers and existing order-confirmation/admin-received email templates.
-- Razorpay/Cashfree integration foundations, webhook routes and signature verification boundaries.
+- Razorpay/Cashfree order creation, checkout, signature verification, webhook reconciliation and reservation-release flows.
 
 ### Admin control plane
 
@@ -69,6 +69,8 @@ The following capabilities are implemented in source and local database migratio
 - Staff users, roles, permissions, session protection and audit logs.
 - Admin customers, promotions, gift cards, reviews, contact inbox, media library, reports, useful-info analytics, settings, system and Pages/CMS routes.
 - Storefront settings for branding, SEO/social image, shipping, tax, SMTP, homepage content, navigation/footer, payment gateway and maintenance mode.
+- Reward settings for enablement, points-per-rupee, point value, redemption minimum/cap and automatic expiry days.
+- Customer gift-card claiming enforces one-account ownership; linked cards can be selected automatically in cart/checkout, persist across refresh, and are consumed only when an order is created.
 - Optional Google Analytics 4 integration is controlled by Admin Settings (`enabled` plus Measurement ID) and is loaded only after optional analytics consent.
 - Safe destructive operations and audit events across catalog/inventory/order operations.
 
@@ -97,7 +99,7 @@ The following capabilities are implemented in source and local database migratio
 
 ### P0 — before accepting public paid orders
 
-1. **Payment provider finalization:** complete one selected Cashfree/Razorpay production path, verified callback/webhook reconciliation, replay/idempotency tests, delayed-payment recovery and provider-backed refunds. Admin refund states currently track workflow but do not settle money with the provider.
+1. **Payment provider launch evidence:** run one selected Cashfree/Razorpay path with real credentials, verify callback replay/idempotency, delayed-payment recovery and provider-backed refunds. Admin refund states currently track workflow but do not settle money with the provider.
 2. **Transactional email proof:** configure production SMTP/provider secrets, run test-send, verify OTP/order/status/reset delivery from staging, and monitor failed/retried deliveries. Add unsubscribe/complaint handling where legally required.
 3. **Production deployment boundary:** configure separate production DB/JWT/admin/payment/SMTP/storage secrets, HTTPS, secure cookie domain, CORS allowlist, durable object storage, encrypted backups and a tested rollback/restore drill.
 4. **Transaction concurrency proof:** run clean-staging concurrent tests for reservation expiry, cancellation, payment failure, duplicate checkout, coupon/gift-card limits and refund/release invariants.
@@ -105,8 +107,8 @@ The following capabilities are implemented in source and local database migratio
 ### P1 — before serious public launch
 
 1. **Provider-backed automated E2E:** browser/API tests for login, signup OTP, catalog, cart, quote, COD, online callback, order confirmation, admin status update, stock release and reset email.
-2. **Promotion reversals:** restore coupon usage and gift-card holds/balances after cancellation/refund; add timezone and expiry tests.
-3. **Rewards lifecycle:** define earn/redeem rules, apply rewards in quote, reserve/reverse ledger entries and cover cancellation/refund.
+2. **Promotion reversals:** restore coupon usage and gift-card balances after cancellation/refund; add timezone and expiry tests. Ownership and order-time consumption are implemented, but reversal remains open.
+3. **Rewards lifecycle:** reward configuration, earning, account ledger and cancellation reversal are implemented; quote redemption and full refund/reversal coverage remain open.
 4. **Search/performance:** server-backed search with debouncing/cancellation, no-result suggestions, URL filter state, pagination and query/index performance checks.
 5. **Media production policy:** configure scanner, private originals/derivatives and CDN/object-storage lifecycle; review the three locally reported orphan files before any deletion.
 6. **Tax/compliance sign-off:** implementation now supports configurable GST invoice fields/rates, tax snapshots, privacy retention language, necessary-cookie/optional-consent wording and a no-card-data payment boundary. The business owner/tax advisor must still confirm GST registration, HSN/SAC, applicable rates/place-of-supply treatment, retention periods, refund wording and launch jurisdiction before enabling tax or public checkout.

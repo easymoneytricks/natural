@@ -869,8 +869,8 @@ export function SettingsPage() {
                   name="provider"
                   state={state}
                   setState={setState}
-                  options={[["cashfree", "Cashfree"]]}
-                  help="Cashfree is the supported online provider in this integration."
+                  options={[["cashfree", "Cashfree"], ["razorpay", "Razorpay"]]}
+                  help="Choose the provider whose server credentials are configured in backend/.env."
                 />
                 <Field
                   label="Gateway mode"

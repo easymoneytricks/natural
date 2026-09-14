@@ -6,9 +6,9 @@ import { useCart } from "../context/CartContext";
 import { shippingRules } from "../config/commerce";
 import { useAuth } from "../context/AuthContext";
 import { getAddresses } from "../services/authApi";
-import { getQuote } from "../services/checkoutApi";
+import { getQuote, getShippingMethods } from "../services/checkoutApi";
 import { createOrder } from "../services/orderApi";
-import { createCashfreeOrder } from "../services/paymentApi";
+import { createCashfreeOrder, createRazorpayOrder, verifyRazorpay } from "../services/paymentApi";
 import { apiRequest } from "../lib/api";
 import "./Checkout.css";
 
@@ -77,8 +77,24 @@ export function Checkout() {
   );
   const [errors, setErrors] = useState({});
   const [quote, setQuote] = useState(null);
+  const [paymentProvider, setPaymentProvider] = useState(null);
+  const [shippingMethods, setShippingMethods] = useState([]);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [, setQuoteError] = useState("");
+  useEffect(() => {
+    apiRequest("/checkout/payment-methods")
+      .then((result) => setPaymentProvider(result.data || null))
+      .catch(() => setPaymentProvider(null));
+  }, []);
+  useEffect(() => {
+    getShippingMethods()
+      .then((result) => setShippingMethods(result.data || []))
+      .catch(() => setShippingMethods([]));
+  }, []);
+  useEffect(() => {
+    if (paymentProvider && !paymentProvider.online && draft.payment === "online")
+      update("payment", "cod");
+  }, [paymentProvider]);
   const [placing, setPlacing] = useState(false);
   const [abandonedSessionKey] = useState(() => {
     const existing = localStorage.getItem("natural-beauty-abandoned-checkout");
@@ -100,6 +116,8 @@ export function Checkout() {
   const productDiscount =
     quote?.pricing?.productDiscount ?? mrpTotal - subtotal;
   const coupon = readSession("natural-beauty-coupon", null);
+  const standardMethod = shippingMethods.find((method) => method.code === "STANDARD");
+  const expressMethod = shippingMethods.find((method) => method.code === "EXPRESS");
   const gift = readSession("natural-beauty-gift", null);
   const activeCoupon =
     coupon && !coupon.expired && subtotal >= coupon.minimum ? coupon : null;
@@ -389,14 +407,48 @@ export function Checkout() {
       const result = await createOrder(body, serverMode ? authFetch : null);
       const created = result.data.order;
       if (draft.payment === "online") {
-        const cashfreeOrder = await createCashfreeOrder(
+        const createPayment = paymentProvider?.provider === "razorpay"
+          ? createRazorpayOrder
+          : createCashfreeOrder;
+        const onlineOrder = await createPayment(
           {
             orderNumber: created.orderNumber,
             customer: { email: draft.email, phone: draft.mobile },
           },
           serverMode ? authFetch : null,
         );
-        if (!window.Cashfree) {
+        if (paymentProvider?.provider === "razorpay") {
+          if (!window.Razorpay) {
+            await new Promise((resolve, reject) => {
+              const script = document.createElement("script");
+              script.src = "https://checkout.razorpay.com/v1/checkout.js";
+              script.onload = resolve;
+              script.onerror = () => reject(new Error("Razorpay checkout could not load."));
+              document.head.appendChild(script);
+            });
+          }
+          await new Promise((resolve, reject) => {
+            const razorpay = new window.Razorpay({
+              key: onlineOrder.data.keyId,
+              amount: onlineOrder.data.amount,
+              currency: onlineOrder.data.currency,
+              name: "Natural Beauty",
+              order_id: onlineOrder.data.orderId,
+              prefill: { email: draft.email, contact: draft.mobile },
+              handler: async (response) => {
+                try {
+                  await verifyRazorpay(response, serverMode ? authFetch : null);
+                  resolve();
+                } catch (error) {
+                  reject(error);
+                }
+              },
+              modal: { ondismiss: () => reject(new Error("Payment was cancelled.")) },
+            });
+            razorpay.open();
+          });
+        } else {
+          if (!window.Cashfree) {
           await new Promise((resolve, reject) => {
             const script = document.createElement("script");
             script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
@@ -409,12 +461,13 @@ export function Checkout() {
         const cashfree = window.Cashfree({
           mode: cashfreeOrder.data.cashfreeMode || "sandbox",
         });
-        await cashfree.checkout({
-          paymentSessionId: cashfreeOrder.data.paymentSessionId,
+          await cashfree.checkout({
+          paymentSessionId: onlineOrder.data.paymentSessionId,
           redirectTarget: "_self",
-        });
-        localStorage.removeItem("natural-beauty-abandoned-checkout");
-        return;
+          });
+          localStorage.removeItem("natural-beauty-abandoned-checkout");
+          return;
+        }
       }
       sessionStorage.setItem(
         "natural-beauty-order",
@@ -540,23 +593,23 @@ export function Checkout() {
                 checked={draft.shippingMethod === "standard"}
                 onChange={() => update("shippingMethod", "standard")}
                 title={
-                  subtotal >= shippingRules.threshold
+                  subtotal >= Number(standardMethod?.freeShippingThreshold || shippingRules.threshold)
                     ? "Complimentary standard delivery"
-                    : "Standard delivery"
+                    : standardMethod?.name || "Standard delivery"
                 }
-                text="Estimated 3–5 business days"
+                text={standardMethod ? `Estimated ${standardMethod.estimatedDaysMin}–${standardMethod.estimatedDaysMax} business days` : "Estimated 3–5 business days"}
                 price={
-                  subtotal >= shippingRules.threshold
+                  subtotal >= Number(standardMethod?.freeShippingThreshold || shippingRules.threshold)
                     ? "Free"
-                    : money(shippingRules.fee)
+                    : money(standardMethod?.fee ?? shippingRules.fee)
                 }
               />
               <Method
                 checked={draft.shippingMethod === "express"}
                 onChange={() => update("shippingMethod", "express")}
-                title="Express delivery"
-                text="Estimated 1–2 business days"
-                price={money(149)}
+                title={expressMethod?.name || "Express delivery"}
+                text={expressMethod ? `Estimated ${expressMethod.estimatedDaysMin}–${expressMethod.estimatedDaysMax} business days` : "Estimated 1–2 business days"}
+                price={money(expressMethod?.fee ?? 149)}
               />
             </div>
           </CheckoutSection>
@@ -565,9 +618,9 @@ export function Checkout() {
               <Method
                 checked={draft.payment === "online"}
                 onChange={() => update("payment", "online")}
-                title="Online payment"
+                title={paymentProvider?.provider ? `Online payment · ${paymentProvider.provider}` : "Online payment"}
                 text="UPI · Cards · Net Banking"
-                price="Secure"
+                price={paymentProvider?.online ? "Secure" : "Unavailable"}
               />
               <Method
                 checked={draft.payment === "cod"}

@@ -1,16 +1,16 @@
 # Natural Beauty — Project Progress
 
-Last updated: 2026-09-14
+Last updated: 2026-09-15
 
 ## Production-readiness progress
 
-<progress value="82" max="100">82%</progress>
+<progress value="90" max="100">90%</progress>
 
-**82% — strong controlled-staging foundation; public paid checkout is not approved yet.**
+**90% — feature-complete controlled-staging foundation; production launch verification remains.**
 
-`█████████████████░░░` 82%
+`██████████████████░░` 90%
 
-This percentage represents production readiness, not the number of screens. Core catalog, customer account, checkout/COD, inventory, orders, admin control plane, CMS, SEO, tax snapshots, invoices, guest order tracking, FAQ/About content and operational foundations are implemented. The remaining 18% is primarily provider/deployment proof and launch evidence.
+This percentage represents production readiness, not the number of screens. Core catalog, customer account, checkout/COD, inventory, orders, admin control plane, CMS, SEO, tax snapshots, invoices, guest order tracking, FAQ/About content and operational foundations are implemented. The remaining 10% is primarily provider/deployment proof, reward quote completion and launch evidence.
 
 ## Present and validated
 
@@ -22,7 +22,7 @@ This percentage represents production readiness, not the number of screens. Core
 - Content/SEO: CMS legal records with version history, per-product/category/brand title-description-keywords-canonical fields, route-aware metadata, Product/CollectionPage/BreadcrumbList JSON-LD, sitemap, robots policy and slug redirects.
 - Security/operations: production secret validation, HTTPS/CORS/cookie boundaries, upload validation, request IDs, structured logs, rate limits, origin protection, cache headers, consent capture and backup/restore tooling.
 
-## Remaining launch blockers (18%)
+## Remaining launch blockers (10%)
 
 1. Finish and evidence one live Cashfree payment path, including callback reconciliation, replay/idempotency handling and provider-backed refunds.
 2. Configure production SMTP and prove OTP, order, status, reset and admin notification delivery with monitoring.

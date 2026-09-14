@@ -1,6 +1,7 @@
 import { AuthError } from "./auth.service.js";
 import { audit } from "./adminCatalog.service.js";
 import { releaseOrderReservations } from "./order.service.js";
+import { reverseOrder as reverseRewardOrder } from "./reward.service.js";
 const fail = (s, c, m) => {
   throw new AuthError(s, c, m);
 };
@@ -159,6 +160,22 @@ export async function updateStatus(pool, number, next, note, adminId, req) {
         "Order cancelled by Admin",
         conn,
       );
+      await reverseRewardOrder(pool, o.id, conn);
+      const [giftRedemptions] = await conn.execute(
+        "SELECT g.id,g.current_balance,g.expires_at,t.amount FROM gift_card_transactions t JOIN gift_cards g ON g.id=t.gift_card_id WHERE t.reference_type='order' AND t.reference_id=? AND t.transaction_type='redeem' FOR UPDATE",
+        [o.id],
+      );
+      for (const redemption of giftRedemptions) {
+        if (!redemption.expires_at || new Date(redemption.expires_at) > new Date()) {
+          const before = Number(redemption.current_balance);
+          const after = before + Number(redemption.amount);
+          await conn.execute("UPDATE gift_cards SET current_balance=?,status='active' WHERE id=?", [after, redemption.id]);
+          await conn.execute(
+            'INSERT INTO gift_card_transactions(gift_card_id,transaction_type,amount,balance_before,balance_after,reference_type,reference_id) VALUES(? ,"refund",?,?,?,"order",?)',
+            [redemption.id, redemption.amount, before, after, o.id],
+          );
+        }
+      }
     } else if (
       next === "delivered" &&
       o.payment_method === "cod" &&

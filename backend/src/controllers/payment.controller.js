@@ -13,17 +13,23 @@ const cashfreeIsEnabled = async () => {
   const settings = await readSettings(pool, true);
   return settings.payments?.enabled !== "false";
 };
+const paymentConfiguration = async () => {
+  const settings = await readSettings(pool, true);
+  const selected = settings.payments?.provider === "razorpay" ? "razorpay" : "cashfree";
+  const available = selected === "razorpay" ? env.razorpay.enabled : await cashfreeIsEnabled();
+  return { selected, available };
+};
 
 export async function paymentMethods(req, res, next) {
   try {
-    const cashfree = await cashfreeIsEnabled();
+    const { selected, available } = await paymentConfiguration();
     res.json({
       data: {
         cod: true,
-        online: cashfree,
-        provider: cashfree ? "cashfree" : null,
-        cashfreeMode: cashfree ? env.cashfree.environment : null,
-        razorpayKeyId: null,
+        online: available,
+        provider: available ? selected : null,
+        cashfreeMode: selected === "cashfree" && available ? env.cashfree.environment : null,
+        razorpayKeyId: selected === "razorpay" && available ? env.razorpay.keyId : null,
       },
     });
   } catch (error) {
@@ -40,7 +46,9 @@ const unavailable = () => {
 
 export async function createCashfreeOrder(req, res, next) {
   try {
-    if (!(await cashfreeIsEnabled())) throw unavailable();
+    const configuration = await paymentConfiguration();
+    if (configuration.selected !== "cashfree" || !configuration.available)
+      throw unavailable();
     const { orderNumber, customer } = req.body || {};
     if (!orderNumber) {
       const error = new Error("An internal order number is required.");
@@ -111,6 +119,51 @@ export async function createCashfreeOrder(req, res, next) {
         paymentSessionId: payload.payment_session_id,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function createRazorpayOrder(req, res, next) {
+  try {
+    const { selected, available } = await paymentConfiguration();
+    if (selected !== "razorpay" || !available) {
+      const error = new Error("Razorpay is not enabled in Admin Settings or server configuration.");
+      error.statusCode = 503;
+      error.code = "RAZORPAY_UNAVAILABLE";
+      throw error;
+    }
+    const { orderNumber } = req.body || {};
+    const [[order]] = await pool.execute(
+      "SELECT id,order_number,grand_total,currency FROM orders WHERE order_number=? LIMIT 1",
+      [orderNumber],
+    );
+    if (!order) {
+      const error = new Error("Order not found.");
+      error.statusCode = 404;
+      error.code = "ORDER_NOT_FOUND";
+      throw error;
+    }
+    const response = await fetch("https://api.razorpay.com/v1/orders", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Basic ${Buffer.from(`${env.razorpay.keyId}:${env.razorpay.keySecret}`).toString("base64")}`,
+      },
+      body: JSON.stringify({ amount: Math.round(Number(order.grand_total) * 100), currency: order.currency || "INR", receipt: order.order_number }),
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.id) {
+      const error = new Error(payload.error?.description || "Razorpay order creation failed.");
+      error.statusCode = 502;
+      error.code = "RAZORPAY_ORDER_FAILED";
+      throw error;
+    }
+    await pool.execute(
+      "INSERT INTO payments(order_id,provider,payment_method,provider_order_id,amount,currency,status) VALUES(?,?,?,?,?,?,'created') ON DUPLICATE KEY UPDATE provider_order_id=VALUES(provider_order_id),amount=VALUES(amount),status='created'",
+      [order.id, "razorpay", "online", payload.id, order.grand_total, order.currency || "INR"],
+    );
+    res.json({ data: { provider: "razorpay", keyId: env.razorpay.keyId, orderId: payload.id, amount: Math.round(Number(order.grand_total) * 100), currency: order.currency || "INR", orderNumber: order.order_number } });
   } catch (error) {
     next(error);
   }
@@ -220,24 +273,6 @@ export function paymentMethodsLegacy(req, res) {
     },
   });
 }
-export async function createRazorpayOrder(req, res, next) {
-  try {
-    if (!env.razorpay.enabled) {
-      const e = new Error("Online payment is not available yet.");
-      e.statusCode = 503;
-      e.code = "RAZORPAY_UNAVAILABLE";
-      throw e;
-    }
-    const e = new Error(
-      "Razorpay order initialization requires configured production credentials.",
-    );
-    e.statusCode = 501;
-    e.code = "RAZORPAY_NOT_CONFIGURED";
-    throw e;
-  } catch (e) {
-    next(e);
-  }
-}
 export async function verifyRazorpay(req, res, next) {
   try {
     if (!env.razorpay.enabled) {
@@ -269,12 +304,24 @@ export async function verifyRazorpay(req, res, next) {
       e.code = "PAYMENT_VERIFICATION_FAILED";
       throw e;
     }
+    const [[payment]] = await pool.execute(
+      "SELECT p.order_id,o.status,o.payment_status FROM payments p JOIN orders o ON o.id=p.order_id WHERE p.provider='razorpay' AND p.provider_order_id=? LIMIT 1",
+      [orderId],
+    );
+    if (!payment) {
+      const e = new Error("Payment order not found.");
+      e.statusCode = 404;
+      e.code = "PAYMENT_ORDER_NOT_FOUND";
+      throw e;
+    }
+    await pool.execute("UPDATE payments SET provider_payment_id=?,status='captured',captured_at=NOW() WHERE provider='razorpay' AND provider_order_id=?", [paymentId, orderId]);
+    await pool.execute("UPDATE orders SET payment_status='paid',status=IF(status='pending','confirmed',status) WHERE id=? AND payment_status NOT IN ('paid','refunded')", [payment.order_id]);
     res.json({ data: { verified: true } });
   } catch (e) {
     next(e);
   }
 }
-export function webhook(req, res, next) {
+export async function webhook(req, res, next) {
   try {
     if (!env.razorpay.enabled)
       return res.status(503).json({
@@ -299,7 +346,58 @@ export function webhook(req, res, next) {
           message: "Invalid webhook signature.",
         },
       });
-    return res.json({ data: { received: true } });
+    const event = req.body || {};
+    const paymentEntity = event.payload?.payment?.entity || {};
+    const paymentOrderId = paymentEntity.order_id;
+    const paymentStatus =
+      event.event === "payment.captured" || event.event === "order.paid"
+        ? "paid"
+        : event.event === "payment.failed"
+          ? "failed"
+          : null;
+    if (paymentOrderId && paymentStatus) {
+      const [[payment]] = await pool.execute(
+        "SELECT p.order_id FROM payments p WHERE p.provider='razorpay' AND p.provider_order_id=? LIMIT 1",
+        [paymentOrderId],
+      );
+      if (payment) {
+        const connection = await pool.getConnection();
+        try {
+          await connection.beginTransaction();
+          const [[order]] = await connection.execute(
+            "SELECT id,status,payment_status FROM orders WHERE id=? FOR UPDATE",
+            [payment.order_id],
+          );
+          if (order?.payment_status === "pending") {
+            const nextStatus =
+              paymentStatus === "paid"
+                ? order.status === "pending" ? "confirmed" : order.status
+                : "cancelled";
+            await connection.execute(
+              "UPDATE orders SET payment_status=?,status=?,cancelled_at=IF(?='cancelled',NOW(),cancelled_at) WHERE id=?",
+              [paymentStatus, nextStatus, nextStatus, order.id],
+            );
+            await connection.execute(
+              "UPDATE payments SET provider_payment_id=?,status=?,captured_at=IF(?='paid',NOW(),captured_at),failed_at=IF(?='failed',NOW(),failed_at) WHERE provider='razorpay' AND provider_order_id=?",
+              [paymentEntity.id || null, paymentStatus === "paid" ? "captured" : "failed", paymentStatus, paymentStatus, paymentOrderId],
+            );
+            await connection.execute(
+              "INSERT INTO order_status_history(order_id,status,note) VALUES(?,?,?)",
+              [order.id, nextStatus, paymentStatus === "paid" ? "Razorpay payment confirmed." : "Razorpay payment failed; reservation released."],
+            );
+            if (paymentStatus === "failed")
+              await releaseOrderReservations(pool, order.id, "Razorpay payment failed", connection);
+          }
+          await connection.commit();
+        } catch (error) {
+          await connection.rollback();
+          throw error;
+        } finally {
+          connection.release();
+        }
+      }
+    }
+    return res.json({ data: { received: true, processed: Boolean(paymentOrderId && paymentStatus) } });
   } catch (e) {
     next(e);
   }

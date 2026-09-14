@@ -58,6 +58,27 @@ async function expirePoints(pool, customerId) {
 export async function adminList(pool, customerId) {
   return account(pool, customerId);
 }
+export async function reverseOrder(pool, orderId, connection = pool) {
+  const [earned] = await connection.execute(
+    "SELECT id,reward_account_id,points FROM reward_transactions WHERE order_id=? AND transaction_type='earn' AND points>0",
+    [orderId],
+  );
+  for (const row of earned) {
+    const [[existing]] = await connection.execute(
+      "SELECT id FROM reward_transactions WHERE reward_account_id=? AND transaction_type='reversal' AND note=? LIMIT 1",
+      [row.reward_account_id, `Order reward reversal #${orderId}`],
+    );
+    if (existing) continue;
+    await connection.execute(
+      'INSERT INTO reward_transactions(reward_account_id,transaction_type,points,order_id,note) VALUES(? ,"reversal",?,?,?)',
+      [row.reward_account_id, -row.points, orderId, `Order reward reversal #${orderId}`],
+    );
+    await connection.execute(
+      "UPDATE reward_accounts SET available_points=GREATEST(available_points-?,0) WHERE id=?",
+      [row.points, row.reward_account_id],
+    );
+  }
+}
 export async function updateConfig(pool, input) {
   const enabled = input.enabled === true || input.enabled === "true" || Number(input.enabled) === 1 ? 1 : 0;
   const expiryEnabled = input.expiryEnabled === true || input.expiryEnabled === "true" || Number(input.expiryEnabled) === 1 ? 1 : 0;
