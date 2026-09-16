@@ -21,3 +21,8 @@ export function StoreSettingsProvider({ children }) {
 }
 
 export const useStoreSettings = () => useContext(StoreSettingsContext);
+
+export const getBusinessName = (settings = {}) =>
+  String(
+    settings.store?.store_name || settings.seo?.site_title || "Natural Beauty",
+  ).trim() || "Natural Beauty";

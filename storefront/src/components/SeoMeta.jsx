@@ -1,4 +1,8 @@
 import { useEffect } from "react";
+import {
+  getBusinessName,
+  useStoreSettings,
+} from "../context/StoreSettingsContext";
 
 const siteUrl = (
   import.meta.env.VITE_SITE_URL || window.location.origin
@@ -37,13 +41,15 @@ export function SeoMeta({
   keywords = "",
   canonicalUrl = "",
 }) {
+  const settings = useStoreSettings();
+  const businessName = getBusinessName(settings);
   useEffect(() => {
     const canonical = resolveCanonical(canonicalUrl);
     document.title = title
-      ? title.endsWith("| Natural Beauty")
+      ? title.endsWith(`| ${businessName}`)
         ? title
-        : `${title} | Natural Beauty`
-      : "Natural Beauty";
+        : `${title} | ${businessName}`
+      : businessName;
     let link = document.head.querySelector("link[rel='canonical']");
     if (!link) {
       link = document.createElement("link");
@@ -60,7 +66,7 @@ export function SeoMeta({
     upsert(
       "meta[property='og:title']",
       { property: "og:title" },
-      title || "Natural Beauty",
+      title || businessName,
     );
     upsert(
       "meta[property='og:description']",
@@ -78,7 +84,7 @@ export function SeoMeta({
     upsert(
       "meta[name='twitter:title']",
       { name: "twitter:title" },
-      title || "Natural Beauty",
+      title || businessName,
     );
     upsert(
       "meta[name='twitter:image']",
@@ -90,7 +96,16 @@ export function SeoMeta({
       { name: "robots" },
       noindex ? "noindex,nofollow" : "index,follow",
     );
-  }, [title, description, image, type, noindex, keywords, canonicalUrl]);
+  }, [
+    title,
+    description,
+    image,
+    type,
+    noindex,
+    keywords,
+    canonicalUrl,
+    businessName,
+  ]);
   return null;
 }
 

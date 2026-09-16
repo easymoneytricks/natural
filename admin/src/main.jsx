@@ -327,7 +327,9 @@ function Shell({ children }) {
       <main className="main">
         <header className="admin-topbar">
           <div className="admin-topbar-context">
-            <span className="admin-topbar-kicker">NATURAL BEAUTY / ADMIN</span>
+            <span className="admin-topbar-kicker">
+              {businessName.toUpperCase()} / ADMIN
+            </span>
           </div>
           <div className="admin-topbar-account">
             <span className="admin-topbar-user">

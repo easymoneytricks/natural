@@ -1,7 +1,10 @@
 import { ChevronDown, MapPin, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { useStoreSettings } from "../../context/StoreSettingsContext";
+import {
+  getBusinessName,
+  useStoreSettings,
+} from "../../context/StoreSettingsContext";
 
 const routeMap = {
   "Shop All": "/shop",
@@ -116,6 +119,7 @@ function SocialIcon({ name }) {
 export function Footer() {
   const [openGroup, setOpenGroup] = useState(null);
   const settings = useStoreSettings();
+  const businessName = getBusinessName(settings);
   const logo =
     settings.branding?.footer_logo_url ||
     settings.branding?.logo_url ||
@@ -144,7 +148,11 @@ export function Footer() {
       <div className="footer-main homepage-container">
         <div className="footer-brand">
           <Link to="/" className="wordmark">
-            <img className="brand-logo" src={logo} alt="Natural Beauty logo" />
+            <img
+              className="brand-logo"
+              src={logo}
+              alt={`${businessName} logo`}
+            />
           </Link>
           <p>
             {settings.footer?.tagline ||
@@ -154,25 +162,25 @@ export function Footer() {
           <div className="footer-socials">
             <a
               href={settings.footer?.instagram_url || "#"}
-              aria-label="Natural Beauty on Instagram"
+              aria-label={`${businessName} on Instagram`}
             >
               <SocialIcon name="instagram" />
             </a>
             <a
               href={settings.footer?.facebook_url || "#"}
-              aria-label="Natural Beauty on Facebook"
+              aria-label={`${businessName} on Facebook`}
             >
               <SocialIcon name="facebook" />
             </a>
             <a
               href={settings.footer?.youtube_url || "#"}
-              aria-label="Natural Beauty on YouTube"
+              aria-label={`${businessName} on YouTube`}
             >
               <SocialIcon name="youtube" />
             </a>
             <a
               href={settings.footer?.pinterest_url || "#"}
-              aria-label="Natural Beauty on Pinterest"
+              aria-label={`${businessName} on Pinterest`}
             >
               <SocialIcon name="pinterest" />
             </a>
@@ -234,7 +242,7 @@ export function Footer() {
         <span>
           UPI <i>•</i> Cards <i>•</i> Net Banking <i>•</i> COD
         </span>
-        <span>© 2026 Natural Beauty</span>
+        <span>© 2026 {businessName}</span>
       </div>
     </footer>
   );

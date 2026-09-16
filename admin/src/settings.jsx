@@ -266,7 +266,10 @@ export function SettingsPage() {
   const [testingEmail, setTestingEmail] = useState(false);
   const [activeSection, setActiveSection] = useState("storefront");
   useEffect(() => {
-    Promise.all([authFetch("/admin/settings"), authFetch("/admin/rewards/config")])
+    Promise.all([
+      authFetch("/admin/settings"),
+      authFetch("/admin/rewards/config"),
+    ])
       .then(([response, rewardResponse]) => {
         setState((current) =>
           Object.keys(defaults).reduce(
@@ -280,10 +283,19 @@ export function SettingsPage() {
         const reward = rewardResponse.data || {};
         setRewardState({
           enabled: String(Boolean(Number(reward.enabled))),
-          points_per_rupee: String(reward.points_per_rupee ?? rewardDefaults.points_per_rupee),
-          rupees_per_point: String(reward.rupees_per_point ?? rewardDefaults.rupees_per_point),
-          min_points_to_redeem: String(reward.min_points_to_redeem ?? rewardDefaults.min_points_to_redeem),
-          max_redemption_percent: String(reward.max_redemption_percent ?? rewardDefaults.max_redemption_percent),
+          points_per_rupee: String(
+            reward.points_per_rupee ?? rewardDefaults.points_per_rupee,
+          ),
+          rupees_per_point: String(
+            reward.rupees_per_point ?? rewardDefaults.rupees_per_point,
+          ),
+          min_points_to_redeem: String(
+            reward.min_points_to_redeem ?? rewardDefaults.min_points_to_redeem,
+          ),
+          max_redemption_percent: String(
+            reward.max_redemption_percent ??
+              rewardDefaults.max_redemption_percent,
+          ),
           expiry_enabled: String(Boolean(Number(reward.expiry_enabled))),
           expiry_days: String(reward.expiry_days ?? rewardDefaults.expiry_days),
         });
@@ -715,6 +727,14 @@ export function SettingsPage() {
                   setState={setState}
                 />
                 <Field
+                  label="Business name"
+                  group="store"
+                  name="store_name"
+                  state={state}
+                  setState={setState}
+                  help="Used across the admin panel, storefront branding and SEO titles."
+                />
+                <Field
                   label="Currency"
                   group="store"
                   name="currency"
@@ -751,13 +771,65 @@ export function SettingsPage() {
                 title="Reward points"
                 description="Decide how customers earn, redeem and retain reward points."
               >
-                <RewardField label="Enable reward points" name="enabled" rewardState={rewardState} setRewardField={setRewardField} options={[["true", "Enabled"], ["false", "Disabled"]]} help="Pause earning and redemption without removing existing balances." />
-                <RewardField label="Points earned per ₹1 spent" name="points_per_rupee" type="number" rewardState={rewardState} setRewardField={setRewardField} help="Example: 0.1 gives 10 points on a ₹100 order." />
-                <RewardField label="Value of 1 point (₹)" name="rupees_per_point" type="number" rewardState={rewardState} setRewardField={setRewardField} help="Used to calculate the checkout discount." />
-                <RewardField label="Minimum points to redeem" name="min_points_to_redeem" type="number" rewardState={rewardState} setRewardField={setRewardField} />
-                <RewardField label="Maximum order discount (%)" name="max_redemption_percent" type="number" rewardState={rewardState} setRewardField={setRewardField} />
-                <RewardField label="Expire unused points" name="expiry_enabled" rewardState={rewardState} setRewardField={setRewardField} options={[["false", "Never expire"], ["true", "Expire automatically"]]} />
-                <RewardField label="Expiry period (days)" name="expiry_days" type="number" rewardState={rewardState} setRewardField={setRewardField} help="Applied when expiry is enabled." />
+                <RewardField
+                  label="Enable reward points"
+                  name="enabled"
+                  rewardState={rewardState}
+                  setRewardField={setRewardField}
+                  options={[
+                    ["true", "Enabled"],
+                    ["false", "Disabled"],
+                  ]}
+                  help="Pause earning and redemption without removing existing balances."
+                />
+                <RewardField
+                  label="Points earned per ₹1 spent"
+                  name="points_per_rupee"
+                  type="number"
+                  rewardState={rewardState}
+                  setRewardField={setRewardField}
+                  help="Example: 0.1 gives 10 points on a ₹100 order."
+                />
+                <RewardField
+                  label="Value of 1 point (₹)"
+                  name="rupees_per_point"
+                  type="number"
+                  rewardState={rewardState}
+                  setRewardField={setRewardField}
+                  help="Used to calculate the checkout discount."
+                />
+                <RewardField
+                  label="Minimum points to redeem"
+                  name="min_points_to_redeem"
+                  type="number"
+                  rewardState={rewardState}
+                  setRewardField={setRewardField}
+                />
+                <RewardField
+                  label="Maximum order discount (%)"
+                  name="max_redemption_percent"
+                  type="number"
+                  rewardState={rewardState}
+                  setRewardField={setRewardField}
+                />
+                <RewardField
+                  label="Expire unused points"
+                  name="expiry_enabled"
+                  rewardState={rewardState}
+                  setRewardField={setRewardField}
+                  options={[
+                    ["false", "Never expire"],
+                    ["true", "Expire automatically"],
+                  ]}
+                />
+                <RewardField
+                  label="Expiry period (days)"
+                  name="expiry_days"
+                  type="number"
+                  rewardState={rewardState}
+                  setRewardField={setRewardField}
+                  help="Applied when expiry is enabled."
+                />
               </SettingsGroup>
             </div>
           )}
@@ -869,7 +941,10 @@ export function SettingsPage() {
                   name="provider"
                   state={state}
                   setState={setState}
-                  options={[["cashfree", "Cashfree"], ["razorpay", "Razorpay"]]}
+                  options={[
+                    ["cashfree", "Cashfree"],
+                    ["razorpay", "Razorpay"],
+                  ]}
                   help="Choose the provider whose server credentials are configured in backend/.env."
                 />
                 <Field
