@@ -764,8 +764,8 @@ export function ProductEditor() {
           <section className="card">
             <h2>Explicit SKUs</h2>
             <p>
-              Safe deletion hides a SKU from storefront and retains history;
-              reserved stock blocks deletion.
+              Safe deletion hides a SKU from storefront and retains history; any
+              reserved stock is released and recorded before permanent deletion.
             </p>
             {skus.map((item) => (
               <div className="sku-editor" key={item.id}>

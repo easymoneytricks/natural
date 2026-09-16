@@ -18,6 +18,5 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
-backend/storage/uploads/*
 !backend/storage/uploads/.gitkeep
 *.suo

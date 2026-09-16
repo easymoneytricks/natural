@@ -274,21 +274,39 @@ export async function permanentlyDeleteProduct(pool, id, adminId, req) {
         "Archive the product before permanently deleting it.",
       );
 
-    const [[reserved]] = await connection.execute(
-      "SELECT COALESCE(SUM(reserved_quantity),0) AS quantity FROM inventory i JOIN product_skus s ON s.id=i.sku_id WHERE s.product_id=?",
+    const [reservedRows] = await connection.execute(
+      "SELECT i.id,i.sku_id,i.quantity_on_hand,i.reserved_quantity FROM inventory i JOIN product_skus s ON s.id=i.sku_id WHERE s.product_id=? AND i.reserved_quantity>0 FOR UPDATE",
       [id],
     );
-    if (Number(reserved.quantity) > 0)
-      fail(
-        409,
-        "PRODUCT_HAS_RESERVED_STOCK",
-        "Release all reserved stock before permanently deleting this product.",
+    for (const row of reservedRows) {
+      const released = Number(row.reserved_quantity);
+      await connection.execute(
+        "UPDATE inventory SET reserved_quantity=0 WHERE id=?",
+        [row.id],
       );
+      await connection.execute(
+        'INSERT INTO inventory_movements (sku_id,movement_type,quantity_change,quantity_before,quantity_after,reserved_before,reserved_after,note) VALUES (? ,"release",0,?,?,?,0,?)',
+        [
+          row.sku_id,
+          row.quantity_on_hand,
+          row.quantity_on_hand,
+          released,
+          "Reserved stock released for permanent product deletion",
+        ],
+      );
+    }
 
     const [[skuSummary]] = await connection.execute(
       "SELECT COUNT(*) AS count FROM product_skus WHERE product_id=?",
       [id],
     );
+    await connection.execute(
+      "UPDATE inventory_movements m JOIN product_skus s ON s.id=m.sku_id SET m.sku_id=NULL WHERE s.product_id=?",
+      [id],
+    );
+    await connection.execute("DELETE FROM product_skus WHERE product_id=?", [
+      id,
+    ]);
     const [result] = await connection.execute(
       "DELETE FROM products WHERE id=? AND deleted_at IS NOT NULL",
       [id],

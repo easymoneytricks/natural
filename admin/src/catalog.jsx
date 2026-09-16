@@ -4,6 +4,7 @@ import {
   ExternalLink,
   ImagePlus,
   LoaderCircle,
+  Package,
   Pencil,
   Plus,
   RotateCcw,

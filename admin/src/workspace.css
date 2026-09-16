@@ -689,7 +689,7 @@
 .media-library-preview img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: transform 0.25s ease;
 }
 .media-image-fallback {
@@ -1996,6 +1996,11 @@
   height: 1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
+}
+.shell .upload-control input {
+  width: 1px;
+  max-width: 1px;
+  height: 1px;
 }
 .brand-actions {
   display: flex;

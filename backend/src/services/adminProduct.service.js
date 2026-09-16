@@ -15,10 +15,9 @@ const fail = (s, c, m) => {
   throw new AuthError(s, c, m);
 };
 export async function list(pool, q = {}) {
+  const includeDeleted = String(q.deleted || "").toLowerCase() === "true";
   const where = [
-      q.deleted === "true"
-        ? "p.deleted_at IS NOT NULL"
-        : "p.deleted_at IS NULL",
+      includeDeleted ? "p.deleted_at IS NOT NULL" : "p.deleted_at IS NULL",
     ],
     args = [];
   if (q.search) {
