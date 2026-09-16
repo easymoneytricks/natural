@@ -406,7 +406,7 @@ export function CategoriesPage() {
           {error}
         </div>
       )}
-      <div className="brand-list card">
+      <div className="brand-list category-list card">
         {loading ? (
           <div className="catalog-state">
             <LoaderCircle className="spin" size={24} />

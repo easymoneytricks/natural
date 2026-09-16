@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { createRoot } from "react-dom/client";
 import {
   BrowserRouter,
@@ -243,6 +249,7 @@ const dashboardCardCopy = {
 function Shell({ children }) {
   const { admin, logout, authFetch } = useAuth();
   const location = useLocation();
+  const navRef = useRef(null);
   const [storeSettings, setStoreSettings] = useState({});
   const [logoFailed, setLogoFailed] = useState(false);
 
@@ -265,6 +272,18 @@ function Shell({ children }) {
     const favicon = document.head.querySelector("link[rel='icon']");
     if (favicon) favicon.href = branding.favicon_url || "/favicon.svg";
   }, [branding.favicon_url]);
+  useEffect(() => {
+    const element = navRef.current;
+    if (!element) return;
+    requestAnimationFrame(() => {
+      const activeLink = element.querySelector('[aria-current="true"]');
+      activeLink?.scrollIntoView({
+        behavior: "auto",
+        block: "nearest",
+        inline: "center",
+      });
+    });
+  }, [location.pathname]);
   return (
     <div className="shell">
       <aside>
@@ -281,7 +300,7 @@ function Shell({ children }) {
           )}
           <small>Admin Panel</small>
         </div>
-        <nav>
+        <nav ref={navRef}>
           {nav
             .filter((n) => admin?.effectivePermissions?.includes(n[3]))
             .map(([l, t, I]) => (

@@ -1268,6 +1268,17 @@ input:focus-visible {
   .mobile-header .icon-button {
     width: 32px;
     height: 32px;
+    overflow: visible;
+  }
+  .mobile-header .icon-button i {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    z-index: 2;
+    display: grid;
+    width: 15px;
+    height: 15px;
+    font-size: 9px;
   }
   .mobile-header svg {
     width: 19px;

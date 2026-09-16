@@ -495,8 +495,12 @@ p {
   .shell nav {
     display: flex;
     overflow: auto;
+    min-width: 0;
+    padding-inline: 2px;
+    overscroll-behavior-inline: contain;
   }
   .shell nav a {
+    flex: 0 0 auto;
     white-space: nowrap;
   }
   .logout {

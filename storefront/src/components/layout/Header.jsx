@@ -44,6 +44,7 @@ export function Header({ onSearch, onCart, onMenu }) {
           </IconButton>
           <IconButton label={bagLabel} onClick={onCart}>
             <ShoppingBag />
+            {count > 0 && <i>{count}</i>}
           </IconButton>
         </span>
       </div>
