@@ -1,3 +1,14 @@
+const parseMetadataJson = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "object") return value;
+  if (typeof value !== "string") return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
 export async function list(pool, query = {}) {
   const where = ["1=1"];
   const values = [];
@@ -29,7 +40,7 @@ export async function list(pool, query = {}) {
     action: row.action,
     entityType: row.entity_type,
     entityId: row.entity_id,
-    metadata: row.metadata_json ? JSON.parse(row.metadata_json) : null,
+    metadata: parseMetadataJson(row.metadata_json),
     ipAddress: row.ip_address,
     userAgent: row.user_agent,
     createdAt: row.created_at,
