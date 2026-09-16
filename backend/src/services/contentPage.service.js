@@ -11,6 +11,10 @@ const cleanSlug = (value) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 const parseContent = (value) => {
+  if (Array.isArray(value)) return value;
+
+  if (value && typeof value === "object") return value;
+
   try {
     return JSON.parse(value);
   } catch {
