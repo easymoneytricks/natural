@@ -298,7 +298,6 @@ function Shell({ children }) {
           ) : (
             businessName
           )}
-          <small>Admin Panel</small>
         </div>
         <nav ref={navRef}>
           {nav
@@ -328,7 +327,7 @@ function Shell({ children }) {
         <header className="admin-topbar">
           <div className="admin-topbar-context">
             <span className="admin-topbar-kicker">
-              {businessName.toUpperCase()} / ADMIN
+              {businessName.toUpperCase()} / ADMIN PANEL
             </span>
           </div>
           <div className="admin-topbar-account">

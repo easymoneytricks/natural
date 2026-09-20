@@ -34,12 +34,15 @@ export function Home() {
   const [bestSellers, setBestSellers] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [catalogError, setCatalogError] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const storeSettings = useStoreSettings();
   const homepage = storeSettings.homepage || {};
   const heroEyebrow = String(homepage.hero_eyebrow || "").trim();
   const heroTitle = String(homepage.hero_title || "").trim();
   const heroDescription = String(homepage.hero_description || "").trim();
-  const heroImageUrl = String(homepage.hero_image_url || "").trim();
+  const heroImageSetting = String(homepage.hero_image_url || "").trim();
+  const heroImageUrl =
+    heroImageSetting === "local:hero" ? homeImages.hero : heroImageSetting;
   const heroImageAlt = String(homepage.hero_image_alt || "").trim();
   const primaryCtaLabel = String(homepage.primary_cta_label || "").trim();
   const primaryCtaUrl = String(homepage.primary_cta_url || "").trim();
@@ -48,6 +51,15 @@ export function Home() {
   const heroProof = String(homepage.hero_proof || "").trim();
   const heroRitualTitle = String(homepage.hero_ritual_title || "").trim();
   const heroRitualText = String(homepage.hero_ritual_text || "").trim();
+  const limits = storeSettings.homepage_limits || {};
+  const itemLimit = (name, fallback) => {
+    const value = Number(limits[`${name}_${isMobile ? "mobile" : "desktop"}`]);
+    return Number.isFinite(value) && value >= 0 ? value : fallback;
+  };
+  const featuredProductLimit = itemLimit("featured_products", 4);
+  const newProductLimit = itemLimit("new_products", 4);
+  const categoryLimit = itemLimit("category_highlights", concernTiles.length);
+  const productGroupLimit = itemLimit("product_groups", skinTypes.length);
   const visible = (section) =>
     storeSettings.homepage_sections?.[section] !== "false";
 
@@ -79,6 +91,14 @@ export function Home() {
   ];
 
   useEffect(() => {
+    const media = window.matchMedia("(max-width: 700px)");
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
     if (!selectedProduct) return undefined;
 
     const closeOnEscape = (event) => {
@@ -98,10 +118,10 @@ export function Home() {
     const controller = new AbortController();
     Promise.all([
       getProducts(
-        { sort: "best-selling", limit: 4 },
+        { sort: "best-selling", limit: 12 },
         { signal: controller.signal },
       ),
-      getProducts({ sort: "newest", limit: 4 }, { signal: controller.signal }),
+      getProducts({ sort: "newest", limit: 12 }, { signal: controller.signal }),
     ])
       .then(([best, arrivals]) => {
         if (controller.signal.aborted) return;
@@ -185,19 +205,19 @@ export function Home() {
       >
         <header className="section-heading">
           <div>
-            <p className="eyebrow">Find your formula</p>
-            <h2>Shop by concern</h2>
+            <p className="eyebrow">Explore the collection</p>
+            <h2>Featured categories</h2>
           </div>
           <div className="section-heading-copy">
-            <p>Target your routine around what your skin needs today.</p>
+            <p>Browse products by the way you like to shop.</p>
             <Link to="/shop">
-              View all concerns <ArrowRight size={15} />
+              View all categories <ArrowRight size={15} />
             </Link>
           </div>
         </header>
 
         <div className="concerns-grid">
-          {concernTiles.map((concern) => (
+          {concernTiles.slice(0, categoryLimit).map((concern) => (
             <Link className="concern-tile" to="/shop" key={concern.title}>
               <img src={concern.image} alt={concern.title} />
               <div className="concern-tile-content">
@@ -222,7 +242,7 @@ export function Home() {
             <h2>The best of Natural Beauty</h2>
           </div>
           <div className="section-heading-copy">
-            <p>Everyday formulas our routines keep coming back to.</p>
+            <p>Customer favourites selected from the full collection.</p>
             <Link to="/shop">
               View all products <ArrowRight size={15} />
             </Link>
@@ -230,7 +250,7 @@ export function Home() {
         </header>
 
         <div className="product-grid">
-          {bestSellers.map((product) => (
+          {bestSellers.slice(0, featuredProductLimit).map((product) => (
             <ProductCard
               key={product.slug}
               product={product}
@@ -246,27 +266,27 @@ export function Home() {
       >
         <header className="section-heading">
           <div>
-            <p className="eyebrow">Skin, understood</p>
-            <h2>Care that starts with your skin.</h2>
+            <p className="eyebrow">Find your fit</p>
+            <h2>Shop by product group.</h2>
           </div>
           <div className="section-heading-copy">
             <p>
-              Build a routine around your skin type, its changing needs, and the
-              concerns that matter to you.
+              Explore products grouped around the needs and preferences that
+              matter to you.
             </p>
             <Link to="/shop">
-              Explore all skin types <ArrowRight size={15} />
+              Explore all groups <ArrowRight size={15} />
             </Link>
           </div>
         </header>
         <div className="skin-types-grid">
-          {skinTypes.map((skin, index) => (
+          {skinTypes.slice(0, productGroupLimit).map((skin, index) => (
             <Link
               className={`skin-type-tile skin-type-${index + 1}`}
               to="/shop"
               key={skin.name}
             >
-              <img src={skin.image} alt={`${skin.name} skin care`} />
+              <img src={skin.image} alt={skin.name} />
               <div>
                 <h3>{skin.name}</h3>
                 <p>{skin.description}</p>
@@ -396,7 +416,7 @@ export function Home() {
           </div>
         </header>
         <div className="product-grid">
-          {newArrivals.map((product) => (
+          {newArrivals.slice(0, newProductLimit).map((product) => (
             <ProductCard
               key={product.slug}
               product={product}
@@ -425,32 +445,32 @@ export function Home() {
         <div className="routine-copy">
           <p className="eyebrow">Find your routine</p>
           <h2>
-            Your skin.
+            Your products.
             <br />
-            Your concerns.
+            Your preferences.
             <br />
-            Your ritual.
+            Your choice.
           </h2>
           <p>
-            Start with what your skin feels like today and discover products
-            that fit naturally into your routine.
+            Start with what you need today and discover products that fit
+            naturally into your routine.
           </p>
           <ol>
             <li>
               <span>01</span>
-              <strong>Choose your skin type</strong>
+              <strong>Choose a product group</strong>
             </li>
             <li>
               <span>02</span>
-              <strong>Tell us your main concern</strong>
+              <strong>Choose your preference</strong>
             </li>
             <li>
               <span>03</span>
-              <strong>Discover your routine</strong>
+              <strong>Discover your selection</strong>
             </li>
           </ol>
           <Link className="button" to="/shop">
-            Find my routine <ArrowRight size={15} />
+            Explore products <ArrowRight size={15} />
           </Link>
           <Link className="routine-secondary" to="/shop">
             Shop all products

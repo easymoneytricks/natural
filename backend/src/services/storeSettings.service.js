@@ -20,6 +20,7 @@ const groups = [
   "smtp",
   "homepage_sections",
   "homepage_positions",
+  "homepage_limits",
   "payments",
   "recaptcha",
 ];
@@ -66,7 +67,9 @@ export async function getStoreMode(pool) {
   if (!row) return "open";
   try {
     const value = JSON.parse(row.value_json);
-    return ["open", "closed", "coming_soon"].includes(value) ? value : "open";
+    return ["open", "closed", "coming_soon", "maintenance"].includes(value)
+      ? value
+      : "open";
   } catch {
     return "open";
   }

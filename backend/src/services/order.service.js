@@ -29,7 +29,9 @@ export async function placeCodOrder(pool, input = {}, customer) {
       "STORE_NOT_ACCEPTING_ORDERS",
       storeMode === "coming_soon"
         ? "Our store is coming soon. Ordering will open shortly."
-        : "Ordering is temporarily paused. You can still browse our products.",
+        : storeMode === "maintenance"
+          ? "Our store is temporarily unavailable for maintenance."
+          : "Ordering is temporarily paused. You can still browse our products.",
     );
   if (!["cod", "online"].includes(input.paymentMethod))
     throw new AuthError(

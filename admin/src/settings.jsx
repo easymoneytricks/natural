@@ -95,6 +95,12 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
   footer: {
     tagline:
       "Thoughtful skincare for everyday rituals. Modern botanical care, made to feel simple and personal.",
+    tagline_secondary:
+      "Modern botanical care, made to feel simple and personal.",
+    shop_title: "Shop",
+    customer_care_title: "Customer Care",
+    about_title: "About",
+    legal_title: "Legal",
     mobile_guidance_title: "Need a little guidance?",
     mobile_guidance_text: "Speak with our team",
     support_email: "hello@naturalbeauty.example",
@@ -114,6 +120,8 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
     facebook_url: "",
     youtube_url: "",
     pinterest_url: "",
+    payment_methods: "UPI · Cards · Net Banking · COD",
+    copyright_text: "© 2026",
   },
   contact: {
     eyebrow: "We would love to hear from you",
@@ -133,6 +141,15 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
     currency: "INR",
     support_hours: "Mon–Sat · 10:00 AM–6:00 PM",
     maintenance_mode: "open",
+    availability_title: "We are getting ready",
+    availability_message:
+      "Our store will be available soon. Please check back shortly.",
+    availability_countdown: "",
+    closed_message:
+      "Ordering is temporarily paused · You can still browse our products.",
+    maintenance_title: "We will be back shortly",
+    maintenance_message:
+      "We are making a few improvements. Please check back soon.",
   },
   smtp: {
     host: "",
@@ -173,6 +190,16 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
     testimonials: "12",
     newsletter: "13",
   },
+  homepage_limits: {
+    featured_products_desktop: "4",
+    featured_products_mobile: "2",
+    new_products_desktop: "4",
+    new_products_mobile: "2",
+    category_highlights_desktop: "4",
+    category_highlights_mobile: "2",
+    product_groups_desktop: "5",
+    product_groups_mobile: "2",
+  },
   payments: {
     enabled: "false",
     provider: "cashfree",
@@ -205,6 +232,8 @@ function Field({
   help,
   options,
   placeholder,
+  min,
+  max,
 }) {
   const value = state[group]?.[name] ?? "";
   const update = (next) =>
@@ -238,6 +267,8 @@ function Field({
             value={value}
             onChange={(event) => update(event.target.value)}
             placeholder={placeholder}
+            min={min}
+            max={max}
           />
         )}
       </div>
@@ -532,7 +563,7 @@ export function SettingsPage() {
           expiryDays: rewardState.expiry_days,
         },
       });
-      setNotice("Storefront settings saved successfully.");
+      setNotice("Settings saved successfully.");
     } catch (caught) {
       setError(caught.message || "Unable to save settings.");
     } finally {
@@ -773,11 +804,59 @@ export function SettingsPage() {
                   options={[
                     ["open", "Open · customers can order"],
                     ["closed", "Closed · browse only"],
-                    ["coming_soon", "Coming soon · browse only"],
+                    ["coming_soon", "Opening soon · unavailable"],
+                    ["maintenance", "Maintenance mode · unavailable"],
                   ]}
                   state={state}
                   setState={setState}
-                  help="Closed and Coming soon keep products visible but block checkout and order placement."
+                  help="Closed, Opening soon and Maintenance mode block checkout and order placement."
+                />
+                <Field
+                  label="Closed notice"
+                  group="store"
+                  name="closed_message"
+                  type="textarea"
+                  state={state}
+                  setState={setState}
+                />
+                <Field
+                  label="Coming soon title"
+                  group="store"
+                  name="availability_title"
+                  state={state}
+                  setState={setState}
+                />
+                <Field
+                  label="Coming soon message"
+                  group="store"
+                  name="availability_message"
+                  type="textarea"
+                  state={state}
+                  setState={setState}
+                />
+                <Field
+                  label="Coming soon countdown date"
+                  group="store"
+                  name="availability_countdown"
+                  type="datetime-local"
+                  state={state}
+                  setState={setState}
+                  help="Optional. The countdown is hidden when this is blank."
+                />
+                <Field
+                  label="Maintenance title"
+                  group="store"
+                  name="maintenance_title"
+                  state={state}
+                  setState={setState}
+                />
+                <Field
+                  label="Maintenance message"
+                  group="store"
+                  name="maintenance_message"
+                  type="textarea"
+                  state={state}
+                  setState={setState}
                 />
               </SettingsGroup>
               <SettingsGroup
@@ -954,6 +1033,11 @@ export function SettingsPage() {
               >
                 {[
                   ["Footer tagline", "tagline", "textarea"],
+                  ["Footer secondary line", "tagline_secondary"],
+                  ["Shop column title", "shop_title"],
+                  ["Customer care column title", "customer_care_title"],
+                  ["About column title", "about_title"],
+                  ["Legal column title", "legal_title"],
                   ["Mobile guidance title", "mobile_guidance_title"],
                   ["Mobile guidance text", "mobile_guidance_text"],
                   ["Footer links", "footer_links", "textarea"],
@@ -968,6 +1052,8 @@ export function SettingsPage() {
                   ["Support email", "support_email"],
                   ["Support phone", "support_phone"],
                   ["Store location", "location"],
+                  ["Payment methods text", "payment_methods"],
+                  ["Copyright text", "copyright_text"],
                 ].map(([label, name, type]) => (
                   <Field
                     key={name}
@@ -1140,11 +1226,12 @@ export function SettingsPage() {
                   options={[
                     ["open", "Open · customers can order"],
                     ["closed", "Closed · browse only"],
-                    ["coming_soon", "Coming soon · browse only"],
+                    ["coming_soon", "Opening soon · unavailable"],
+                    ["maintenance", "Maintenance mode · unavailable"],
                   ]}
                   state={state}
                   setState={setState}
-                  help="Closed and Coming soon keep products visible but block checkout and order placement."
+                  help="Closed, Opening soon and Maintenance mode block checkout and order placement."
                 />
               </SettingsGroup>
               <SettingsGroup
@@ -1417,6 +1504,7 @@ export function SettingsPage() {
                   name="hero_image_url"
                   state={state}
                   setState={setState}
+                  placeholder="local:hero or https://..."
                   placeholder="https://… (recommended: 1600 × 700 px landscape)"
                   help="Recommended: 1600 × 700 px landscape image (roughly 2.3:1) for desktop and mobile crops."
                 />
@@ -1489,7 +1577,23 @@ export function SettingsPage() {
                 {Object.entries(defaults.homepage_sections).map(([name]) => (
                   <Fragment key={name}>
                     <Field
-                      label={`${name.replaceAll("_", " ")} visibility`}
+                      label={`${
+                        {
+                          hero: "Hero banner",
+                          trust: "Trust highlights",
+                          concerns: "Category highlights",
+                          bestsellers: "Featured products",
+                          skin_types: "Product groups",
+                          brand_story: "Brand story",
+                          ingredient: "Ingredients",
+                          principles: "Principles",
+                          ritual: "Ritual banner",
+                          new_arrivals: "New products",
+                          routine: "Routine guide",
+                          testimonials: "Testimonials",
+                          newsletter: "Newsletter",
+                        }[name] || name.replaceAll("_", " ")
+                      } visibility`}
                       group="homepage_sections"
                       name={name}
                       options={[
@@ -1500,7 +1604,23 @@ export function SettingsPage() {
                       setState={setState}
                     />
                     <Field
-                      label={`${name.replaceAll("_", " ")} position`}
+                      label={`${
+                        {
+                          hero: "Hero banner",
+                          trust: "Trust highlights",
+                          concerns: "Category highlights",
+                          bestsellers: "Featured products",
+                          skin_types: "Product groups",
+                          brand_story: "Brand story",
+                          ingredient: "Ingredients",
+                          principles: "Principles",
+                          ritual: "Ritual banner",
+                          new_arrivals: "New products",
+                          routine: "Routine guide",
+                          testimonials: "Testimonials",
+                          newsletter: "Newsletter",
+                        }[name] || name.replaceAll("_", " ")
+                      } position`}
                       group="homepage_positions"
                       name={name}
                       options={Array.from({ length: 13 }, (_, index) => [
@@ -1511,6 +1631,40 @@ export function SettingsPage() {
                       setState={setState}
                     />
                   </Fragment>
+                ))}
+              </SettingsGroup>
+              <SettingsGroup
+                icon={Settings2}
+                title="Homepage item limits"
+                description="Choose how many products and category cards appear on desktop and mobile."
+              >
+                {[
+                  ["Featured products · desktop", "featured_products_desktop"],
+                  ["Featured products · mobile", "featured_products_mobile"],
+                  ["New products · desktop", "new_products_desktop"],
+                  ["New products · mobile", "new_products_mobile"],
+                  [
+                    "Category highlights · desktop",
+                    "category_highlights_desktop",
+                  ],
+                  [
+                    "Category highlights · mobile",
+                    "category_highlights_mobile",
+                  ],
+                  ["Product groups · desktop", "product_groups_desktop"],
+                  ["Product groups · mobile", "product_groups_mobile"],
+                ].map(([label, name]) => (
+                  <Field
+                    key={name}
+                    label={label}
+                    group="homepage_limits"
+                    name={name}
+                    type="number"
+                    state={state}
+                    setState={setState}
+                    min="0"
+                    max="12"
+                  />
                 ))}
               </SettingsGroup>
               <SettingsGroup

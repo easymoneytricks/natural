@@ -6,72 +6,14 @@ import {
   useStoreSettings,
 } from "../../context/StoreSettingsContext";
 
-const routeMap = {
-  "Shop All": "/shop",
-  "New Arrivals": "/new-arrivals",
-  "Best Sellers": "/best-sellers",
-  "Skin Types": "/skin-types",
-  Concerns: "/concerns",
-  "Gift Cards": "/gift-cards",
-  "Contact Us": "/contact",
-  FAQs: "/faq",
-  Shipping: "/shipping",
-  "Returns & Refunds": "/returns",
-  "Track Order": "/track-order",
-  "My Account": "/account",
-  "Our Story": "/about",
-  Ingredients: "/about",
-  Journal: "/journal",
-  Contact: "/contact",
-  "Privacy Policy": "/privacy",
-  "Terms & Conditions": "/terms",
-  "Shipping Policy": "/shipping",
-  "Return Policy": "/returns",
-  "Refund Policy": "/refund-policy",
-  "Cancellation Policy": "/cancellation-policy",
-};
-
-const defaultFooterLinks = {
-  Shop: [
-    ["Shop All", "/shop"],
-    ["New Arrivals", "/new-arrivals"],
-    ["Best Sellers", "/best-sellers"],
-    ["Skin Types", "/skin-types"],
-    ["Concerns", "/concerns"],
-    ["Gift Cards", "/gift-cards"],
-  ],
-  "Customer Care": [
-    ["Contact Us", "/contact"],
-    ["FAQs", "/faq"],
-    ["Shipping", "/shipping"],
-    ["Returns & Refunds", "/returns"],
-    ["Track Order", "/track-order"],
-    ["My Account", "/account"],
-  ],
-  About: [
-    ["Our Story", "/about"],
-    ["Ingredients", "/about"],
-    ["Journal", "/journal"],
-    ["Contact", "/contact"],
-  ],
-  Legal: [
-    ["Privacy Policy", "/privacy"],
-    ["Terms & Conditions", "/terms"],
-    ["Shipping Policy", "/shipping"],
-    ["Return Policy", "/returns"],
-    ["Refund Policy", "/refund-policy"],
-    ["Cancellation Policy", "/cancellation-policy"],
-  ],
-};
-
-function parseFooterLinks(value, fallback) {
-  if (!value || typeof value !== "string") return fallback;
+function parseFooterLinks(value) {
+  if (!value || typeof value !== "string") return [];
   const parsed = value
     .split(/\r?\n/)
     .map((line) => line.split("|").map((part) => part.trim()))
     .filter(([label, path]) => label && path)
     .map(([label, path]) => [label, path]);
-  return parsed.length ? parsed : fallback;
+  return parsed;
 }
 
 function SocialIcon({ name }) {
@@ -122,24 +64,24 @@ export function Footer() {
   const businessName = getBusinessName(settings);
   const logo =
     settings.branding?.footer_logo_url || settings.branding?.logo_url || "";
-  const footerLinks = {
-    Shop: parseFooterLinks(
-      settings.footer?.shop_links,
-      defaultFooterLinks.Shop,
-    ),
-    "Customer Care": parseFooterLinks(
-      settings.footer?.customer_care_links,
-      defaultFooterLinks["Customer Care"],
-    ),
-    About: parseFooterLinks(
-      settings.footer?.about_links,
-      defaultFooterLinks.About,
-    ),
-    Legal: parseFooterLinks(
-      settings.footer?.legal_links,
-      defaultFooterLinks.Legal,
-    ),
-  };
+  const footerLinks = [
+    [
+      settings.footer?.shop_title,
+      parseFooterLinks(settings.footer?.shop_links),
+    ],
+    [
+      settings.footer?.customer_care_title,
+      parseFooterLinks(settings.footer?.customer_care_links),
+    ],
+    [
+      settings.footer?.about_title,
+      parseFooterLinks(settings.footer?.about_links),
+    ],
+    [
+      settings.footer?.legal_title,
+      parseFooterLinks(settings.footer?.legal_links),
+    ],
+  ].filter(([title, links]) => title && links.length);
 
   return (
     <footer className="site-footer">
@@ -156,11 +98,10 @@ export function Footer() {
               <span className="wordmark-name">{businessName}</span>
             )}
           </Link>
-          <p>
-            {settings.footer?.tagline ||
-              "Thoughtful skincare for everyday rituals."}
-          </p>
-          <span>Modern botanical care, made to feel simple and personal.</span>
+          <p>{settings.footer?.tagline}</p>
+          {settings.footer?.tagline_secondary && (
+            <span>{settings.footer.tagline_secondary}</span>
+          )}
           <div className="footer-socials">
             <a
               href={settings.footer?.instagram_url || "#"}
@@ -189,7 +130,7 @@ export function Footer() {
           </div>
         </div>
         <div className="footer-links">
-          {Object.entries(footerLinks).map(([group, links]) => (
+          {footerLinks.map(([group, links]) => (
             <section
               key={group}
               className={openGroup === group ? "is-open" : ""}
@@ -203,10 +144,7 @@ export function Footer() {
               </button>
               <div>
                 {links.map(([label, path]) => (
-                  <Link
-                    key={`${label}-${path}`}
-                    to={path || routeMap[label] || "/about"}
-                  >
+                  <Link key={`${label}-${path}`} to={path}>
                     {label}
                   </Link>
                 ))}
@@ -215,36 +153,50 @@ export function Footer() {
           ))}
         </div>
         <div className="footer-contact">
-          <p className="eyebrow">Customer care</p>
-          <a
-            href={`mailto:${settings.footer?.support_email || "hello@naturalbeauty.example"}`}
-          >
-            {settings.footer?.support_email || "hello@naturalbeauty.example"}
+          {settings.footer?.customer_care_title && (
+            <p className="eyebrow">{settings.footer.customer_care_title}</p>
+          )}
+          <a href={`mailto:${settings.footer?.support_email || ""}`}>
+            {settings.footer?.support_email}
           </a>
-          <a
-            className="footer-contact-detail"
-            href={`tel:${settings.footer?.support_phone || ""}`}
-          >
-            <Phone size={14} />
-            {settings.footer?.support_phone || "Add support number"}
-          </a>
-          <span className="footer-contact-detail">
-            <MapPin size={14} />
-            {settings.footer?.location || "Bengaluru, Karnataka"}
-          </span>
-          <span>
-            Mon–Sat
-            <br />
-            10:00 AM – 6:00 PM
-          </span>
+          {settings.footer?.support_phone && (
+            <a
+              className="footer-contact-detail"
+              href={`tel:${settings.footer.support_phone}`}
+            >
+              <Phone size={14} />
+              {settings.footer.support_phone}
+            </a>
+          )}
+          {settings.footer?.location && (
+            <span className="footer-contact-detail">
+              <MapPin size={14} />
+              {settings.footer.location}
+            </span>
+          )}
+          {settings.store?.support_hours && (
+            <span>{settings.store.support_hours}</span>
+          )}
+          {false && (
+            <span>
+              Mon–Sat
+              <br />
+              10:00 AM – 6:00 PM
+            </span>
+          )}
         </div>
       </div>
       <div className="footer-bottom homepage-container">
-        <span>Secure payments</span>
+        <span>{settings.footer?.payment_methods && "Secure payments"}</span>
+        <span>{settings.footer?.payment_methods}</span>
+        {false && (
+          <span>
+            UPI <i>•</i> Cards <i>•</i> Net Banking <i>•</i> COD
+          </span>
+        )}
         <span>
-          UPI <i>•</i> Cards <i>•</i> Net Banking <i>•</i> COD
+          {settings.footer?.copyright_text} {businessName}
         </span>
-        <span>© 2026 {businessName}</span>
       </div>
     </footer>
   );
