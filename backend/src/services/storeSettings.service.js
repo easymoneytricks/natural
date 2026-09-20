@@ -21,6 +21,7 @@ const groups = [
   "homepage_sections",
   "homepage_positions",
   "homepage_limits",
+  "trust",
   "payments",
   "recaptcha",
 ];

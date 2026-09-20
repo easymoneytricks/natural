@@ -1,0 +1,20 @@
+INSERT IGNORE INTO store_settings (setting_group, setting_key, value_json, is_public)
+VALUES
+  ('contact', 'cta_label', '"Explore skincare"', 1),
+  ('contact', 'cta_url', '"/shop"', 1),
+  ('contact', 'form_eyebrow', '"Customer care"', 1),
+  ('contact', 'form_title', '"How can we help?"', 1),
+  ('contact', 'form_description', '"Send us a note and our team will get back to you shortly."', 1),
+  ('contact', 'name_label', '"Name"', 1),
+  ('contact', 'name_placeholder', '"Your name"', 1),
+  ('contact', 'email_label', '"Email"', 1),
+  ('contact', 'email_placeholder', '"you@example.com"', 1),
+  ('contact', 'order_label', '"Order number"', 1),
+  ('contact', 'order_optional_label', '"(optional)"', 1),
+  ('contact', 'order_placeholder', '"NB-2026-0000"', 1),
+  ('contact', 'message_label', '"Message"', 1),
+  ('contact', 'message_placeholder', '"How can we help?"', 1),
+  ('contact', 'submit_label', '"Send message"', 1),
+  ('contact', 'submitting_label', '"Sending…"', 1),
+  ('contact', 'sent_label', '"Message sent"', 1),
+  ('contact', 'map_title', '"Store location"', 1);

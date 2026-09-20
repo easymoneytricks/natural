@@ -403,6 +403,25 @@ function ContactPage() {
   const contact = settings.contact || {};
   const contactEmail = String(contact.email || "").trim();
   const contactPhone = String(contact.phone || "").trim();
+  const contactSecondaryPhone = String(contact.phone_secondary || "").trim();
+  const contactCtaLabel = String(contact.cta_label || "").trim();
+  const contactCtaUrl = String(contact.cta_url || "").trim();
+  const formEyebrow = String(contact.form_eyebrow || "").trim();
+  const formTitle = String(contact.form_title || "").trim();
+  const formDescription = String(contact.form_description || "").trim();
+  const nameLabel = String(contact.name_label || "").trim();
+  const namePlaceholder = String(contact.name_placeholder || "").trim();
+  const emailLabel = String(contact.email_label || "").trim();
+  const emailPlaceholder = String(contact.email_placeholder || "").trim();
+  const orderLabel = String(contact.order_label || "").trim();
+  const orderOptionalLabel = String(contact.order_optional_label || "").trim();
+  const orderPlaceholder = String(contact.order_placeholder || "").trim();
+  const messageLabel = String(contact.message_label || "").trim();
+  const messagePlaceholder = String(contact.message_placeholder || "").trim();
+  const submitLabel = String(contact.submit_label || "").trim();
+  const submittingLabel = String(contact.submitting_label || "").trim();
+  const sentLabel = String(contact.sent_label || "").trim();
+  const mapTitle = String(contact.map_title || "").trim();
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -450,11 +469,11 @@ function ContactPage() {
   };
   return (
     <section className="route-shell contact-page container">
-      <p className="eyebrow">
-        {contact.eyebrow || "We would love to hear from you"}
-      </p>
-      <h1 className="contact-title-controlled">{contact.title}</h1>
-      <p className="route-intro contact-intro-controlled">{contact.intro}</p>
+      {contact.eyebrow && <p className="eyebrow">{contact.eyebrow}</p>}
+      {contact.title && <h1 className="contact-title-controlled">{contact.title}</h1>}
+      {contact.intro && (
+        <p className="route-intro contact-intro-controlled">{contact.intro}</p>
+      )}
       <div className="contact-grid">
         <div className="contact-info">
           <a href={`mailto:${contactEmail}`}>
@@ -465,56 +484,62 @@ function ContactPage() {
             <Phone size={17} />
             {contactPhone}
           </a>
+          {contactSecondaryPhone && (
+            <a href={`tel:${contactSecondaryPhone.replace(/\s+/g, "")}`}>
+              <Phone size={17} />
+              {contactSecondaryPhone}
+            </a>
+          )}
           <p>
             <MapPin size={17} />
             {contact.address_name}
             {contact.address_name && contact.address_line && <br />}
             {contact.address_line}
           </p>
-          <Link className="button" to="/shop">
-            Explore skincare <ArrowRight size={15} />
-          </Link>
+          {contactCtaLabel && contactCtaUrl && (
+            <Link className="button" to={contactCtaUrl}>
+              {contactCtaLabel} <ArrowRight size={15} />
+            </Link>
+          )}
         </div>
         <form
           className="contact-form contact-form-card"
           onSubmit={submitContact}
         >
           <div className="contact-form-heading">
-            <p className="eyebrow">Customer care</p>
-            <h2>How can we help?</h2>
-            <span>
-              Send us a note and our team will get back to you shortly.
-            </span>
+            {formEyebrow && <p className="eyebrow">{formEyebrow}</p>}
+            {formTitle && <h2>{formTitle}</h2>}
+            {formDescription && <span>{formDescription}</span>}
           </div>
           <label>
-            Name
-            <input required name="name" placeholder="Your name" />
+            {nameLabel}
+            <input required name="name" placeholder={namePlaceholder} />
           </label>
           <label>
-            Email
+            {emailLabel}
             <input
               required
               type="email"
               name="email"
-              placeholder="you@example.com"
+              placeholder={emailPlaceholder}
             />
           </label>
           <label>
-            Order number <span>(optional)</span>
-            <input name="order" placeholder="NB-2026-0000" />
+            {orderLabel} {orderOptionalLabel && <span>{orderOptionalLabel}</span>}
+            <input name="order" placeholder={orderPlaceholder} />
           </label>
           <label>
-            Message
+            {messageLabel}
             <textarea
               required
               name="message"
               rows="4"
-              placeholder="How can we help?"
+              placeholder={messagePlaceholder}
             />
           </label>
           <RecaptchaWidget onToken={setRecaptchaToken} />
           <button className="button" type="submit">
-            {sending ? "Sending…" : sent ? "Message sent" : "Send message"}{" "}
+            {sending ? submittingLabel : sent ? sentLabel : submitLabel}{" "}
             <ArrowRight size={15} />
           </button>
           {error && (
@@ -524,7 +549,7 @@ function ContactPage() {
           )}
         </form>
         <iframe
-          title="Natural Beauty Studio location"
+          title={mapTitle}
           src={contact.map_url}
           loading="lazy"
         />

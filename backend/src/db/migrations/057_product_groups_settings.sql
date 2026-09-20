@@ -1,0 +1,2 @@
+INSERT IGNORE INTO store_settings (setting_group, setting_key, value_json, is_public) VALUES
+('homepage','groups_eyebrow','"Find your fit"',1),('homepage','groups_title','"Shop by product group."',1),('homepage','groups_description','"Explore products grouped around the needs and preferences that matter to you."',1),('homepage','groups_link_label','"Explore all groups"',1),('homepage','groups_link_url','"/shop"',1);

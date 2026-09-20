@@ -1,0 +1,2 @@
+INSERT IGNORE INTO store_settings (setting_group, setting_key, value_json, is_public) VALUES
+('homepage','brand_eyebrow','"Our philosophy"',1),('homepage','brand_title','"Nature, refined by thoughtful formulation."',1),('homepage','brand_description','"We believe products should feel considered, uncomplicated and personal."',1),('homepage','brand_link_label','"Discover our story"',1),('homepage','brand_link_url','"/about"',1);

@@ -1,6 +1,20 @@
 import { useState } from "react";
+import { useStoreSettings } from "../../context/StoreSettingsContext";
 
 export function Newsletter() {
+  const settings = useStoreSettings();
+  const homepage = settings.homepage || {};
+  const eyebrow = String(homepage.newsletter_eyebrow || "").trim();
+  const title = String(homepage.newsletter_title || "").trim();
+  const description = String(homepage.newsletter_description || "").trim();
+  const label = String(homepage.newsletter_label || "").trim();
+  const placeholder = String(homepage.newsletter_placeholder || "").trim();
+  const buttonLabel = String(homepage.newsletter_button_label || "").trim();
+  const submittingLabel = String(
+    homepage.newsletter_submitting_label || "",
+  ).trim();
+  const privacy = String(homepage.newsletter_privacy || "").trim();
+  const successMessage = String(homepage.newsletter_success || "").trim();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -35,7 +49,7 @@ export function Newsletter() {
         throw new Error(
           payload?.error?.message || "We could not add you to the list.",
         );
-      setMessage("You’re on the list. Welcome to the Natural Beauty note.");
+      setMessage(successMessage);
       setEmail("");
     } catch (error) {
       setMessage(error.message || "We could not add you to the list.");
@@ -48,31 +62,33 @@ export function Newsletter() {
     <section className="newsletter-section">
       <div className="homepage-container newsletter-inner">
         <div>
-          <p className="eyebrow">The Natural Beauty note</p>
-          <h2>
-            A little more care,
-            <br />
-            delivered to your inbox.
-          </h2>
-          <p>
-            New formulas, thoughtful skincare notes, early access and occasional
-            offers — without the noise.
-          </p>
+          {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+          {title && (
+            <h2>
+              {title.split("\n").map((line, index) => (
+                <span key={`${line}-${index}`}>
+                  {index > 0 && <br />}
+                  {line}
+                </span>
+              ))}
+            </h2>
+          )}
+          {description && <p>{description}</p>}
         </div>
         <form onSubmit={handleSubmit} noValidate>
-          <label htmlFor="newsletter-email">Your email address</label>
+          {label && <label htmlFor="newsletter-email">{label}</label>}
           <div className="newsletter-field">
             <input
               id="newsletter-email"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="Your email address"
+              placeholder={placeholder}
               required
               aria-describedby="newsletter-message newsletter-privacy"
             />
             <button type="submit" disabled={submitting}>
-              {submitting ? "Joining…" : "Join the list"}
+              {submitting ? submittingLabel : buttonLabel}
             </button>
           </div>
           <p
@@ -83,10 +99,7 @@ export function Newsletter() {
           >
             {message}
           </p>
-          <small id="newsletter-privacy">
-            By subscribing, you agree to receive Natural Beauty updates. You can
-            unsubscribe at any time.
-          </small>
+          {privacy && <small id="newsletter-privacy">{privacy}</small>}
         </form>
       </div>
     </section>

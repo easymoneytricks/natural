@@ -11,14 +11,9 @@ import { ProductCard } from "../components/product/ProductCard";
 import { QuickOptions } from "../components/product/QuickOptions";
 import { Newsletter } from "../components/layout/Newsletter";
 import {
-  brandPrinciples,
-  concernTiles,
   homeImages,
-  ingredients,
-  skinTypes,
-  trustItems,
 } from "../data/home";
-import { getProducts } from "../services/catalogApi";
+import { getCategories, getProducts } from "../services/catalogApi";
 import { useStoreSettings } from "../context/StoreSettingsContext";
 
 const trustIcons = {
@@ -34,6 +29,7 @@ export function Home() {
   const [bestSellers, setBestSellers] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [catalogError, setCatalogError] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
   const storeSettings = useStoreSettings();
   const homepage = storeSettings.homepage || {};
@@ -51,44 +47,143 @@ export function Home() {
   const heroProof = String(homepage.hero_proof || "").trim();
   const heroRitualTitle = String(homepage.hero_ritual_title || "").trim();
   const heroRitualText = String(homepage.hero_ritual_text || "").trim();
+  const categoryEyebrow = String(homepage.category_eyebrow || "").trim();
+  const categoryTitle = String(homepage.category_title || "").trim();
+  const categoryDescription = String(
+    homepage.category_description || "",
+  ).trim();
+  const categoryLinkLabel = String(homepage.category_link_label || "").trim();
+  const categoryLinkUrl = String(homepage.category_link_url || "").trim();
+  const groupsEyebrow = String(homepage.groups_eyebrow || "").trim();
+  const groupsTitle = String(homepage.groups_title || "").trim();
+  const groupsDescription = String(homepage.groups_description || "").trim();
+  const groupsLinkLabel = String(homepage.groups_link_label || "").trim();
+  const groupsLinkUrl = String(homepage.groups_link_url || "").trim();
+  const brandEyebrow = String(homepage.brand_eyebrow || "").trim();
+  const brandTitle = String(homepage.brand_title || "").trim();
+  const brandDescription = String(homepage.brand_description || "").trim();
+  const brandLinkLabel = String(homepage.brand_link_label || "").trim();
+  const brandLinkUrl = String(homepage.brand_link_url || "").trim();
+  const brandImageSetting = String(homepage.brand_image_url || "").trim();
+  const brandImageUrl =
+    brandImageSetting === "local:hero" ? homeImages.hero : brandImageSetting;
+  const brandImageAlt = String(homepage.brand_image_alt || "").trim();
+  const brandNoteTitle = String(homepage.brand_note_title || "").trim();
+  const brandNoteText = String(homepage.brand_note_text || "").trim();
+  const ingredientsEyebrow = String(homepage.ingredients_eyebrow || "").trim();
+  const ingredientsTitle = String(homepage.ingredients_title || "").trim();
+  const ingredientsDescription = String(
+    homepage.ingredients_description || "",
+  ).trim();
+  const ingredientsImageSetting = String(
+    homepage.ingredients_image_url || "",
+  ).trim();
+  const ingredientsImageUrl =
+    ingredientsImageSetting === "local:hero"
+      ? homeImages.hero
+      : ingredientsImageSetting;
+  const ingredientsImageAlt = String(
+    homepage.ingredients_image_alt || "",
+  ).trim();
+  const productHighlights = [1, 2, 3, 4, 5, 6]
+    .map((number) => ({
+      name: String(homepage[`highlight_${number}_title`] || "").trim(),
+      description: String(homepage[`highlight_${number}_text`] || "").trim(),
+    }))
+    .filter(({ name, description }) => name && description);
+  const principlesTitle = String(homepage.principles_title || "").trim();
+  const principles = [1, 2, 3]
+    .map((number) => ({
+      title: String(homepage[`principle_${number}_title`] || "").trim(),
+      text: String(homepage[`principle_${number}_text`] || "").trim(),
+    }))
+    .filter(({ title, text }) => title && text);
+  const ritualEyebrow = String(homepage.ritual_eyebrow || "").trim();
+  const ritualTitle = String(homepage.ritual_title || "").trim();
+  const ritualDescription = String(homepage.ritual_description || "").trim();
+  const ritualLinkLabel = String(homepage.ritual_link_label || "").trim();
+  const ritualLinkUrl = String(homepage.ritual_link_url || "").trim();
+  const ritualImageSetting = String(homepage.ritual_image_url || "").trim();
+  const ritualImageUrl =
+    ritualImageSetting === "local:hero"
+      ? homeImages.hero
+      : ritualImageSetting;
+  const ritualImageAlt = String(homepage.ritual_image_alt || "").trim();
+  const newEyebrow = String(homepage.new_eyebrow || "").trim();
+  const newTitle = String(homepage.new_title || "").trim();
+  const newDescription = String(homepage.new_description || "").trim();
+  const newLinkLabel = String(homepage.new_link_label || "").trim();
+  const newLinkUrl = String(homepage.new_link_url || "").trim();
+  const routineEyebrow = String(homepage.routine_eyebrow || "").trim();
+  const routineTitle = String(homepage.routine_title || "").trim();
+  const routineDescription = String(homepage.routine_description || "").trim();
+  const routineSteps = [1, 2, 3].map((step) =>
+    String(homepage[`routine_step_${step}`] || "").trim(),
+  );
+  const routineLinkLabel = String(homepage.routine_link_label || "").trim();
+  const routineLinkUrl = String(homepage.routine_link_url || "").trim();
+  const routineSecondaryLabel = String(
+    homepage.routine_secondary_label || "",
+  ).trim();
+  const routineSecondaryUrl = String(
+    homepage.routine_secondary_url || "",
+  ).trim();
+  const routineImageSetting = String(homepage.routine_image_url || "").trim();
+  const routineImageUrl =
+    routineImageSetting === "local:hero" ? homeImages.hero : routineImageSetting;
+  const routineImageAlt = String(homepage.routine_image_alt || "").trim();
+  const featuredEyebrow = String(homepage.featured_eyebrow || "").trim();
+  const featuredTitle = String(homepage.featured_title || "").trim();
+  const featuredDescription = String(
+    homepage.featured_description || "",
+  ).trim();
+  const featuredLinkLabel = String(homepage.featured_link_label || "").trim();
+  const featuredLinkUrl = String(homepage.featured_link_url || "").trim();
   const limits = storeSettings.homepage_limits || {};
+  const parentCategories = categories.filter(
+    (category) => category.parentId === null || category.parentId === undefined,
+  );
+  const childCategories = categories.filter(
+    (category) => category.parentId !== null && category.parentId !== undefined,
+  );
   const itemLimit = (name, fallback) => {
     const value = Number(limits[`${name}_${isMobile ? "mobile" : "desktop"}`]);
     return Number.isFinite(value) && value >= 0 ? value : fallback;
   };
   const featuredProductLimit = itemLimit("featured_products", 4);
   const newProductLimit = itemLimit("new_products", 4);
-  const categoryLimit = itemLimit("category_highlights", concernTiles.length);
-  const productGroupLimit = itemLimit("product_groups", skinTypes.length);
+  const categoryLimit = itemLimit("category_highlights", childCategories.length);
+  const productGroupLimit = itemLimit("product_groups", parentCategories.length);
+  const trustHighlights = ["sparkle", "heart", "shield", "package"]
+    .map((icon, index) => ({
+      icon,
+      title: String(
+        storeSettings.trust?.[`item_${index + 1}_title`] || "",
+      ).trim(),
+      text: String(
+        storeSettings.trust?.[`item_${index + 1}_text`] || "",
+      ).trim(),
+    }))
+    .filter(({ title, text }) => title && text);
   const visible = (section) =>
     storeSettings.homepage_sections?.[section] !== "false";
 
-  const testimonials = [
-    {
-      name: "Aanya Mehta",
-      product: "Barrier Restore Moisturizer",
-      quote:
-        "The Barrier Restore Moisturizer became the easiest part of my evening routine. The texture feels rich without feeling heavy.",
-    },
-    {
-      name: "Riya Kapoor",
-      product: "Vitamin C Radiance Serum",
-      quote:
-        "I love how simple the routine feels. The Vitamin C serum layers beautifully under sunscreen in the morning.",
-    },
-    {
-      name: "Meera Sharma",
-      product: "Gentle Barrier Cleanser",
-      quote:
-        "The cleanser and moisturizer combination feels gentle and uncomplicated, which is exactly what I wanted from my routine.",
-    },
-    {
-      name: "Sara Khan",
-      product: "Niacinamide Balance Serum",
-      quote:
-        "The website made it surprisingly easy to browse by concern instead of guessing which product I should start with.",
-    },
-  ];
+  const testimonialsEyebrow = String(
+    homepage.testimonials_eyebrow || "",
+  ).trim();
+  const testimonials = [1, 2, 3, 4]
+    .map((number) => ({
+      name: String(homepage[`testimonial_${number}_name`] || "").trim(),
+      product: String(homepage[`testimonial_${number}_product`] || "").trim(),
+      quote: String(homepage[`testimonial_${number}_quote`] || "").trim(),
+    }))
+    .filter(({ name, product, quote }) => name && product && quote);
+  const activeTestimonial =
+    testimonials[testimonialIndex] || testimonials[0] || {
+      name: "",
+      product: "",
+      quote: "",
+    };
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 700px)");
@@ -117,14 +212,16 @@ export function Home() {
   useEffect(() => {
     const controller = new AbortController();
     Promise.all([
+      getCategories({ signal: controller.signal }),
       getProducts(
         { sort: "best-selling", limit: 12 },
         { signal: controller.signal },
       ),
       getProducts({ sort: "newest", limit: 12 }, { signal: controller.signal }),
     ])
-      .then(([best, arrivals]) => {
+      .then(([categoryPayload, best, arrivals]) => {
         if (controller.signal.aborted) return;
+        setCategories(categoryPayload.data);
         setBestSellers(best.data);
         setNewArrivals(arrivals.data);
       })
@@ -183,7 +280,7 @@ export function Home() {
         hidden={!visible("trust")}
       >
         <div className="homepage-container trust-grid">
-          {trustItems.map(({ icon, title, text }) => {
+          {trustHighlights.map(({ icon, title, text }) => {
             const Icon = trustIcons[icon];
 
             return (
@@ -205,24 +302,31 @@ export function Home() {
       >
         <header className="section-heading">
           <div>
-            <p className="eyebrow">Explore the collection</p>
-            <h2>Featured categories</h2>
+            {categoryEyebrow && <p className="eyebrow">{categoryEyebrow}</p>}
+            {categoryTitle && <h2>{categoryTitle}</h2>}
           </div>
           <div className="section-heading-copy">
-            <p>Browse products by the way you like to shop.</p>
-            <Link to="/shop">
-              View all categories <ArrowRight size={15} />
-            </Link>
+            {categoryDescription && <p>{categoryDescription}</p>}
+            {categoryLinkLabel && categoryLinkUrl && (
+              <Link to={categoryLinkUrl}>
+                {categoryLinkLabel} <ArrowRight size={15} />
+              </Link>
+            )}
           </div>
         </header>
 
         <div className="concerns-grid">
-          {concernTiles.slice(0, categoryLimit).map((concern) => (
-            <Link className="concern-tile" to="/shop" key={concern.title}>
-              <img src={concern.image} alt={concern.title} />
+          {childCategories.slice(0, categoryLimit).map((category) => (
+            <Link
+              className="concern-tile"
+              to={`/shop?category=${encodeURIComponent(category.slug)}`}
+              key={category.id || category.slug}
+            >
+              {category.image && (
+                <img src={category.image} alt={category.name} />
+              )}
               <div className="concern-tile-content">
-                <h3>{concern.title}</h3>
-                <p>{concern.description}</p>
+                <h3>{category.name}</h3>
                 <span aria-hidden="true">
                   <ArrowRight size={17} />
                 </span>
@@ -238,14 +342,16 @@ export function Home() {
       >
         <header className="section-heading">
           <div>
-            <p className="eyebrow">Most loved</p>
-            <h2>The best of Natural Beauty</h2>
+            {featuredEyebrow && <p className="eyebrow">{featuredEyebrow}</p>}
+            {featuredTitle && <h2>{featuredTitle}</h2>}
           </div>
           <div className="section-heading-copy">
-            <p>Customer favourites selected from the full collection.</p>
-            <Link to="/shop">
-              View all products <ArrowRight size={15} />
-            </Link>
+            {featuredDescription && <p>{featuredDescription}</p>}
+            {featuredLinkLabel && featuredLinkUrl && (
+              <Link to={featuredLinkUrl}>
+                {featuredLinkLabel} <ArrowRight size={15} />
+              </Link>
+            )}
           </div>
         </header>
 
@@ -266,34 +372,36 @@ export function Home() {
       >
         <header className="section-heading">
           <div>
-            <p className="eyebrow">Find your fit</p>
-            <h2>Shop by product group.</h2>
+            {groupsEyebrow && <p className="eyebrow">{groupsEyebrow}</p>}
+            {groupsTitle && <h2>{groupsTitle}</h2>}
           </div>
           <div className="section-heading-copy">
-            <p>
-              Explore products grouped around the needs and preferences that
-              matter to you.
-            </p>
-            <Link to="/shop">
-              Explore all groups <ArrowRight size={15} />
-            </Link>
+            <p>{groupsDescription}</p>
+            {groupsLinkLabel && groupsLinkUrl && (
+              <Link to={groupsLinkUrl}>
+                {groupsLinkLabel} <ArrowRight size={15} />
+              </Link>
+            )}
           </div>
         </header>
         <div className="skin-types-grid">
-          {skinTypes.slice(0, productGroupLimit).map((skin, index) => (
-            <Link
-              className={`skin-type-tile skin-type-${index + 1}`}
-              to="/shop"
-              key={skin.name}
-            >
-              <img src={skin.image} alt={skin.name} />
-              <div>
-                <h3>{skin.name}</h3>
-                <p>{skin.description}</p>
-                <ArrowRight size={17} />
-              </div>
-            </Link>
-          ))}
+          {parentCategories
+            .slice(0, productGroupLimit)
+            .map((category, index) => (
+              <Link
+                className={`skin-type-tile skin-type-${index + 1}`}
+                to={`/shop?category=${encodeURIComponent(category.slug)}`}
+                key={category.id || category.slug}
+              >
+                {category.image && (
+                  <img src={category.image} alt={category.name} />
+                )}
+                <div>
+                  <h3>{category.name}</h3>
+                  <ArrowRight size={17} />
+                </div>
+              </Link>
+            ))}
         </div>
       </section>
 
@@ -302,33 +410,23 @@ export function Home() {
         hidden={!visible("brand_story")}
       >
         <div className="brand-story-visual">
-          <img
-            src={homeImages.hero}
-            alt="Botanical skincare bottles in soft natural light"
-          />
+          {brandImageUrl && <img src={brandImageUrl} alt={brandImageAlt} />}
         </div>
         <div className="brand-story-copy">
-          <p className="eyebrow">Our philosophy</p>
-          <h2>Nature, refined by thoughtful formulation.</h2>
-          <p>
-            We believe skincare should feel considered, uncomplicated and
-            personal. Natural Beauty brings together botanical inspiration and
-            modern cosmetic formulation to create everyday rituals designed
-            around real skin needs.
-          </p>
-          <p>
-            No crowded routines. No unnecessary complexity. Just purposeful care
-            you can understand and enjoy using every day.
-          </p>
-          <Link className="hero-secondary" to="/about">
-            Discover our story <ArrowRight size={15} />
-          </Link>
-          <div className="brand-note">
-            <strong>Formulated with purpose</strong>
-            <span>
-              Designed around skin needs, texture and everyday usability.
-            </span>
-          </div>
+          {brandEyebrow && <p className="eyebrow">{brandEyebrow}</p>}
+          {brandTitle && <h2>{brandTitle}</h2>}
+          {brandDescription && <p>{brandDescription}</p>}
+          {brandLinkLabel && brandLinkUrl && (
+            <Link className="hero-secondary" to={brandLinkUrl}>
+              {brandLinkLabel} <ArrowRight size={15} />
+            </Link>
+          )}
+          {(brandNoteTitle || brandNoteText) && (
+            <div className="brand-note">
+              {brandNoteTitle && <strong>{brandNoteTitle}</strong>}
+              {brandNoteText && <span>{brandNoteText}</span>}
+            </div>
+          )}
         </div>
       </section>
 
@@ -337,24 +435,22 @@ export function Home() {
         hidden={!visible("ingredient")}
       >
         <div className="ingredient-visual">
-          <img
-            src={homeImages.hero}
-            alt="Unbranded skincare bottles and botanical ingredients prepared for formulation"
-          />
+          {ingredientsImageUrl && (
+            <img src={ingredientsImageUrl} alt={ingredientsImageAlt} />
+          )}
         </div>
         <div className="ingredient-copy">
-          <p className="eyebrow">Formulas with intention</p>
-          <h2>Ingredients your routine will recognize.</h2>
-          <p>
-            Discover familiar skincare actives and botanical ingredients,
-            organized around what they bring to your ritual.
-          </p>
+          {ingredientsEyebrow && (
+            <p className="eyebrow">{ingredientsEyebrow}</p>
+          )}
+          {ingredientsTitle && <h2>{ingredientsTitle}</h2>}
+          {ingredientsDescription && <p>{ingredientsDescription}</p>}
           <div className="ingredient-list">
-            {ingredients.map((ingredient) => (
-              <button key={ingredient.name}>
+            {productHighlights.map((highlight) => (
+              <button key={highlight.name}>
                 <span>
-                  <strong>{ingredient.name}</strong>
-                  <small>{ingredient.description}</small>
+                  <strong>{highlight.name}</strong>
+                  <small>{highlight.description}</small>
                 </span>
                 <ArrowRight size={16} />
               </button>
@@ -363,9 +459,13 @@ export function Home() {
         </div>
       </section>
 
-      <section className="principles-strip" hidden={!visible("principles")}>
+      <section
+        className="principles-strip"
+        aria-label={principlesTitle || undefined}
+        hidden={!visible("principles") || principles.length === 0}
+      >
         <div className="homepage-container principles-grid">
-          {brandPrinciples.map((principle) => (
+          {principles.map((principle) => (
             <article key={principle.title}>
               <h3>{principle.title}</h3>
               <p>{principle.text}</p>
@@ -375,24 +475,25 @@ export function Home() {
       </section>
 
       <section className="ritual-banner" hidden={!visible("ritual")}>
-        <img
-          src={homeImages.hero}
-          alt="A calm botanical skincare ritual arranged on stone"
-        />
+        {ritualImageUrl && <img src={ritualImageUrl} alt={ritualImageAlt} />}
         <div className="ritual-banner-content">
-          <p className="eyebrow">The daily ritual</p>
-          <h2>
-            Small rituals.
-            <br />
-            Beautiful consistency.
-          </h2>
-          <p>
-            Build a simple routine for morning, evening and everything in
-            between.
-          </p>
-          <Link className="hero-secondary" to="/shop">
-            Build your routine <ArrowRight size={15} />
-          </Link>
+          {ritualEyebrow && <p className="eyebrow">{ritualEyebrow}</p>}
+          {ritualTitle && (
+            <h2>
+              {ritualTitle.split("\n").map((line, index) => (
+                <span key={`${line}-${index}`}>
+                  {index > 0 && <br />}
+                  {line}
+                </span>
+              ))}
+            </h2>
+          )}
+          {ritualDescription && <p>{ritualDescription}</p>}
+          {ritualLinkLabel && ritualLinkUrl && (
+            <Link className="hero-secondary" to={ritualLinkUrl}>
+              {ritualLinkLabel} <ArrowRight size={15} />
+            </Link>
+          )}
         </div>
       </section>
 
@@ -402,17 +503,16 @@ export function Home() {
       >
         <header className="section-heading">
           <div>
-            <p className="eyebrow">Just in</p>
-            <h2>New to the ritual</h2>
+            {newEyebrow && <p className="eyebrow">{newEyebrow}</p>}
+            {newTitle && <h2>{newTitle}</h2>}
           </div>
           <div className="section-heading-copy">
-            <p>
-              Fresh additions designed to find an easy place in your everyday
-              routine.
-            </p>
-            <Link to="/new-arrivals">
-              Shop new arrivals <ArrowRight size={15} />
-            </Link>
+            {newDescription && <p>{newDescription}</p>}
+            {newLinkLabel && newLinkUrl && (
+              <Link to={newLinkUrl}>
+                {newLinkLabel} <ArrowRight size={15} />
+              </Link>
+            )}
           </div>
         </header>
         <div className="product-grid">
@@ -437,66 +537,68 @@ export function Home() {
         hidden={!visible("routine")}
       >
         <div className="routine-visual">
-          <img
-            src={homeImages.hero}
-            alt="Unbranded skincare ritual products arranged on natural stone"
-          />
+          {routineImageUrl && <img src={routineImageUrl} alt={routineImageAlt} />}
         </div>
         <div className="routine-copy">
-          <p className="eyebrow">Find your routine</p>
-          <h2>
-            Your products.
-            <br />
-            Your preferences.
-            <br />
-            Your choice.
-          </h2>
-          <p>
-            Start with what you need today and discover products that fit
-            naturally into your routine.
-          </p>
-          <ol>
-            <li>
-              <span>01</span>
-              <strong>Choose a product group</strong>
-            </li>
-            <li>
-              <span>02</span>
-              <strong>Choose your preference</strong>
-            </li>
-            <li>
-              <span>03</span>
-              <strong>Discover your selection</strong>
-            </li>
-          </ol>
-          <Link className="button" to="/shop">
-            Explore products <ArrowRight size={15} />
-          </Link>
-          <Link className="routine-secondary" to="/shop">
-            Shop all products
-          </Link>
+          {routineEyebrow && <p className="eyebrow">{routineEyebrow}</p>}
+          {routineTitle && (
+            <h2>
+              {routineTitle.split("\n").map((line, index) => (
+                <span key={`${line}-${index}`}>
+                  {index > 0 && <br />}
+                  {line}
+                </span>
+              ))}
+            </h2>
+          )}
+          {routineDescription && <p>{routineDescription}</p>}
+          {routineSteps.some(Boolean) && (
+            <ol>
+              {routineSteps.map(
+                (step, index) =>
+                  step && (
+                    <li key={`${step}-${index}`}>
+                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      <strong>{step}</strong>
+                    </li>
+                  ),
+              )}
+            </ol>
+          )}
+          {routineLinkLabel && routineLinkUrl && (
+            <Link className="button" to={routineLinkUrl}>
+              {routineLinkLabel} <ArrowRight size={15} />
+            </Link>
+          )}
+          {routineSecondaryLabel && routineSecondaryUrl && (
+            <Link className="routine-secondary" to={routineSecondaryUrl}>
+              {routineSecondaryLabel}
+            </Link>
+          )}
         </div>
       </section>
 
       <section
         className="testimonials-section homepage-container"
-        hidden={!visible("testimonials")}
+        hidden={!visible("testimonials") || testimonials.length === 0}
       >
         <div className="testimonial-feature">
-          <p className="eyebrow">Notes from the ritual</p>
+          {testimonialsEyebrow && (
+            <p className="eyebrow">{testimonialsEyebrow}</p>
+          )}
           <div className="quote-mark">“</div>
-          <blockquote>{testimonials[testimonialIndex].quote}</blockquote>
+          <blockquote>{activeTestimonial.quote}</blockquote>
           <p className="testimonial-name">
-            {testimonials[testimonialIndex].name}
+            {activeTestimonial.name}
           </p>
           <p className="testimonial-product">
-            ★★★★★ &nbsp; {testimonials[testimonialIndex].product}
+            ★★★★★ &nbsp; {activeTestimonial.product}
           </p>
         </div>
         <div className="testimonial-list">
           {testimonials.map((testimonial, index) => (
             <button
-              key={testimonial.name}
+              key={`${testimonial.name}-${index}`}
               className={testimonialIndex === index ? "is-active" : ""}
               onClick={() => setTestimonialIndex(index)}
             >

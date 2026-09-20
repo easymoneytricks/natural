@@ -51,6 +51,14 @@ function SocialIcon({ name }) {
     );
   }
 
+  if (name === "twitter") {
+    return (
+      <svg {...commonProps} fill="currentColor">
+        <path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.4L2.8 2h6.4l4.4 5.8L18.9 2Zm-1.1 17.9h1.7L8.3 4H6.5l11.3 15.9Z" />
+      </svg>
+    );
+  }
+
   return (
     <svg {...commonProps} fill="currentColor">
       <path d="M12.1 2.2c-5.3 0-8.8 3.8-8.8 8.1 0 3.4 1.9 6.4 4.8 7.5-.1-.6-.1-1.5 0-2.1l1-4.2s-.3-.6-.3-1.5c0-1.4.8-2.4 1.8-2.4.8 0 1.2.6 1.2 1.3 0 .8-.5 1.9-.8 3-.2.9.4 1.6 1.3 1.6 1.6 0 2.8-1.7 2.8-4.2 0-2.2-1.6-3.8-3.9-3.8-2.7 0-4.3 2-4.3 4.1 0 .8.3 1.7.7 2.1.1.1.1.2.1.3l-.3 1.1c-.1.3-.3.4-.6.2-1.2-.5-1.9-2.1-1.9-3.4 0-2.8 2-5.4 5.9-5.4 3.1 0 5.5 2.2 5.5 5.1 0 3-1.9 5.4-4.5 5.4-.9 0-1.7-.5-2-1l-.6 2.3c-.2.9-.8 2-1.2 2.7.9.3 1.8.5 2.8.5 5.3 0 8.8-3.8 8.8-8.1s-3.5-8.1-8.8-8.1Z" />
@@ -126,6 +134,12 @@ export function Footer() {
               aria-label={`${businessName} on Pinterest`}
             >
               <SocialIcon name="pinterest" />
+            </a>
+            <a
+              href={settings.footer?.twitter_url || "#"}
+              aria-label={`${businessName} on Twitter / X`}
+            >
+              <SocialIcon name="twitter" />
             </a>
           </div>
         </div>

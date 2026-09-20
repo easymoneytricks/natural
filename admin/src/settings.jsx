@@ -68,6 +68,125 @@ const defaults = {
     hero_ritual_title: "",
     hero_ritual_text: "",
     hero_image_alt: "",
+    category_eyebrow: "Explore the collection",
+    category_title: "Shop by product group.",
+    category_description: "Browse products by the way you like to shop.",
+    category_link_label: "Explore all groups",
+    category_link_url: "/shop",
+    groups_eyebrow: "Find your fit",
+    groups_title: "Shop By Categories",
+    groups_description:
+      "Explore products grouped around the needs and preferences that matter to you.",
+    groups_link_label: "Explore all groups",
+    groups_link_url: "/shop",
+    brand_eyebrow: "Our philosophy",
+    brand_title: "Nature, refined by thoughtful formulation.",
+    brand_description:
+      "We believe products should feel considered, uncomplicated and personal.",
+    brand_link_label: "Discover our story",
+    brand_link_url: "/about",
+    brand_image_url: "local:hero",
+    brand_image_alt: "Botanical skincare bottles in soft natural light",
+    brand_note_title: "Formulated with purpose",
+    brand_note_text: "Designed around skin needs, texture and everyday usability.",
+    ingredients_eyebrow: "Details with intention",
+    ingredients_title: "Details that make a difference.",
+    ingredients_description:
+      "Explore the qualities and benefits behind each product.",
+    ingredients_image_url: "local:hero",
+    ingredients_image_alt: "Products and materials arranged for a considered routine",
+    highlight_1_title: "Vitamin C",
+    highlight_1_text: "For brighter-looking, more radiant skin",
+    highlight_2_title: "Niacinamide",
+    highlight_2_text: "Supports balance and smoother-looking texture",
+    highlight_3_title: "Hyaluronic Acid",
+    highlight_3_text: "Helps maintain skin hydration",
+    highlight_4_title: "Ceramides",
+    highlight_4_text: "Supports the skin's moisture barrier",
+    highlight_5_title: "Salicylic Acid",
+    highlight_5_text: "Helps clarify congested-looking skin",
+    highlight_6_title: "Retinol",
+    highlight_6_text: "Supports smoother, renewed-looking skin",
+    principles_title: "Principles",
+    principle_1_title: "Purposeful formulas",
+    principle_1_text: "Every product starts with a clear role in your routine.",
+    principle_2_title: "Routine-first design",
+    principle_2_text: "Products made to work naturally within everyday skincare.",
+    principle_3_title: "Considered experience",
+    principle_3_text:
+      "Texture, usability and presentation matter as much as the formula story.",
+    ritual_eyebrow: "The daily ritual",
+    ritual_title: "Small rituals.\nBeautiful consistency.",
+    ritual_description:
+      "Build a simple routine for morning, evening and everything in between.",
+    ritual_link_label: "Build your routine",
+    ritual_link_url: "/shop",
+    ritual_image_url: "local:hero",
+    ritual_image_alt: "A calm botanical skincare ritual arranged on stone",
+    new_eyebrow: "Just in",
+    new_title: "New to the ritual",
+    new_description:
+      "Fresh additions designed to find an easy place in your everyday routine.",
+    new_link_label: "Shop new arrivals",
+    new_link_url: "/new-arrivals",
+    routine_eyebrow: "Find your routine",
+    routine_title: "Your products.\nYour preferences.\nYour choice.",
+    routine_description:
+      "Start with what you need today and discover products that fit naturally into your routine.",
+    routine_step_1: "Choose a product group",
+    routine_step_2: "Choose your preference",
+    routine_step_3: "Discover your selection",
+    routine_link_label: "Explore products",
+    routine_link_url: "/shop",
+    routine_secondary_label: "Shop all products",
+    routine_secondary_url: "/shop",
+    routine_image_url: "local:hero",
+    routine_image_alt: "Unbranded products arranged on natural stone",
+    testimonials_eyebrow: "Notes from the ritual",
+    testimonial_1_name: "Aanya Mehta",
+    testimonial_1_product: "Barrier Restore Moisturizer",
+    testimonial_1_quote:
+      "The Barrier Restore Moisturizer became the easiest part of my evening routine. The texture feels rich without feeling heavy.",
+    testimonial_2_name: "Riya Kapoor",
+    testimonial_2_product: "Vitamin C Radiance Serum",
+    testimonial_2_quote:
+      "I love how simple the routine feels. The Vitamin C serum layers beautifully under sunscreen in the morning.",
+    testimonial_3_name: "Meera Sharma",
+    testimonial_3_product: "Gentle Barrier Cleanser",
+    testimonial_3_quote:
+      "The cleanser and moisturizer combination feels gentle and uncomplicated, which is exactly what I wanted from my routine.",
+    testimonial_4_name: "Sara Khan",
+    testimonial_4_product: "Niacinamide Balance Serum",
+    testimonial_4_quote:
+      "The website made it surprisingly easy to browse by concern instead of guessing which product I should start with.",
+    newsletter_eyebrow: "The Natural Beauty note",
+    newsletter_title: "A little more care,\ndelivered to your inbox.",
+    newsletter_description:
+      "New formulas, thoughtful skincare notes, early access and occasional offers — without the noise.",
+    newsletter_label: "Your email address",
+    newsletter_placeholder: "Your email address",
+    newsletter_button_label: "Join the list",
+    newsletter_submitting_label: "Joining…",
+    newsletter_privacy:
+      "By subscribing, you agree to receive Natural Beauty updates. You can unsubscribe at any time.",
+    newsletter_success:
+      "You’re on the list. Welcome to the Natural Beauty note.",
+    featured_eyebrow: "Most loved",
+    featured_title: "The best of Natural Beauty",
+    featured_description:
+      "Customer favourites selected from the full collection.",
+    featured_link_label: "View all products",
+    featured_link_url: "/shop",
+  },
+  trust: {
+    item_1_title: "Thoughtful formulas",
+    item_1_text: "Made for everyday skin rituals",
+    item_2_title: "Skin-first care",
+    item_2_text: "Solutions organized around your needs",
+    item_3_title: "Secure checkout",
+    item_3_text: "Protected and straightforward",
+    item_4_title: "Complimentary shipping",
+    item_4_text: "On orders above ₹999",
   },
   navigation: {
     header_links:
@@ -120,6 +239,7 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
     facebook_url: "",
     youtube_url: "",
     pinterest_url: "",
+    twitter_url: "",
     payment_methods: "UPI · Cards · Net Banking · COD",
     copyright_text: "© 2026",
   },
@@ -130,8 +250,27 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
       "Questions about a product, an order or finding your next formula? Our care team is here Monday–Saturday, 10:00 AM–6:00 PM.",
     email: "hello@naturalbeauty.example",
     phone: "+91 98765 43210",
+    phone_secondary: "",
     address_name: "Natural Beauty Studio",
     address_line: "Indiranagar, Bengaluru 560038",
+    cta_label: "Explore skincare",
+    cta_url: "/shop",
+    form_eyebrow: "Customer care",
+    form_title: "How can we help?",
+    form_description: "Send us a note and our team will get back to you shortly.",
+    name_label: "Name",
+    name_placeholder: "Your name",
+    email_label: "Email",
+    email_placeholder: "you@example.com",
+    order_label: "Order number",
+    order_optional_label: "(optional)",
+    order_placeholder: "NB-2026-0000",
+    message_label: "Message",
+    message_placeholder: "How can we help?",
+    submit_label: "Send message",
+    submitting_label: "Sending…",
+    sent_label: "Message sent",
+    map_title: "Store location",
     hours: "Monday–Saturday, 10:00 AM–6:00 PM",
     map_url:
       "https://www.openstreetmap.org/export/embed.html?bbox=77.625%2C12.965%2C77.645%2C12.985&layer=mapnik&marker=12.975%2C77.635",
@@ -195,7 +334,7 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
     featured_products_mobile: "2",
     new_products_desktop: "4",
     new_products_mobile: "2",
-    category_highlights_desktop: "4",
+    category_highlights_desktop: "5",
     category_highlights_mobile: "2",
     product_groups_desktop: "5",
     product_groups_mobile: "2",
@@ -625,7 +764,7 @@ export function SettingsPage() {
               ["storefront", "Storefront", "Branding, SEO and mega menu"],
               ["commerce", "Commerce", "Shipping, tax and payments"],
               ["communications", "Communications", "Email and security"],
-              ["homepage", "Homepage", "Hero, sections and navigation"],
+              ["homepage", "Homepage", "Hero, Section and Positions"],
               [
                 "header_footer",
                 "Header & footer",
@@ -955,6 +1094,14 @@ export function SettingsPage() {
                   setState={setState}
                 />
                 <Field
+                  label="Secondary support phone"
+                  group="contact"
+                  name="phone_secondary"
+                  state={state}
+                  setState={setState}
+                  help="Optional. Leave blank to hide it on the contact page."
+                />
+                <Field
                   label="Address name"
                   group="contact"
                   name="address_name"
@@ -983,6 +1130,24 @@ export function SettingsPage() {
                   setState={setState}
                   help="Paste any Google Maps Embed URL or OpenStreetMap iframe URL. Use an /embed or /export/embed URL, not a share link."
                 />
+                <Field label="CTA label" group="contact" name="cta_label" state={state} setState={setState} />
+                <Field label="CTA URL" group="contact" name="cta_url" state={state} setState={setState} />
+                <Field label="Form eyebrow" group="contact" name="form_eyebrow" state={state} setState={setState} />
+                <Field label="Form title" group="contact" name="form_title" state={state} setState={setState} />
+                <Field label="Form description" group="contact" name="form_description" type="textarea" state={state} setState={setState} />
+                <Field label="Name label" group="contact" name="name_label" state={state} setState={setState} />
+                <Field label="Name placeholder" group="contact" name="name_placeholder" state={state} setState={setState} />
+                <Field label="Email label" group="contact" name="email_label" state={state} setState={setState} />
+                <Field label="Email placeholder" group="contact" name="email_placeholder" state={state} setState={setState} />
+                <Field label="Order label" group="contact" name="order_label" state={state} setState={setState} />
+                <Field label="Order optional text" group="contact" name="order_optional_label" state={state} setState={setState} />
+                <Field label="Order placeholder" group="contact" name="order_placeholder" state={state} setState={setState} />
+                <Field label="Message label" group="contact" name="message_label" state={state} setState={setState} />
+                <Field label="Message placeholder" group="contact" name="message_placeholder" state={state} setState={setState} />
+                <Field label="Submit label" group="contact" name="submit_label" state={state} setState={setState} />
+                <Field label="Submitting label" group="contact" name="submitting_label" state={state} setState={setState} />
+                <Field label="Sent label" group="contact" name="sent_label" state={state} setState={setState} />
+                <Field label="Map title" group="contact" name="map_title" state={state} setState={setState} />
               </SettingsGroup>
             </div>
           )}
@@ -1040,7 +1205,6 @@ export function SettingsPage() {
                   ["Legal column title", "legal_title"],
                   ["Mobile guidance title", "mobile_guidance_title"],
                   ["Mobile guidance text", "mobile_guidance_text"],
-                  ["Footer links", "footer_links", "textarea"],
                   ["Shop links", "shop_links", "textarea"],
                   ["Customer care links", "customer_care_links", "textarea"],
                   ["About links", "about_links", "textarea"],
@@ -1049,6 +1213,7 @@ export function SettingsPage() {
                   ["Facebook URL", "facebook_url"],
                   ["YouTube URL", "youtube_url"],
                   ["Pinterest URL", "pinterest_url"],
+                  ["Twitter / X URL", "twitter_url"],
                   ["Support email", "support_email"],
                   ["Support phone", "support_phone"],
                   ["Store location", "location"],
@@ -1218,20 +1383,6 @@ export function SettingsPage() {
                   name="invoice_note"
                   state={state}
                   setState={setState}
-                />
-                <Field
-                  label="Store availability"
-                  group="store"
-                  name="maintenance_mode"
-                  options={[
-                    ["open", "Open · customers can order"],
-                    ["closed", "Closed · browse only"],
-                    ["coming_soon", "Opening soon · unavailable"],
-                    ["maintenance", "Maintenance mode · unavailable"],
-                  ]}
-                  state={state}
-                  setState={setState}
-                  help="Closed, Opening soon and Maintenance mode block checkout and order placement."
                 />
               </SettingsGroup>
               <SettingsGroup
@@ -1473,9 +1624,31 @@ export function SettingsPage() {
             <div className="settings-tab-panel">
               <SettingsGroup
                 icon={Globe2}
-                title="Homepage hero and calls to action"
-                description="Update the first impression without changing code."
+                title="Hero Section Settings"
+                description="Configure hero content, imagery and calls to action."
               >
+                <Field
+                  label="Visibility"
+                  group="homepage_sections"
+                  name="hero"
+                  options={[
+                    ["true", "Enabled"],
+                    ["false", "Disabled"],
+                  ]}
+                  state={state}
+                  setState={setState}
+                />
+                <Field
+                  label="Position"
+                  group="homepage_positions"
+                  name="hero"
+                  options={Array.from({ length: 13 }, (_, index) => [
+                    String(index + 1),
+                    `Position ${index + 1}`,
+                  ])}
+                  state={state}
+                  setState={setState}
+                />
                 <Field
                   label="Eyebrow"
                   group="homepage"
@@ -1569,105 +1742,398 @@ export function SettingsPage() {
                   help="Optional caption shown over the hero image."
                 />
               </SettingsGroup>
-              <SettingsGroup
-                icon={Settings2}
-                title="Homepage sections"
-                description="Choose visibility and display position for each homepage section."
-              >
-                {Object.entries(defaults.homepage_sections).map(([name]) => (
-                  <Fragment key={name}>
-                    <Field
-                      label={`${
-                        {
-                          hero: "Hero banner",
-                          trust: "Trust highlights",
-                          concerns: "Category highlights",
-                          bestsellers: "Featured products",
-                          skin_types: "Product groups",
-                          brand_story: "Brand story",
-                          ingredient: "Ingredients",
-                          principles: "Principles",
-                          ritual: "Ritual banner",
-                          new_arrivals: "New products",
-                          routine: "Routine guide",
-                          testimonials: "Testimonials",
-                          newsletter: "Newsletter",
-                        }[name] || name.replaceAll("_", " ")
-                      } visibility`}
-                      group="homepage_sections"
-                      name={name}
-                      options={[
-                        ["true", "Enabled"],
-                        ["false", "Disabled"],
-                      ]}
-                      state={state}
-                      setState={setState}
-                    />
-                    <Field
-                      label={`${
-                        {
-                          hero: "Hero banner",
-                          trust: "Trust highlights",
-                          concerns: "Category highlights",
-                          bestsellers: "Featured products",
-                          skin_types: "Product groups",
-                          brand_story: "Brand story",
-                          ingredient: "Ingredients",
-                          principles: "Principles",
-                          ritual: "Ritual banner",
-                          new_arrivals: "New products",
-                          routine: "Routine guide",
-                          testimonials: "Testimonials",
-                          newsletter: "Newsletter",
-                        }[name] || name.replaceAll("_", " ")
-                      } position`}
-                      group="homepage_positions"
-                      name={name}
-                      options={Array.from({ length: 13 }, (_, index) => [
-                        String(index + 1),
-                        `Position ${index + 1}`,
-                      ])}
-                      state={state}
-                      setState={setState}
-                    />
-                  </Fragment>
-                ))}
-              </SettingsGroup>
-              <SettingsGroup
-                icon={Settings2}
-                title="Homepage item limits"
-                description="Choose how many products and category cards appear on desktop and mobile."
-              >
-                {[
-                  ["Featured products · desktop", "featured_products_desktop"],
-                  ["Featured products · mobile", "featured_products_mobile"],
-                  ["New products · desktop", "new_products_desktop"],
-                  ["New products · mobile", "new_products_mobile"],
-                  [
-                    "Category highlights · desktop",
-                    "category_highlights_desktop",
-                  ],
-                  [
-                    "Category highlights · mobile",
-                    "category_highlights_mobile",
-                  ],
-                  ["Product groups · desktop", "product_groups_desktop"],
-                  ["Product groups · mobile", "product_groups_mobile"],
-                ].map(([label, name]) => (
+              {[
+                ["trust", "Trust highlights"],
+                ["concerns", "Category highlights", "category_highlights"],
+                ["bestsellers", "Featured products", "featured_products"],
+                ["skin_types", "Top Level Categories", "product_groups"],
+                ["brand_story", "Brand story"],
+                ["ingredient", "Product highlights"],
+                ["principles", "Principles"],
+                ["ritual", "Showcase"],
+                ["new_arrivals", "New products", "new_products"],
+                ["routine", "Product discovery"],
+                ["testimonials", "Testimonials"],
+                ["newsletter", "Newsletter"],
+              ].map(([name, title, limitKey]) => (
+                <SettingsGroup
+                  key={name}
+                  icon={Settings2}
+                  title={title}
+                  description="Control visibility and display position for this section."
+                >
                   <Field
-                    key={name}
-                    label={label}
-                    group="homepage_limits"
+                    label="Visibility"
+                    group="homepage_sections"
                     name={name}
-                    type="number"
+                    options={[
+                      ["true", "Enabled"],
+                      ["false", "Disabled"],
+                    ]}
                     state={state}
                     setState={setState}
-                    min="0"
-                    max="12"
                   />
-                ))}
-              </SettingsGroup>
-              <SettingsGroup
+                  <Field
+                    label="Position"
+                    group="homepage_positions"
+                    name={name}
+                    options={Array.from({ length: 13 }, (_, index) => [
+                      String(index + 1),
+                      `Position ${index + 1}`,
+                    ])}
+                    state={state}
+                    setState={setState}
+                  />
+                  {limitKey && (
+                    <>
+                      <Field
+                        label="Desktop item count"
+                        group="homepage_limits"
+                        name={`${limitKey}_desktop`}
+                        type="number"
+                        state={state}
+                        setState={setState}
+                        min="0"
+                        max="12"
+                      />
+                      <Field
+                        label="Mobile item count"
+                        group="homepage_limits"
+                        name={`${limitKey}_mobile`}
+                        type="number"
+                        state={state}
+                        setState={setState}
+                        min="0"
+                        max="12"
+                      />
+                    </>
+                  )}
+                  {name === "trust" &&
+                    [1, 2, 3, 4]
+                      .flatMap((number) => [
+                        [`Highlight ${number} title`, `item_${number}_title`],
+                        [`Highlight ${number} text`, `item_${number}_text`],
+                      ])
+                      .map(([label, fieldName]) => (
+                        <Field
+                          key={fieldName}
+                          label={label}
+                          group="trust"
+                          name={fieldName}
+                          state={state}
+                          setState={setState}
+                        />
+                      ))}
+                  {name === "concerns" &&
+                    [
+                      ["Eyebrow", "category_eyebrow"],
+                      ["Title", "category_title"],
+                      ["Description", "category_description"],
+                      ["Link label", "category_link_label"],
+                      ["Link URL", "category_link_url"],
+                    ].map(([label, fieldName]) => (
+                      <Field
+                        key={fieldName}
+                        label={label}
+                        group="homepage"
+                        name={fieldName}
+                        type={
+                          fieldName === "category_description"
+                            ? "textarea"
+                            : "text"
+                        }
+                        state={state}
+                        setState={setState}
+                      />
+                    ))}
+                  {name === "skin_types" &&
+                    [
+                      ["Eyebrow", "groups_eyebrow"],
+                      ["Title", "groups_title"],
+                      ["Description", "groups_description"],
+                      ["Link label", "groups_link_label"],
+                      ["Link URL", "groups_link_url"],
+                    ].map(([label, fieldName]) => (
+                      <Field
+                        key={fieldName}
+                        label={label}
+                        group="homepage"
+                        name={fieldName}
+                        type={
+                          fieldName === "groups_description"
+                            ? "textarea"
+                            : "text"
+                        }
+                        state={state}
+                        setState={setState}
+                      />
+                    ))}
+                  {name === "brand_story" &&
+                    [
+                      ["Eyebrow", "brand_eyebrow"],
+                      ["Title", "brand_title"],
+                      ["Description", "brand_description"],
+                      ["Link label", "brand_link_label"],
+                      ["Link URL", "brand_link_url"],
+                      ["Image URL", "brand_image_url"],
+                      ["Image alt text", "brand_image_alt"],
+                      ["Note title", "brand_note_title"],
+                      ["Note text", "brand_note_text"],
+                    ].map(([label, fieldName]) => (
+                      <Field
+                        key={fieldName}
+                        label={label}
+                        group="homepage"
+                        name={fieldName}
+                        type={
+                          fieldName === "brand_description"
+                            || fieldName === "brand_note_text"
+                            ? "textarea"
+                            : "text"
+                        }
+                        state={state}
+                        setState={setState}
+                        placeholder={
+                          fieldName === "brand_image_url"
+                            ? "local:hero or https://..."
+                            : undefined
+                        }
+                      />
+                    ))}
+                  {name === "ingredient" &&
+                    [
+                      ["Eyebrow", "ingredients_eyebrow"],
+                      ["Title", "ingredients_title"],
+                      ["Description", "ingredients_description"],
+                      ["Image URL", "ingredients_image_url"],
+                      ["Image alt text", "ingredients_image_alt"],
+                    ].map(([label, fieldName]) => (
+                      <Field
+                        key={fieldName}
+                        label={label}
+                        group="homepage"
+                        name={fieldName}
+                        type={
+                          fieldName === "ingredients_description"
+                            ? "textarea"
+                            : "text"
+                        }
+                        state={state}
+                        setState={setState}
+                        placeholder={
+                          fieldName === "ingredients_image_url"
+                            ? "local:hero or https://..."
+                            : undefined
+                        }
+                      />
+                    ))}
+                  {name === "ingredient" &&
+                    [1, 2, 3, 4, 5, 6].flatMap((number) => [
+                      [`Highlight ${number} title`, `highlight_${number}_title`],
+                      [`Highlight ${number} text`, `highlight_${number}_text`],
+                    ]).map(([label, fieldName]) => (
+                      <Field
+                        key={fieldName}
+                        label={label}
+                        group="homepage"
+                        name={fieldName}
+                        state={state}
+                        setState={setState}
+                      />
+                    ))}
+                  {name === "principles" && (
+                    <>
+                      <Field
+                        label="Section title"
+                        group="homepage"
+                        name="principles_title"
+                        state={state}
+                        setState={setState}
+                      />
+                      {[1, 2, 3].flatMap((number) => [
+                        [`Card ${number} title`, `principle_${number}_title`],
+                        [`Card ${number} text`, `principle_${number}_text`],
+                      ]).map(([label, fieldName]) => (
+                        <Field
+                          key={fieldName}
+                          label={label}
+                          group="homepage"
+                          name={fieldName}
+                          type={fieldName.endsWith("_text") ? "textarea" : "text"}
+                          state={state}
+                          setState={setState}
+                        />
+                      ))}
+                    </>
+                  )}
+                  {name === "ritual" &&
+                    [
+                      ["Eyebrow", "ritual_eyebrow"],
+                      ["Title", "ritual_title"],
+                      ["Description", "ritual_description"],
+                      ["Link label", "ritual_link_label"],
+                      ["Link URL", "ritual_link_url"],
+                      ["Image URL", "ritual_image_url"],
+                      ["Image alt text", "ritual_image_alt"],
+                    ].map(([label, fieldName]) => (
+                      <Field
+                        key={fieldName}
+                        label={label}
+                        group="homepage"
+                        name={fieldName}
+                        type={
+                          fieldName === "ritual_title" ||
+                          fieldName === "ritual_description"
+                            ? "textarea"
+                            : "text"
+                        }
+                        state={state}
+                        setState={setState}
+                        placeholder={
+                          fieldName === "ritual_image_url"
+                            ? "local:hero or https://..."
+                            : undefined
+                        }
+                      />
+                    ))}
+                  {name === "new_arrivals" &&
+                    [
+                      ["Eyebrow", "new_eyebrow"],
+                      ["Title", "new_title"],
+                      ["Description", "new_description"],
+                      ["Link label", "new_link_label"],
+                      ["Link URL", "new_link_url"],
+                    ].map(([label, fieldName]) => (
+                      <Field
+                        key={fieldName}
+                        label={label}
+                        group="homepage"
+                        name={fieldName}
+                        type={
+                          fieldName === "new_description" ? "textarea" : "text"
+                        }
+                        state={state}
+                        setState={setState}
+                      />
+                    ))}
+                  {name === "routine" &&
+                    [
+                      ["Eyebrow", "routine_eyebrow"],
+                      ["Title", "routine_title"],
+                      ["Description", "routine_description"],
+                      ["Step 1", "routine_step_1"],
+                      ["Step 2", "routine_step_2"],
+                      ["Step 3", "routine_step_3"],
+                      ["Primary link label", "routine_link_label"],
+                      ["Primary link URL", "routine_link_url"],
+                      ["Secondary link label", "routine_secondary_label"],
+                      ["Secondary link URL", "routine_secondary_url"],
+                      ["Image URL", "routine_image_url"],
+                      ["Image alt text", "routine_image_alt"],
+                    ].map(([label, fieldName]) => (
+                      <Field
+                        key={fieldName}
+                        label={label}
+                        group="homepage"
+                        name={fieldName}
+                        type={
+                          fieldName === "routine_title" ||
+                          fieldName === "routine_description"
+                            ? "textarea"
+                            : "text"
+                        }
+                        state={state}
+                        setState={setState}
+                        placeholder={
+                          fieldName === "routine_image_url"
+                            ? "local:hero or https://..."
+                            : undefined
+                        }
+                      />
+                    ))}
+                  {name === "testimonials" && (
+                    <>
+                      <Field
+                        label="Eyebrow"
+                        group="homepage"
+                        name="testimonials_eyebrow"
+                        state={state}
+                        setState={setState}
+                      />
+                      {[1, 2, 3, 4].flatMap((number) => [
+                        ["Name", `testimonial_${number}_name`],
+                        ["Product or label", `testimonial_${number}_product`],
+                        ["Quote", `testimonial_${number}_quote`],
+                      ]).map(([label, fieldName]) => (
+                        <Field
+                          key={fieldName}
+                          label={`Testimonial ${fieldName.split("_")[1]} ${label}`}
+                          group="homepage"
+                          name={fieldName}
+                          type={fieldName.endsWith("_quote") ? "textarea" : "text"}
+                          state={state}
+                          setState={setState}
+                        />
+                      ))}
+                    </>
+                  )}
+                  {name === "newsletter" &&
+                    [
+                      ["Eyebrow", "newsletter_eyebrow"],
+                      ["Title", "newsletter_title"],
+                      ["Description", "newsletter_description"],
+                      ["Email label", "newsletter_label"],
+                      ["Email placeholder", "newsletter_placeholder"],
+                      ["Button label", "newsletter_button_label"],
+                      ["Submitting label", "newsletter_submitting_label"],
+                      ["Privacy note", "newsletter_privacy"],
+                      ["Success message", "newsletter_success"],
+                    ].map(([label, fieldName]) => (
+                      <Field
+                        key={fieldName}
+                        label={label}
+                        group="homepage"
+                        name={fieldName}
+                        type={
+                          [
+                            "newsletter_title",
+                            "newsletter_description",
+                            "newsletter_privacy",
+                            "newsletter_success",
+                          ].includes(fieldName)
+                            ? "textarea"
+                            : "text"
+                        }
+                        state={state}
+                        setState={setState}
+                      />
+                    ))}
+                  {name === "bestsellers" &&
+                    [
+                      ["Eyebrow", "featured_eyebrow"],
+                      ["Title", "featured_title"],
+                      ["Description", "featured_description"],
+                      ["Link label", "featured_link_label"],
+                      ["Link URL", "featured_link_url"],
+                    ].map(([label, fieldName]) => (
+                      <Field
+                        key={fieldName}
+                        label={label}
+                        group="homepage"
+                        name={fieldName}
+                        type={
+                          fieldName === "featured_description"
+                            ? "textarea"
+                            : "text"
+                        }
+                        state={state}
+                        setState={setState}
+                      />
+                    ))}
+                </SettingsGroup>
+              ))}
+              {false && (
+                <SettingsGroup
                 icon={Globe2}
                 title="Header and footer navigation"
                 description="Maintain visible menu labels and customer-care links."
@@ -1713,13 +2179,54 @@ export function SettingsPage() {
                   setState={setState}
                 />
                 <Field
-                  label="Footer links"
+                  label="Footer secondary tagline"
                   group="footer"
-                  name="footer_links"
+                  name="tagline_secondary"
                   type="textarea"
                   state={state}
                   setState={setState}
-                  help="One link per line in the format Label|/path."
+                />
+                <Field
+                  label="Shop column title"
+                  group="footer"
+                  name="shop_title"
+                  state={state}
+                  setState={setState}
+                />
+                <Field
+                  label="Customer care column title"
+                  group="footer"
+                  name="customer_care_title"
+                  state={state}
+                  setState={setState}
+                />
+                <Field
+                  label="About column title"
+                  group="footer"
+                  name="about_title"
+                  state={state}
+                  setState={setState}
+                />
+                <Field
+                  label="Legal column title"
+                  group="footer"
+                  name="legal_title"
+                  state={state}
+                  setState={setState}
+                />
+                <Field
+                  label="Mobile guidance title"
+                  group="footer"
+                  name="mobile_guidance_title"
+                  state={state}
+                  setState={setState}
+                />
+                <Field
+                  label="Mobile guidance text"
+                  group="footer"
+                  name="mobile_guidance_text"
+                  state={state}
+                  setState={setState}
                 />
                 <Field
                   label="Footer column 2 — Shop"
@@ -1811,7 +2318,22 @@ export function SettingsPage() {
                   setState={setState}
                   placeholder="Bengaluru, Karnataka"
                 />
-              </SettingsGroup>
+                <Field
+                  label="Payment methods text"
+                  group="footer"
+                  name="payment_methods"
+                  state={state}
+                  setState={setState}
+                />
+                <Field
+                  label="Copyright text"
+                  group="footer"
+                  name="copyright_text"
+                  state={state}
+                  setState={setState}
+                />
+                </SettingsGroup>
+              )}
             </div>
           )}
         </form>

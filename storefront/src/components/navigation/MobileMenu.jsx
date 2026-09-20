@@ -47,8 +47,7 @@ export function MobileMenu({ open, onClose }) {
     settings.footer?.mobile_guidance_text || "",
   ).trim();
   const headerLinks = parseHeaderLinks(
-    settings.navigation?.header_links ||
-      "Shop|/shop\nSkin|/skin-types\nConcerns|/concerns\nCollections|/collections\nJournal|/journal\nAbout|/about",
+    settings.navigation?.header_links,
   );
   useFocusTrap(ref, open, onClose);
   return (

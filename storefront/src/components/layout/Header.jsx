@@ -41,8 +41,7 @@ export function Header({ onSearch, onCart, onMenu }) {
   const businessName = getBusinessName(settings);
   const logo = settings.branding?.logo_url || "";
   const headerLinks = parseHeaderLinks(
-    settings.navigation?.header_links ||
-      "Shop|/shop\nSkin|/skin-types\nConcerns|/concerns\nCollections|/collections\nJournal|/journal\nAbout|/about",
+    settings.navigation?.header_links,
   );
   const bagLabel = `Shopping bag, ${count} ${count === 1 ? "item" : "items"}`;
   const accountReady = authStatus !== "checking";

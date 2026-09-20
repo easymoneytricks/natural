@@ -77,7 +77,18 @@ export async function getProductBySlug(slug, options) {
   };
 }
 
-export const getCategories = (options) => apiRequest("/categories", options);
+export async function getCategories(options) {
+  const payload = await apiRequest("/categories", options);
+  return {
+    ...payload,
+    data: payload.data.map((category) => ({
+      ...category,
+      image: category.image?.startsWith("/uploads/")
+        ? mediaUrl(category.image)
+        : category.image || "",
+    })),
+  };
+}
 export const getBrands = (options) => apiRequest("/brands", options);
 export const getCatalogFilters = (options) =>
   apiRequest("/catalog/filters", options);

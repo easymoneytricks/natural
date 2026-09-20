@@ -1726,20 +1726,20 @@ input:focus-visible {
 
 .concerns-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1.28fr 0.86fr 0.86fr;
+  grid-template-rows: repeat(2, minmax(260px, 1fr));
   gap: 16px;
 }
 
 .concern-tile {
   position: relative;
-  min-height: 350px;
+  min-height: 0;
   overflow: hidden;
   background: #e3e6df;
 }
 
-.concern-tile:nth-child(2),
-.concern-tile:nth-child(5) {
-  min-height: 415px;
+.concern-tile:first-child {
+  grid-row: span 2;
 }
 
 .concern-tile::after {
@@ -1889,10 +1889,10 @@ input:focus-visible {
   }
   .concerns-grid {
     grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 230px);
   }
-  .concern-tile:nth-child(2),
-  .concern-tile:nth-child(5) {
-    min-height: 350px;
+  .concern-tile:first-child {
+    grid-row: span 2;
   }
 }
 
@@ -1955,11 +1955,10 @@ input:focus-visible {
     padding-right: 28px;
     scroll-snap-type: x mandatory;
   }
-  .concern-tile,
-  .concern-tile:nth-child(2),
-  .concern-tile:nth-child(5) {
+  .concern-tile {
     min-width: 77vw;
     min-height: 365px;
+    grid-row: auto;
     scroll-snap-align: start;
   }
   .editorial-teaser {
@@ -2349,9 +2348,9 @@ input:focus-visible {
 }
 .skin-types-grid {
   display: grid;
-  grid-template-columns: 1.28fr 0.86fr 0.86fr;
-  grid-template-rows: repeat(2, 250px);
-  gap: 14px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(420px, 1fr);
+  gap: 20px;
 }
 .skin-type-tile {
   position: relative;
@@ -2359,7 +2358,7 @@ input:focus-visible {
   background: #e3e5df;
 }
 .skin-type-1 {
-  grid-row: span 2;
+  grid-row: auto;
 }
 .skin-type-tile::after {
   position: absolute;
@@ -2386,7 +2385,7 @@ input:focus-visible {
 }
 .skin-type-tile h3 {
   margin: 0;
-  font: 26px var(--serif);
+  font: 32px var(--serif);
   letter-spacing: -0.03em;
 }
 .skin-type-tile p {
@@ -2595,10 +2594,10 @@ input:focus-visible {
 @media (max-width: 800px) {
   .skin-types-grid {
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(3, 230px);
+    grid-auto-rows: 320px;
   }
   .skin-type-1 {
-    grid-row: span 2;
+    grid-row: auto;
   }
   .brand-story-section,
   .ingredient-section {
@@ -2641,7 +2640,7 @@ input:focus-visible {
 @media (max-width: 520px) {
   .skin-types-grid {
     width: calc(100% + 14px);
-    grid-template-rows: repeat(3, 190px);
+    grid-auto-rows: 280px;
     gap: 8px;
   }
   .skin-type-tile h3 {
