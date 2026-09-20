@@ -22,7 +22,7 @@ async function guestItems(pool, input = []) {
       const quantity = Number(item?.quantity);
       if (!Number.isInteger(quantity) || quantity < 1) continue;
       const [rows] = await connection.execute(
-        `SELECT ps.id sku_id,ps.sku,ps.price,ps.mrp,ps.track_inventory,ps.allow_backorder,ps.is_active sku_active,ps.deleted_at sku_deleted,p.id product_id,p.slug,p.name,p.is_active product_active,p.deleted_at product_deleted,i.quantity_on_hand,i.reserved_quantity FROM product_skus ps JOIN products p ON p.id=ps.product_id LEFT JOIN inventory i ON i.sku_id=ps.id WHERE ps.id=?`,
+        `SELECT ps.id sku_id,ps.sku,ps.price,ps.mrp,ps.weight_grams,ps.track_inventory,ps.allow_backorder,ps.is_active sku_active,ps.deleted_at sku_deleted,p.id product_id,p.slug,p.name,p.hsn_sac,p.is_active product_active,p.deleted_at product_deleted,i.quantity_on_hand,i.reserved_quantity FROM product_skus ps JOIN products p ON p.id=ps.product_id LEFT JOIN inventory i ON i.sku_id=ps.id WHERE ps.id=?`,
         [Number(item.skuId)],
       );
       if (rows[0]) result.push({ ...rows[0], quantity });
@@ -49,8 +49,14 @@ function line(row) {
   return {
     skuId: row.sku_id,
     sku: row.sku,
-    product: { id: row.product_id, slug: row.slug, name: row.name },
+    product: {
+      id: row.product_id,
+      slug: row.slug,
+      name: row.name,
+      hsnSac: row.hsn_sac,
+    },
     quantity: row.quantity,
+    weightGrams: Number(row.weight_grams || 0),
     price: Number(row.price),
     mrp: Number(row.mrp),
     lineSubtotal: purchasable ? Number(row.price) * row.quantity : 0,
@@ -86,6 +92,17 @@ async function readTaxSettings(pool) {
     }
     return result;
   }, {});
+  const [shippingRows] = await pool.execute(
+    "SELECT setting_key,value_json FROM store_settings WHERE setting_group='shipping'",
+  );
+  const shippingValues = shippingRows.reduce((result, row) => {
+    try {
+      result[row.setting_key] = JSON.parse(row.value_json);
+    } catch {
+      result[row.setting_key] = row.value_json;
+    }
+    return result;
+  }, {});
   return {
     enabled: values.enabled === true || values.enabled === "true",
     rate: Math.max(0, Math.min(100, Number(values.default_rate || 0))),
@@ -102,6 +119,32 @@ async function readTaxSettings(pool) {
     sellerStateCode: String(values.seller_state_code || "").trim(),
     reverseCharge:
       values.reverse_charge === true || values.reverse_charge === "true",
+    shippingMode: String(shippingValues.mode || "fixed"),
+    shippingSlabs: (() => {
+      try {
+        const raw = String(shippingValues.weight_slabs || "").trim();
+        let parsed;
+        try {
+          parsed = JSON.parse(raw || "[]");
+        } catch {
+          parsed = raw.split(/\r?\n|,/).map((entry) => {
+            const [upToGrams, rate] = entry.split(/[=:]/).map(Number);
+            return { up_to_grams: upToGrams, rate };
+          });
+        }
+        return Array.isArray(parsed)
+          ? parsed
+              .map((slab) => ({
+                upToGrams: Number(slab.up_to_grams),
+                rate: Math.max(0, Number(slab.rate)),
+              }))
+              .filter((slab) => slab.upToGrams > 0)
+              .sort((a, b) => a.upToGrams - b.upToGrams)
+          : [];
+      } catch {
+        return [];
+      }
+    })(),
   };
 }
 export async function shippingMethods(pool) {
@@ -214,11 +257,23 @@ export async function quote(
       code: "SHIPPING_METHOD_UNAVAILABLE",
       message: "Selected delivery method is unavailable.",
     });
+  const totalWeightGrams = valid.reduce(
+    (sum, item) => sum + item.weightGrams * item.quantity,
+    0,
+  );
+  const configuredRate =
+    taxSettings.shippingMode === "slab"
+      ? (taxSettings.shippingSlabs.find(
+          (slab) => totalWeightGrams <= slab.upToGrams,
+        )?.rate ??
+        ship?.fee ??
+        0)
+      : (ship?.fee ?? 0);
   const shipping = ship
     ? ship.freeShippingThreshold !== null &&
       subtotal >= paise(ship.freeShippingThreshold)
       ? 0
-      : paise(ship.fee)
+      : paise(configuredRate)
     : 0;
   const couponDiscount = paise(coupon?.discount);
   const beforeGift = Math.max(0, subtotal - couponDiscount + shipping);
@@ -242,8 +297,8 @@ export async function quote(
       giftCardId && customerId
         ? "SELECT gc.* FROM gift_cards gc JOIN customer_gift_cards cgc ON cgc.gift_card_id=gc.id AND cgc.customer_id=? WHERE gc.id=? AND gc.deleted_at IS NULL LIMIT 1"
         : customerId
-        ? "SELECT gc.* FROM gift_cards gc LEFT JOIN customer_gift_cards cgc ON cgc.gift_card_id=gc.id AND cgc.customer_id=? WHERE gc.code_hash=? AND gc.deleted_at IS NULL AND (cgc.id IS NOT NULL OR NOT EXISTS (SELECT 1 FROM customer_gift_cards WHERE gift_card_id=gc.id)) LIMIT 1"
-        : "SELECT * FROM gift_cards WHERE code_hash=? AND deleted_at IS NULL LIMIT 1",
+          ? "SELECT gc.* FROM gift_cards gc LEFT JOIN customer_gift_cards cgc ON cgc.gift_card_id=gc.id AND cgc.customer_id=? WHERE gc.code_hash=? AND gc.deleted_at IS NULL AND (cgc.id IS NOT NULL OR NOT EXISTS (SELECT 1 FROM customer_gift_cards WHERE gift_card_id=gc.id)) LIMIT 1"
+          : "SELECT * FROM gift_cards WHERE code_hash=? AND deleted_at IS NULL LIMIT 1",
       giftCardId && customerId
         ? [customerId, giftCardId]
         : customerId
@@ -293,6 +348,7 @@ export async function quote(
         method: ship?.code || String(shippingMethod).toUpperCase(),
         fee: rupees(shipping),
         freeShippingApplied: shipping === 0,
+        weightGrams: totalWeightGrams,
       },
       giftCard: giftCard ? { ...giftCard } : null,
       tax: {

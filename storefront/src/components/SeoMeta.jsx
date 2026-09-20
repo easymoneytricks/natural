@@ -43,13 +43,34 @@ export function SeoMeta({
 }) {
   const settings = useStoreSettings();
   const businessName = getBusinessName(settings);
+  const seo = settings.seo || {};
+  const siteTitle = String(seo.site_title || "").trim();
   useEffect(() => {
     const canonical = resolveCanonical(canonicalUrl);
+    const faviconUrl = settings.branding?.favicon_url?.trim();
+    let favicon = document.head.querySelector("link[rel='icon']");
+    if (faviconUrl) {
+      if (!favicon) {
+        favicon = document.createElement("link");
+        favicon.rel = "icon";
+        document.head.appendChild(favicon);
+      }
+      favicon.href = faviconUrl;
+    } else {
+      favicon?.remove();
+    }
+    const titleSuffix = siteTitle || businessName;
+    const effectiveDescription =
+      description ||
+      seo.meta_description ||
+      "Thoughtfully formulated skincare for everyday rituals.";
+    const effectiveKeywords = keywords || seo.keywords || "";
+    const effectiveImage = image || seo.og_image_url || "";
     document.title = title
-      ? title.endsWith(`| ${businessName}`)
+      ? title.endsWith(`| ${titleSuffix}`)
         ? title
-        : `${title} | ${businessName}`
-      : businessName;
+        : `${title} | ${titleSuffix}`
+      : titleSuffix;
     let link = document.head.querySelector("link[rel='canonical']");
     if (!link) {
       link = document.createElement("link");
@@ -60,42 +81,58 @@ export function SeoMeta({
     upsert(
       "meta[name='description']",
       { name: "description" },
-      description || "Thoughtfully formulated skincare for everyday rituals.",
+      effectiveDescription,
     );
-    upsert("meta[name='keywords']", { name: "keywords" }, keywords || "");
+    upsert("meta[name='keywords']", { name: "keywords" }, effectiveKeywords);
     upsert(
       "meta[property='og:title']",
       { property: "og:title" },
-      title || businessName,
+      title || titleSuffix,
     );
     upsert(
       "meta[property='og:description']",
       { property: "og:description" },
-      description || "Thoughtfully formulated skincare for everyday rituals.",
+      effectiveDescription,
     );
     upsert("meta[property='og:url']", { property: "og:url" }, canonical);
     upsert("meta[property='og:type']", { property: "og:type" }, type);
-    upsert("meta[property='og:image']", { property: "og:image" }, image || "");
+    upsert(
+      "meta[property='og:image']",
+      { property: "og:image" },
+      effectiveImage,
+    );
     upsert(
       "meta[name='twitter:card']",
       { name: "twitter:card" },
-      image ? "summary_large_image" : "summary",
+      effectiveImage ? "summary_large_image" : "summary",
     );
     upsert(
       "meta[name='twitter:title']",
       { name: "twitter:title" },
-      title || businessName,
+      title || titleSuffix,
     );
     upsert(
       "meta[name='twitter:image']",
       { name: "twitter:image" },
-      image || "",
+      effectiveImage,
     );
     upsert(
       "meta[name='robots']",
       { name: "robots" },
-      noindex ? "noindex,nofollow" : "index,follow",
+      noindex ? "noindex,nofollow" : seo.robots || "index,follow",
     );
+    const verification = String(seo.google_site_verification || "").trim();
+    if (verification) {
+      upsert(
+        "meta[name='google-site-verification']",
+        { name: "google-site-verification" },
+        verification,
+      );
+    } else {
+      document.head
+        .querySelector("meta[name='google-site-verification']")
+        ?.remove();
+    }
   }, [
     title,
     description,
@@ -105,6 +142,13 @@ export function SeoMeta({
     keywords,
     canonicalUrl,
     businessName,
+    siteTitle,
+    seo.meta_description,
+    seo.keywords,
+    seo.og_image_url,
+    seo.robots,
+    seo.google_site_verification,
+    settings.branding?.favicon_url,
   ]);
   return null;
 }

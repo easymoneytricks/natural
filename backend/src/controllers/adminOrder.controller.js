@@ -75,8 +75,17 @@ export const invoice = w(async (req, res) => {
     `attachment; filename="${detail.order.orderNumber}-invoice.pdf"`,
   );
   document.pipe(res);
-  document.fontSize(22).text("Natural Beauty");
+  document.fontSize(22).text(detail.order.sellerLegalName || "Seller");
   document.fontSize(11).text("Tax invoice");
+  document
+    .fontSize(10)
+    .text("Seller: " + (detail.order.sellerLegalName || "Seller"))
+    .text("Address: " + (detail.order.sellerAddress || "Not configured"))
+    .text(
+      detail.order.sellerGstin
+        ? "GSTIN: " + detail.order.sellerGstin
+        : "GSTIN: Not configured",
+    );
   document.moveDown();
   document.fontSize(14).text(`Order ${detail.order.orderNumber}`);
   document
@@ -86,7 +95,7 @@ export const invoice = w(async (req, res) => {
   document.moveDown();
   detail.items.forEach((item, index) => {
     document.text(
-      `${index + 1}. ${item.product_name} | ${item.sku_code} | Qty ${item.quantity} | INR ${Number(item.line_subtotal).toFixed(2)}`,
+      `${index + 1}. ${item.product_name} | ${item.sku_code} | Qty ${item.quantity} | INR ${Number(item.line_subtotal).toFixed(2)} | HSN/SAC: ${item.hsn_sac || detail.pricing.tax?.hsnSac || "Not configured"}`,
     );
   });
   document.moveDown();

@@ -20,6 +20,17 @@ import {
 } from "../../context/StoreSettingsContext";
 
 const navItems = ["Shop", "Skin", "Concerns", "Collections"];
+const parseHeaderLinks = (value) =>
+  String(value || "")
+    .split(/\r?\n/)
+    .map((line) => {
+      const separator = line.indexOf("|");
+      if (separator < 1) return null;
+      const label = line.slice(0, separator).trim();
+      const target = line.slice(separator + 1).trim();
+      return label && target ? { label, target } : null;
+    })
+    .filter(Boolean);
 
 export function Header({ onSearch, onCart, onMenu }) {
   const { count } = useCart();
@@ -28,9 +39,11 @@ export function Header({ onSearch, onCart, onMenu }) {
   const { isAuthenticated, user, authStatus } = useAuth();
   const settings = useStoreSettings();
   const businessName = getBusinessName(settings);
-  const logo =
-    settings.branding?.logo_url ||
-    "https://www.svgrepo.com/show/42722/skincare.svg";
+  const logo = settings.branding?.logo_url || "";
+  const headerLinks = parseHeaderLinks(
+    settings.navigation?.header_links ||
+      "Shop|/shop\nSkin|/skin-types\nConcerns|/concerns\nCollections|/collections\nJournal|/journal\nAbout|/about",
+  );
   const bagLabel = `Shopping bag, ${count} ${count === 1 ? "item" : "items"}`;
   const accountReady = authStatus !== "checking";
   return (
@@ -40,7 +53,15 @@ export function Header({ onSearch, onCart, onMenu }) {
           <Menu />
         </IconButton>
         <Link to="/" className="wordmark">
-          <img className="brand-logo" src={logo} alt={`${businessName} logo`} />
+          {logo ? (
+            <img
+              className="brand-logo"
+              src={logo}
+              alt={`${businessName} logo`}
+            />
+          ) : (
+            <span className="wordmark-name">{businessName}</span>
+          )}
         </Link>
         <span>
           <IconButton label="Search" onClick={onSearch}>
@@ -54,30 +75,51 @@ export function Header({ onSearch, onCart, onMenu }) {
       </div>
       <div className="desktop-header container">
         <Link to="/" className="wordmark">
-          <img className="brand-logo" src={logo} alt={`${businessName} logo`} />
+          {logo ? (
+            <img
+              className="brand-logo"
+              src={logo}
+              alt={`${businessName} logo`}
+            />
+          ) : (
+            <span className="wordmark-name">{businessName}</span>
+          )}
         </Link>
         <nav aria-label="Main navigation">
           <ul>
-            {navItems.map((name) => (
-              <li className="nav-item" key={name}>
-                <button>
-                  {name}
-                  <ChevronDown size={14} />
-                </button>
-                <MegaMenu
-                  item={parseMegaMenu(
-                    settings.mega_menu?.[name.toLowerCase()],
-                    menus[name],
-                  )}
-                />
-              </li>
-            ))}
-            <li>
-              <Link to="/journal">Journal</Link>
-            </li>
-            <li>
-              <Link to="/about">About</Link>
-            </li>
+            {headerLinks.map(({ label, target }) => {
+              const menuName = navItems.find(
+                (name) => name.toLowerCase() === label.toLowerCase(),
+              );
+              const configuredMenu = menuName
+                ? settings.mega_menu?.[menuName.toLowerCase()]
+                : null;
+              if (
+                menuName &&
+                ((typeof configuredMenu === "string" &&
+                  !configuredMenu.trim()) ||
+                  (Array.isArray(configuredMenu) && !configuredMenu.length))
+              )
+                return null;
+              return menuName ? (
+                <li className="nav-item" key={label + target}>
+                  <button>
+                    {label}
+                    <ChevronDown size={14} />
+                  </button>
+                  <MegaMenu
+                    item={parseMegaMenu(
+                      settings.mega_menu?.[menuName.toLowerCase()],
+                      menus[menuName],
+                    )}
+                  />
+                </li>
+              ) : (
+                <li key={label + target}>
+                  <Link to={target}>{label}</Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
         <div className="header-actions">

@@ -64,7 +64,7 @@ export async function loginAdmin(pool, input, req) {
         hashAdminRefreshToken(raw),
         7,
         String(req.get("user-agent") || "").slice(0, 500),
-        req.ip,
+        req.ips?.[0] || req.ip,
       ],
     );
     await c.execute("UPDATE admin_users SET last_login_at=NOW() WHERE id=?", [
@@ -121,13 +121,19 @@ export const getAdminIdentity = (pool, id) =>
       c.release();
     }
   });
-export const revokeAdminSession = (pool, raw) =>
-  raw
-    ? pool.execute(
-        "UPDATE admin_sessions SET revoked_at=COALESCE(revoked_at,NOW()) WHERE token_hash=?",
-        [hashAdminRefreshToken(raw)],
-      )
-    : Promise.resolve();
+export const revokeAdminSession = async (pool, raw) => {
+  if (!raw) return null;
+  const tokenHash = hashAdminRefreshToken(raw);
+  const [[session]] = await pool.execute(
+    "SELECT admin_user_id FROM admin_sessions WHERE token_hash=? LIMIT 1",
+    [tokenHash],
+  );
+  await pool.execute(
+    "UPDATE admin_sessions SET revoked_at=COALESCE(revoked_at,NOW()) WHERE token_hash=?",
+    [tokenHash],
+  );
+  return session?.admin_user_id || null;
+};
 export const revokeAllAdminSessions = (pool, id) =>
   pool.execute(
     "UPDATE admin_sessions SET revoked_at=COALESCE(revoked_at,NOW()) WHERE admin_user_id=? AND revoked_at IS NULL",

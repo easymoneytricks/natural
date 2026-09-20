@@ -401,8 +401,8 @@ function AboutPage() {
 function ContactPage() {
   const settings = useStoreSettings();
   const contact = settings.contact || {};
-  const contactEmail = contact.email || "hello@naturalbeauty.example";
-  const contactPhone = contact.phone || "+91 98765 43210";
+  const contactEmail = String(contact.email || "").trim();
+  const contactPhone = String(contact.phone || "").trim();
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -453,18 +453,8 @@ function ContactPage() {
       <p className="eyebrow">
         {contact.eyebrow || "We would love to hear from you"}
       </p>
-      <h1 className="contact-title-controlled">
-        {contact.title || "Let’s make your routine feel simple."}
-      </h1>
-      <p className="route-intro contact-intro-controlled">
-        {contact.intro ||
-          "Questions about a product, an order or finding your next formula? Our care team is here Monday–Saturday, 10:00 AM–6:00 PM."}
-      </p>
-      <h1>Let’s make your routine feel simple.</h1>
-      <p className="route-intro contact-intro-fallback">
-        Questions about a product, an order or finding your next formula? Our
-        care team is here Monday–Saturday, 10:00 AM–6:00 PM.
-      </p>
+      <h1 className="contact-title-controlled">{contact.title}</h1>
+      <p className="route-intro contact-intro-controlled">{contact.intro}</p>
       <div className="contact-grid">
         <div className="contact-info">
           <a href={`mailto:${contactEmail}`}>
@@ -477,9 +467,9 @@ function ContactPage() {
           </a>
           <p>
             <MapPin size={17} />
-            {contact.address_name || "Natural Beauty Studio"}
-            <br />
-            {contact.address_line || "Indiranagar, Bengaluru 560038"}
+            {contact.address_name}
+            {contact.address_name && contact.address_line && <br />}
+            {contact.address_line}
           </p>
           <Link className="button" to="/shop">
             Explore skincare <ArrowRight size={15} />
@@ -535,10 +525,7 @@ function ContactPage() {
         </form>
         <iframe
           title="Natural Beauty Studio location"
-          src={
-            contact.map_url ||
-            "https://www.openstreetmap.org/export/embed.html?bbox=77.625%2C12.965%2C77.645%2C12.985&layer=mapnik&marker=12.975%2C77.635"
-          }
+          src={contact.map_url}
           loading="lazy"
         />
       </div>

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
-import { linkTarget } from "../../data/navigationLinks";
+import { linkLabel, linkTarget } from "../../data/navigationLinks";
 
 export function MegaMenu({ item }) {
   return (
@@ -10,17 +10,21 @@ export function MegaMenu({ item }) {
           <section key={column.title}>
             <h3>{column.title}</h3>
             <ul className="mega-links">
-              {column.links.map((link) => (
-                <li key={link}>
-                  <Link to={linkTarget(link)} role="menuitem">
-                    {link}
-                  </Link>
-                </li>
-              ))}
+              {column.links.map((link) => {
+                const target = linkTarget(link);
+                if (!target) return null;
+                return (
+                  <li key={link}>
+                    <Link to={target} role="menuitem">
+                      {linkLabel(link)}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         ))}
-        <Link className="mega-feature" to="/shop">
+        <Link className="mega-feature" to={item.feature.url || "/shop"}>
           <img src={item.feature.image} alt="" />
           <div>
             <p>{item.feature.title}</p>

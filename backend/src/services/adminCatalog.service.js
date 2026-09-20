@@ -12,7 +12,9 @@ const fields = {
   brands: { table: "brands", path: "logo_path" },
   categories: { table: "categories", path: "image_path" },
 };
-async function audit(pool, adminId, action, entity, id, req) {
+const clientIp = (req) => req.ips?.[0] || req.ip || null;
+
+async function audit(pool, adminId, action, entity, id, req, metadata = {}) {
   await pool.execute(
     "INSERT INTO admin_audit_logs (admin_user_id,action,entity_type,entity_id,metadata_json,ip_address,user_agent) VALUES (?,?,?,?,?,?,?)",
     [
@@ -20,8 +22,8 @@ async function audit(pool, adminId, action, entity, id, req) {
       action,
       entity,
       String(id || ""),
-      JSON.stringify({}),
-      req.ip,
+      JSON.stringify(metadata && typeof metadata === "object" ? metadata : {}),
+      clientIp(req),
       String(req.get("user-agent") || "").slice(0, 500),
     ],
   );

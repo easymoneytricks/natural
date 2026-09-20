@@ -16,7 +16,7 @@ export async function list(pool, query = {}) {
       "SELECT pm.id,p.name,pm.file_path,pm.alt_text,pm.is_primary,pm.updated_at FROM product_media pm JOIN products p ON p.id=pm.product_id WHERE pm.deleted_at IS NULL AND p.deleted_at IS NULL",
     ),
     pool.execute(
-      "SELECT id,file_path,alt_text,created_at updated_at FROM media_assets WHERE deleted_at IS NULL",
+      "SELECT id,file_path,alt_text,usage_type,created_at updated_at FROM media_assets WHERE deleted_at IS NULL",
     ),
   ]);
   const assets = [
@@ -42,7 +42,12 @@ export async function list(pool, query = {}) {
     })),
   ];
   return assets
-    .filter((asset) => type === "all" || asset.asset_type === type)
+    .filter(
+      (asset) =>
+        type === "all" ||
+        asset.asset_type === type ||
+        (asset.asset_type === "unassigned" && asset.usage_type === type),
+    )
     .filter(
       (asset) =>
         !search ||
@@ -58,6 +63,7 @@ export async function list(pool, query = {}) {
       path: asset.file_path,
       altText: asset.alt_text || "",
       primary: Boolean(asset.is_primary),
+      usageType: asset.usage_type || "general",
       updatedAt: asset.updated_at,
     }));
 }

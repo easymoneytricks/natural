@@ -12,6 +12,7 @@ const groups = [
   "tax",
   "homepage",
   "navigation",
+  "search",
   "mega_menu",
   "footer",
   "contact",
@@ -116,6 +117,23 @@ export async function update(pool, input, adminId, req) {
       "store_settings",
       "global",
       req,
+      {
+        groups: Object.keys(input).filter((group) => groups.includes(group)),
+        keys: Object.entries(input)
+          .filter(([group]) => groups.includes(group))
+          .flatMap(([group, values]) =>
+            Object.keys(values || {})
+              .filter(
+                (key) =>
+                  !(
+                    (group === "smtp" && key === "password") ||
+                    (group === "recaptcha" && key === "secret_key") ||
+                    (group === "tax" && key === "seller_gstin")
+                  ),
+              )
+              .map((key) => `${group}.${key}`),
+          ),
+      },
     );
     return read(pool);
   } catch (error) {

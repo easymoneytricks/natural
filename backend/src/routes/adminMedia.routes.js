@@ -3,13 +3,19 @@ import {
   requireAdminAuth,
   requireAdminPermission,
 } from "../middleware/adminAuth.js";
-import { list, remove, upload } from "../controllers/adminMedia.controller.js";
+import {
+  list,
+  remove,
+  update,
+  upload,
+} from "../controllers/adminMedia.controller.js";
 import { upload as uploadMiddleware } from "../services/mediaStorage.service.js";
 
 const router = Router();
 router.use(requireAdminAuth);
 router.get("/media", requireAdminPermission("catalog.view"), list);
 router.delete("/media/:id", requireAdminPermission("catalog.manage"), remove);
+router.patch("/media/:id", requireAdminPermission("catalog.manage"), update);
 router.post(
   "/media",
   requireAdminPermission("catalog.manage"),

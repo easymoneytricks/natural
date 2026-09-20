@@ -47,69 +47,57 @@ export const menus = {
   Skin: {
     columns: [
       {
-        title: "Shop by skin type",
+        title: "Shop by type",
         links: [
-          "Normal Skin",
-          "Dry Skin",
-          "Oily Skin",
-          "Combination Skin",
-          "Sensitive Skin",
-          "Acne-Prone Skin",
+          "New arrivals",
+          "Best Sellers",
+          "Everyday Essentials",
+          "Seasonal Picks",
         ],
       },
       {
-        title: "Find your routine",
+        title: "Shop collections",
         links: [
-          "Morning Essentials",
-          "Night Routine",
-          "Hydration Routine",
-          "Barrier Repair",
-          "Beginner Routine",
+          "Featured Edit",
+          "Daily Essentials",
+          "Limited Edition",
+          "Gift Sets",
         ],
       },
     ],
     feature: {
       image: imageUrls.skin,
-      title: "Not sure about your skin type?",
-      text: "Find products designed around your skin's needs.",
-      cta: "Explore skin guide",
+      title: "Find your favourites",
+      text: "Curated products for every style and routine.",
+      cta: "Explore collection",
     },
   },
   Concerns: {
     columns: [
       {
-        title: "Shop by concern",
+        title: "Shop by need",
         links: [
-          "Acne & Breakouts",
-          "Dark Spots",
-          "Pigmentation",
-          "Dryness",
-          "Dullness",
-          "Fine Lines",
-          "Uneven Texture",
-          "Redness",
-          "Oil Control",
-          "Dehydration",
-          "Sun Protection",
-          "Damaged Skin Barrier",
+          "Trending Now",
+          "New In",
+          "Best Sellers",
+          "Everyday Essentials",
         ],
       },
       {
-        title: "Popular solutions",
+        title: "Popular picks",
         links: [
-          "Brightening",
-          "Deep Hydration",
-          "Barrier Support",
-          "Clarifying Care",
-          "Age Support",
+          "Staff Favourites",
+          "Gift Ideas",
+          "Limited Edition",
+          "Value Sets",
         ],
       },
     ],
     feature: {
       image: imageUrls.concerns,
-      title: "Care with intention",
-      text: "Thoughtful formulas for every skin concern.",
-      cta: "Discover solutions",
+      title: "Made for your routine",
+      text: "Thoughtful products for the moments that matter.",
+      cta: "Discover products",
     },
   },
   Collections: {
@@ -153,19 +141,20 @@ export const megaMenuDefaults = Object.fromEntries(
 export function parseMegaMenu(value, fallback) {
   if (!value || typeof value !== "string") return fallback;
   const columns = [];
-  let feature = fallback.feature;
+  let feature = { ...fallback.feature, url: fallback.feature.url || "/shop" };
   value
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
     .forEach((line) => {
       if (line.toLowerCase().startsWith("feature|")) {
-        const [, title, text, cta, image] = line.split("|");
+        const [, title, text, cta, image, url] = line.split("|");
         feature = {
           title: title?.trim() || fallback.feature.title,
           text: text?.trim() || fallback.feature.text,
           cta: cta?.trim() || fallback.feature.cta,
           image: image?.trim() || fallback.feature.image,
+          url: url?.trim() || feature.url,
         };
         return;
       }

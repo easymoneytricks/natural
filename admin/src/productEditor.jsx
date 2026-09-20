@@ -48,6 +48,7 @@ const emptyProduct = {
   seoDescription: "",
   seoKeywords: "",
   canonicalUrl: "",
+  hsnSac: "",
 };
 
 const emptySku = {
@@ -160,6 +161,7 @@ export function ProductEditor() {
       seoDescription: product.seo_description || "",
       seoKeywords: product.seo_keywords || "",
       canonicalUrl: product.canonical_url || "",
+      hsnSac: product.hsn_sac || "",
       brandId: product.brand_id || "",
       categories: (product.categories || []).map((category) => ({
         id: category.id,
@@ -502,6 +504,17 @@ export function ProductEditor() {
                 value={form.baseMrp}
                 onChange={(event) => updateForm("baseMrp", event.target.value)}
               />
+            </label>
+            <label>
+              HSN / SAC code
+              <input
+                value={form.hsnSac || ""}
+                onChange={(event) => updateForm("hsnSac", event.target.value)}
+                placeholder="Example: 3304"
+              />
+              <small>
+                Product-specific tax classification printed on invoices.
+              </small>
             </label>
           </section>
           <section className="card">

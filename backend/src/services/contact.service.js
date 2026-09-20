@@ -79,7 +79,7 @@ export async function update(pool, id, input, adminId, req) {
       "contact_submissions",
       id,
       JSON.stringify({ status }),
-      req.ip,
+      req.ips?.[0] || req.ip,
       String(req.get("user-agent") || "").slice(0, 500),
     ],
   );

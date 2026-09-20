@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Eye,
   Image,
@@ -30,9 +30,23 @@ export function MediaLibrary() {
   const [uploadMessage, setUploadMessage] = useState("");
   const [selected, setSelected] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const uploadFile = async (event) => {
+  const [pendingFile, setPendingFile] = useState(null);
+  const [uploadAltText, setUploadAltText] = useState("");
+  const [uploadType, setUploadType] = useState("general");
+  const [altDraft, setAltDraft] = useState("");
+  const [savingDetails, setSavingDetails] = useState(false);
+  const [copyMessage, setCopyMessage] = useState("");
+  const fileInputRef = useRef(null);
+  const chooseFile = (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
+    if (!file) return;
+    setPendingFile(file);
+    setUploadAltText("");
+    setUploadType("general");
+  };
+  const uploadFile = async (event) => {
+    const file = pendingFile;
     if (!file) return;
     setUploading(true);
     setError("");
@@ -40,12 +54,15 @@ export function MediaLibrary() {
     try {
       const form = new FormData();
       form.append("image", file);
+      form.append("altText", uploadAltText);
+      form.append("usageType", uploadType);
       const response = await authFetch("/admin/media", {
         method: "POST",
         body: form,
       });
       setAssets((current) => [response.data, ...current]);
       setUploadMessage("Image uploaded to the library.");
+      setPendingFile(null);
     } catch (caught) {
       setError(caught.message || "Unable to upload image.");
     } finally {
@@ -106,7 +123,7 @@ export function MediaLibrary() {
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              onChange={uploadFile}
+              onChange={chooseFile}
               disabled={uploading}
               hidden
             />
@@ -187,7 +204,10 @@ export function MediaLibrary() {
               <button
                 className="media-library-preview"
                 type="button"
-                onClick={() => setSelected(asset)}
+                onClick={() => {
+                  setSelected(asset);
+                  setAltDraft(asset.altText || "");
+                }}
                 aria-label={`View details for ${asset.name}`}
               >
                 <img
@@ -215,6 +235,11 @@ export function MediaLibrary() {
                   {asset.primary && (
                     <span className="media-primary-pill">Primary</span>
                   )}
+                  {asset.type === "unassigned" && asset.usageType && (
+                    <span className="media-primary-pill">
+                      {asset.usageType}
+                    </span>
+                  )}
                 </div>
                 <h2>{asset.name}</h2>
                 <p>{asset.altText || "No alt text added"}</p>
@@ -224,6 +249,64 @@ export function MediaLibrary() {
           ))
         )}
       </div>
+      {pendingFile && (
+        <div className="modal-backdrop" role="presentation">
+          <section
+            className="modal-card media-detail-modal"
+            role="dialog"
+            aria-modal="true"
+          >
+            <button
+              className="modal-close"
+              type="button"
+              onClick={() => setPendingFile(null)}
+              aria-label="Close upload details"
+            >
+              <X size={20} />
+            </button>
+            <h2>Image details</h2>
+            <p>{pendingFile.name}</p>
+            <label className="media-detail-alt-field">
+              Image type
+              <select
+                value={uploadType}
+                onChange={(event) => setUploadType(event.target.value)}
+              >
+                <option value="general">General image</option>
+                <option value="brand">Brand image</option>
+                <option value="category">Category image</option>
+                <option value="product">Product image</option>
+              </select>
+            </label>
+            <label className="media-detail-alt-field">
+              Alt text
+              <input
+                value={uploadAltText}
+                onChange={(event) => setUploadAltText(event.target.value)}
+                maxLength={255}
+                placeholder="Describe this image"
+              />
+            </label>
+            <div className="modal-actions media-detail-actions">
+              <button
+                className="button-secondary"
+                type="button"
+                onClick={() => setPendingFile(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="button"
+                type="button"
+                onClick={uploadFile}
+                disabled={uploading}
+              >
+                {uploading ? "Uploading…" : "Upload image"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
       {selected && (
         <div
           className="modal-backdrop"
@@ -264,6 +347,17 @@ export function MediaLibrary() {
               {selected.type}
             </span>
             <h2 id="media-detail-title">{selected.name}</h2>
+            {selected.type === "unassigned" && (
+              <label className="media-detail-alt-field">
+                Alt text
+                <input
+                  value={altDraft}
+                  onChange={(event) => setAltDraft(event.target.value)}
+                  maxLength={255}
+                  placeholder="Describe this image"
+                />
+              </label>
+            )}
             <dl className="media-detail-meta">
               <div>
                 <dt>Alt text</dt>
@@ -283,6 +377,60 @@ export function MediaLibrary() {
               </div>
             </dl>
             <div className="modal-actions media-detail-actions">
+              {selected.type === "unassigned" && (
+                <button
+                  className="button-secondary"
+                  type="button"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(
+                      assetUrl(selected.path),
+                    );
+                    setCopyMessage("Link copied");
+                    window.setTimeout(() => setCopyMessage(""), 1800);
+                  }}
+                >
+                  {copyMessage || "Copy image link"}
+                </button>
+              )}
+              <button
+                className="button-secondary"
+                type="button"
+                onClick={async () => {
+                  setSavingDetails(true);
+                  try {
+                    const response = await authFetch(
+                      `/admin/media/${selected.id}`,
+                      {
+                        method: "PATCH",
+                        body: JSON.stringify({
+                          altText: altDraft,
+                          usageType: selected.usageType || "general",
+                        }),
+                      },
+                    );
+                    setSelected((current) =>
+                      current
+                        ? { ...current, altText: response.data.altText }
+                        : current,
+                    );
+                    setAssets((current) =>
+                      current.map((asset) =>
+                        asset.id === selected.id && asset.type === selected.type
+                          ? { ...asset, altText: response.data.altText }
+                          : asset,
+                      ),
+                    );
+                    setUploadMessage("Media details saved.");
+                  } catch (caught) {
+                    setError(caught.message || "Unable to save media details.");
+                  } finally {
+                    setSavingDetails(false);
+                  }
+                }}
+                disabled={savingDetails || selected.type !== "unassigned"}
+              >
+                {savingDetails ? "Saving…" : "Save details"}
+              </button>
               <button
                 className="button-secondary"
                 type="button"

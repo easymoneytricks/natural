@@ -2,14 +2,24 @@ import { useStoreSettings } from "../../context/StoreSettingsContext";
 
 export function AnnouncementBar() {
   const settings = useStoreSettings();
+  const branding = settings.branding || {};
+  const messages = [
+    branding.announcement ?? "Complimentary shipping on orders above ₹999",
+    branding.announcement_secondary ?? "Thoughtfully formulated skincare",
+    branding.announcement_tertiary ?? "Secure checkout",
+  ].filter((message) => String(message || "").trim());
+
   return (
     <aside className="announcement">
       <div className="container">
-        <span>Complimentary shipping on orders above ₹999</span>
-        <span className="announcement-extra">
-          Thoughtfully formulated skincare
-        </span>
-        <span className="announcement-extra">Secure checkout</span>
+        {messages.map((message, index) => (
+          <span
+            className={index ? "announcement-extra" : ""}
+            key={`${message}-${index}`}
+          >
+            {message}
+          </span>
+        ))}
       </div>
     </aside>
   );

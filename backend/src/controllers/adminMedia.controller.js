@@ -24,9 +24,14 @@ export async function upload(req, res, next) {
       String(req.body?.altText || "")
         .trim()
         .slice(0, 255) || null;
+    const usageType = ["general", "brand", "category", "product"].includes(
+      String(req.body?.usageType || "general"),
+    )
+      ? String(req.body?.usageType || "general")
+      : "general";
     const [result] = await database.execute(
-      "INSERT INTO media_assets(file_path,alt_text,created_by) VALUES(?,?,?)",
-      [stored, altText, req.admin.id],
+      "INSERT INTO media_assets(file_path,alt_text,usage_type,created_by) VALUES(?,?,?,?)",
+      [stored, altText, usageType, req.admin.id],
     );
     res.status(201).json({
       data: {
@@ -35,8 +40,35 @@ export async function upload(req, res, next) {
         name: stored.split("/").pop(),
         path: stored,
         altText: altText || "",
+        usageType,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function update(req, res, next) {
+  try {
+    const altText =
+      String(req.body?.altText || "")
+        .trim()
+        .slice(0, 255) || null;
+    const usageType = ["general", "brand", "category", "product"].includes(
+      String(req.body?.usageType || "general"),
+    )
+      ? String(req.body?.usageType || "general")
+      : "general";
+    const [result] = await database.execute(
+      "UPDATE media_assets SET alt_text=?,usage_type=? WHERE id=? AND deleted_at IS NULL",
+      [altText, usageType, req.params.id],
+    );
+    if (!result.affectedRows) {
+      const error = new Error("Media asset not found.");
+      error.statusCode = 404;
+      throw error;
+    }
+    res.json({ data: { id: Number(req.params.id), altText, usageType } });
   } catch (error) {
     next(error);
   }

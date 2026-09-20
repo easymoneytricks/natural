@@ -1,9 +1,13 @@
 const parseMetadataJson = (value) => {
   if (value === null || value === undefined) return null;
-  if (typeof value === "object") return value;
+  if (typeof value === "object")
+    return Object.keys(value).length ? value : null;
   if (typeof value !== "string") return null;
   try {
-    return JSON.parse(value);
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && Object.keys(parsed).length
+      ? parsed
+      : null;
   } catch {
     return null;
   }

@@ -2,12 +2,17 @@ import { useState, useRef } from "react";
 import { Search, X, ArrowUpRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useFocusTrap } from "../ui/useFocusTrap";
-
-const terms = ["Vitamin C", "Sunscreen", "Acne", "Dry Skin", "Niacinamide"];
+import { useStoreSettings } from "../../context/StoreSettingsContext";
 
 export function SearchOverlay({ open, onClose }) {
   const ref = useRef(null);
   const navigate = useNavigate();
+  const settings = useStoreSettings();
+  const search = settings.search || {};
+  const terms = String(search.quick_links || "")
+    .split(/\r?\n|,/)
+    .map((term) => term.trim())
+    .filter(Boolean);
   const [query, setQuery] = useState("");
   useFocusTrap(ref, open, onClose);
   const submit = (value = query) => {
@@ -36,7 +41,7 @@ export function SearchOverlay({ open, onClose }) {
         >
           <X />
         </button>
-        <p className="eyebrow">Find your ritual</p>
+        <p className="eyebrow">{search.eyebrow}</p>
         <form
           className="search-field"
           onSubmit={(event) => {
@@ -49,12 +54,12 @@ export function SearchOverlay({ open, onClose }) {
             autoFocus={open}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search skincare, ingredients, concerns..."
+            placeholder={search.placeholder}
             aria-label="Search products"
           />
         </form>
         <div className="trending">
-          <p>Trending searches</p>
+          <p>Quick links</p>
           <div>
             {terms.map((term) => (
               <button type="button" key={term} onClick={() => submit(term)}>

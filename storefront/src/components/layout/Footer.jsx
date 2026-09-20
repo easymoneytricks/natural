@@ -121,9 +121,7 @@ export function Footer() {
   const settings = useStoreSettings();
   const businessName = getBusinessName(settings);
   const logo =
-    settings.branding?.footer_logo_url ||
-    settings.branding?.logo_url ||
-    "https://www.svgrepo.com/show/42722/skincare.svg";
+    settings.branding?.footer_logo_url || settings.branding?.logo_url || "";
   const footerLinks = {
     Shop: parseFooterLinks(
       settings.footer?.shop_links,
@@ -148,11 +146,15 @@ export function Footer() {
       <div className="footer-main homepage-container">
         <div className="footer-brand">
           <Link to="/" className="wordmark">
-            <img
-              className="brand-logo"
-              src={logo}
-              alt={`${businessName} logo`}
-            />
+            {logo ? (
+              <img
+                className="brand-logo"
+                src={logo}
+                alt={`${businessName} logo`}
+              />
+            ) : (
+              <span className="wordmark-name">{businessName}</span>
+            )}
           </Link>
           <p>
             {settings.footer?.tagline ||

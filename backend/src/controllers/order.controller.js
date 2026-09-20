@@ -222,7 +222,11 @@ export async function customerInvoice(req, res, next) {
       document
         .fillColor("#68766c")
         .fontSize(8)
-        .text(`SKU ${item.sku}`, 60, rowY + 15);
+        .text(
+          `SKU ${item.sku} · HSN/SAC ${item.hsnSac || order.pricing.tax?.hsnSac || "Not configured"}`,
+          60,
+          rowY + 15,
+        );
       document
         .fillColor("#202521")
         .fontSize(10)

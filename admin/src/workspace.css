@@ -802,6 +802,36 @@
     500 28px Georgia,
     serif;
 }
+.media-detail-alt-field {
+  display: grid;
+  gap: 7px;
+  margin: 0 0 16px;
+  color: #6d7c72;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.media-detail-alt-field input,
+.media-detail-alt-field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #d5dfd4;
+  border-radius: 10px;
+  color: #33453a;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.media-detail-alt-field input:focus,
+.media-detail-alt-field select:focus {
+  outline: 2px solid #9db79d;
+  outline-offset: 1px;
+}
 .media-detail-meta {
   display: grid;
   gap: 12px;
@@ -3872,6 +3902,21 @@ input::file-selector-button {
 .settings-tab-panel {
   display: grid;
   gap: 18px;
+}
+.storefront-settings-panel > .settings-group:nth-child(1) {
+  grid-row: 2;
+}
+.storefront-settings-panel > .settings-group:nth-child(2) {
+  grid-row: 3;
+}
+.storefront-settings-panel > .settings-group:nth-child(3) {
+  grid-row: 1;
+}
+.storefront-settings-panel > .settings-group:nth-child(4) {
+  grid-row: 5;
+}
+.storefront-settings-panel > .settings-group:nth-child(5) {
+  grid-row: 4;
 }
 .settings-group {
   padding: 22px;

@@ -141,8 +141,8 @@ export async function placeCodOrder(pool, input = {}, customer) {
         input.giftCardId && customer?.id
           ? 'SELECT gc.* FROM gift_cards gc JOIN customer_gift_cards cgc ON cgc.gift_card_id=gc.id AND cgc.customer_id=? WHERE gc.id=? AND gc.status="active" AND gc.deleted_at IS NULL FOR UPDATE'
           : customer?.id
-          ? 'SELECT gc.* FROM gift_cards gc LEFT JOIN customer_gift_cards cgc ON cgc.gift_card_id=gc.id AND cgc.customer_id=? WHERE gc.code_hash=? AND gc.status="active" AND gc.deleted_at IS NULL AND (cgc.id IS NOT NULL OR NOT EXISTS (SELECT 1 FROM customer_gift_cards WHERE gift_card_id=gc.id)) FOR UPDATE'
-          : 'SELECT * FROM gift_cards WHERE code_hash=? AND status="active" AND deleted_at IS NULL FOR UPDATE',
+            ? 'SELECT gc.* FROM gift_cards gc LEFT JOIN customer_gift_cards cgc ON cgc.gift_card_id=gc.id AND cgc.customer_id=? WHERE gc.code_hash=? AND gc.status="active" AND gc.deleted_at IS NULL AND (cgc.id IS NOT NULL OR NOT EXISTS (SELECT 1 FROM customer_gift_cards WHERE gift_card_id=gc.id)) FOR UPDATE'
+            : 'SELECT * FROM gift_cards WHERE code_hash=? AND status="active" AND deleted_at IS NULL FOR UPDATE',
         input.giftCardId && customer?.id
           ? [customer.id, input.giftCardId]
           : customer?.id
@@ -215,7 +215,7 @@ export async function placeCodOrder(pool, input = {}, customer) {
     }
     for (const item of calculated.items) {
       await connection.execute(
-        "INSERT INTO order_items (order_id,product_id,sku_id,sku_code,product_name,product_slug,variant_title,attributes_json,image_path,quantity,unit_price,unit_mrp,line_subtotal,line_mrp_total,line_product_discount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO order_items (order_id,product_id,sku_id,sku_code,product_name,product_slug,variant_title,attributes_json,image_path,hsn_sac,quantity,unit_price,unit_mrp,line_subtotal,line_mrp_total,line_product_discount) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         [
           orderId,
           item.product.id,
@@ -226,6 +226,7 @@ export async function placeCodOrder(pool, input = {}, customer) {
           null,
           null,
           null,
+          item.product.hsnSac || p.tax?.hsnSac || null,
           item.quantity,
           item.price,
           item.mrp,
@@ -417,6 +418,7 @@ export async function getOrder(pool, id, customerId) {
       price: Number(i.unit_price),
       mrp: Number(i.unit_mrp),
       lineSubtotal: Number(i.line_subtotal),
+      hsnSac: i.hsn_sac,
     })),
     shippingAddress: addresses[0] || null,
     timeline: history,

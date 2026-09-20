@@ -35,6 +35,19 @@ export function Home() {
   const [newArrivals, setNewArrivals] = useState([]);
   const [catalogError, setCatalogError] = useState(false);
   const storeSettings = useStoreSettings();
+  const homepage = storeSettings.homepage || {};
+  const heroEyebrow = String(homepage.hero_eyebrow || "").trim();
+  const heroTitle = String(homepage.hero_title || "").trim();
+  const heroDescription = String(homepage.hero_description || "").trim();
+  const heroImageUrl = String(homepage.hero_image_url || "").trim();
+  const heroImageAlt = String(homepage.hero_image_alt || "").trim();
+  const primaryCtaLabel = String(homepage.primary_cta_label || "").trim();
+  const primaryCtaUrl = String(homepage.primary_cta_url || "").trim();
+  const secondaryCtaLabel = String(homepage.secondary_cta_label || "").trim();
+  const secondaryCtaUrl = String(homepage.secondary_cta_url || "").trim();
+  const heroProof = String(homepage.hero_proof || "").trim();
+  const heroRitualTitle = String(homepage.hero_ritual_title || "").trim();
+  const heroRitualText = String(homepage.hero_ritual_text || "").trim();
   const visible = (section) =>
     storeSettings.homepage_sections?.[section] !== "false";
 
@@ -107,45 +120,40 @@ export function Home() {
       <section className="homepage-hero" hidden={!visible("hero")}>
         <div className="homepage-container hero-layout">
           <div className="hero-copy">
-            <p className="eyebrow">
-              Botanical skincare <span>•</span> Modern science
-            </p>
-            <h1>
-              Healthy skin,
-              <br />
-              beautifully simple.
-            </h1>
-            <p className="hero-description">
-              Thoughtful formulas for everyday concerns — designed to hydrate,
-              restore and bring out your natural glow.
-            </p>
-            <div className="hero-actions">
-              <Link className="button hero-primary" to="/shop">
-                Shop bestsellers <ArrowRight size={15} />
-              </Link>
-              <Link className="hero-secondary" to="/shop">
-                Explore by concern <ArrowRight size={15} />
-              </Link>
-            </div>
-            <p className="hero-proof">
-              Dermatologically considered <span>•</span> Cruelty-free{" "}
-              <span>•</span>
-              Thoughtfully formulated
-            </p>
+            {heroEyebrow && <p className="eyebrow">{heroEyebrow}</p>}
+            {heroTitle && <h1>{heroTitle}</h1>}
+            {heroDescription && (
+              <p className="hero-description">{heroDescription}</p>
+            )}
+            {(primaryCtaLabel && primaryCtaUrl) ||
+            (secondaryCtaLabel && secondaryCtaUrl) ? (
+              <div className="hero-actions">
+                {primaryCtaLabel && primaryCtaUrl && (
+                  <Link className="button hero-primary" to={primaryCtaUrl}>
+                    {primaryCtaLabel} <ArrowRight size={15} />
+                  </Link>
+                )}
+                {secondaryCtaLabel && secondaryCtaUrl && (
+                  <Link className="hero-secondary" to={secondaryCtaUrl}>
+                    {secondaryCtaLabel} <ArrowRight size={15} />
+                  </Link>
+                )}
+              </div>
+            ) : null}
+            {heroProof && <p className="hero-proof">{heroProof}</p>}
           </div>
 
-          <div className="hero-visual">
-            <img
-              src={homeImages.hero}
-              alt="Natural Beauty skincare bottles in soft botanical studio light"
-            />
-            <div className="ritual-label">
-              <span>The daily ritual</span>
-              <p>
-                Cleanse <i>•</i> Treat <i>•</i> Hydrate <i>•</i> Protect
-              </p>
+          {heroImageUrl && (
+            <div className="hero-visual">
+              <img src={heroImageUrl} alt={heroImageAlt} />
+              {(heroRitualTitle || heroRitualText) && (
+                <div className="ritual-label">
+                  {heroRitualTitle && <span>{heroRitualTitle}</span>}
+                  {heroRitualText && <p>{heroRitualText}</p>}
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
       </section>
 

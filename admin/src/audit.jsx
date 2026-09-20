@@ -9,6 +9,15 @@ import {
 } from "lucide-react";
 import { useAuth } from "./main";
 
+const formatAction = (value) =>
+  String(value || "System event")
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+const hasMetadata = (value) =>
+  value && typeof value === "object" && Object.keys(value).length > 0;
+
 const formatDate = (value) =>
   value ? new Date(value).toLocaleString("en-IN") : "—";
 
@@ -26,7 +35,7 @@ function AuditDetail({ entry, onClose }) {
         <header className="audit-modal-header">
           <div>
             <span className="section-kicker">AUDIT / EVENT DETAIL</span>
-            <h2>{entry.action}</h2>
+            <h2>{formatAction(entry.action)}</h2>
             <p>
               {formatDate(entry.createdAt)} ·{" "}
               {entry.entityType || "System event"}
@@ -69,7 +78,7 @@ function AuditDetail({ entry, onClose }) {
         <div className="audit-metadata">
           <h3>Event metadata</h3>
           <pre>
-            {entry.metadata
+            {hasMetadata(entry.metadata)
               ? JSON.stringify(entry.metadata, null, 2)
               : "No metadata recorded."}
           </pre>
@@ -158,7 +167,7 @@ export function AuditPage() {
           <option value="">All actions</option>
           {filters.actions.map((value) => (
             <option key={value} value={value}>
-              {value}
+              {formatAction(value)}
             </option>
           ))}
         </select>
@@ -206,9 +215,11 @@ export function AuditPage() {
               {entries.map((entry) => (
                 <tr key={entry.id}>
                   <td>
-                    <strong>{entry.action}</strong>
+                    <strong>{formatAction(entry.action)}</strong>
                     <small>
-                      {entry.metadata ? "Metadata attached" : "No metadata"}
+                      {hasMetadata(entry.metadata)
+                        ? "Metadata attached"
+                        : "No metadata"}
                     </small>
                   </td>
                   <td>
@@ -230,7 +241,7 @@ export function AuditPage() {
                     <button
                       className="icon-button"
                       onClick={() => setSelected(entry)}
-                      aria-label={`View ${entry.action}`}
+                      aria-label={`View ${formatAction(entry.action)}`}
                     >
                       <Eye size={16} />
                     </button>
