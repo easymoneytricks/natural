@@ -195,7 +195,7 @@ function EmptyCompare() {
         Choose products while you browse and we'll line up the details for you.
       </p>
       <Link className="button" to="/shop">
-        Explore skincare <ArrowRight size={15} />
+        Explore products <ArrowRight size={15} />
       </Link>
     </section>
   );

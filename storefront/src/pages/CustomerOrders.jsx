@@ -111,7 +111,7 @@ export function CustomerOrders() {
           </div>
         ) : (
           <p>
-            No orders yet. <Link to="/shop">Explore skincare</Link>
+            No orders yet. <Link to="/shop">Explore products</Link>
           </p>
         )}
       </Shell>

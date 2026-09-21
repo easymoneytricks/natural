@@ -51,8 +51,8 @@ export const concernTiles = [
 
 export const trustItems = [
   {
-    title: "Thoughtful formulas",
-    text: "Made for everyday skin rituals",
+    title: "Thoughtful products",
+    text: "Made for everyday use",
     icon: "sparkle",
   },
   {
@@ -122,15 +122,15 @@ export const ingredients = [
 
 export const brandPrinciples = [
   {
-    title: "Purposeful formulas",
+    title: "Purposeful products",
     text: "Every product starts with a clear role in your routine.",
   },
   {
     title: "Routine-first design",
-    text: "Products made to work naturally within everyday skincare.",
+    text: "Products made to work naturally within everyday routines.",
   },
   {
     title: "Considered experience",
-    text: "Texture, usability and presentation matter as much as the formula story.",
+    text: "Usability and presentation matter as much as the product story.",
   },
 ];

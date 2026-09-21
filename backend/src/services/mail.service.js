@@ -20,8 +20,19 @@ const paragraph = (value) =>
 const button = (label, href) =>
   `<a href="${esc(href)}" style="display:inline-block;background:#385941;color:#fffdf8;text-decoration:none;padding:13px 20px;font-size:12px;letter-spacing:1px;text-transform:uppercase;font-weight:bold">${esc(label)} &rarr;</a>`;
 
-const shell = ({ eyebrow, title, preview, body }) =>
+const rawShell = ({ eyebrow, title, preview, body }) =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title></head><body style="margin:0;background:#f5f4ee;color:#24352b;font-family:Arial,Helvetica,sans-serif;line-height:1.6"><div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preview)}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f4ee;padding:28px 12px"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#fffdf8;border:1px solid #e2e4da"><tr><td style="padding:28px 36px;border-bottom:1px solid #e2e4da"><span style="font-family:Georgia,serif;font-size:27px;color:#1d2c22">Natural Beauty</span><div style="margin-top:6px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#5c725f">Thoughtful skincare, simply considered</div></td></tr><tr><td style="padding:38px 36px"><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#55715b;font-weight:bold">${esc(eyebrow)}</div><h1 style="margin:13px 0 18px;font-family:Georgia,serif;font-size:36px;line-height:1.12;font-weight:normal;color:#1d2c22">${esc(title)}</h1>${body}</td></tr><tr><td style="padding:20px 36px;background:#edf1e8;border-top:1px solid #e2e4da;color:#627267;font-size:12px">You are receiving this email from Natural Beauty. Need help? Reply to this email and our care team will be happy to help.</td></tr></table><div style="max-width:640px;padding:18px 12px;color:#7b877d;font-size:11px">Natural Beauty · Bengaluru, India</div></td></tr></table></body></html>`;
+
+const shell = (args) =>
+  rawShell(args)
+    .replaceAll("Natural Beauty", "Your store")
+    .replaceAll("natural beauty", "your store")
+    .replaceAll("skincare", "products")
+    .replaceAll("Skincare", "Products")
+    .replaceAll("formulas", "products")
+    .replaceAll("Formulas", "Products")
+    .replaceAll("ritual", "routine")
+    .replaceAll("Ritual", "Routine");
 
 async function getTransport() {
   const settings = (await readPrivate(pool)).smtp || {};
@@ -68,7 +79,7 @@ export async function sendEmail({
       const { transport, settings } = await getTransport();
       const fromEmail =
         settings.from_email || process.env.SMTP_FROM_EMAIL || settings.username;
-      const fromName = settings.from_name || "Natural Beauty";
+      const fromName = settings.from_name || "Your store";
       const result = await transport.sendMail({
         from: `${fromName} <${fromEmail}>`,
         to,

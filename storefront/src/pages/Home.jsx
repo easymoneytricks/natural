@@ -143,8 +143,15 @@ export function Home() {
   const parentCategories = categories.filter(
     (category) => category.parentId === null || category.parentId === undefined,
   );
-  const childCategories = categories.filter(
-    (category) => category.parentId !== null && category.parentId !== undefined,
+  const childCategories = Array.from(
+    new Map(
+      categories
+        .filter(
+          (category) =>
+            category.parentId !== null && category.parentId !== undefined,
+        )
+        .map((category) => [category.id, category]),
+    ).values(),
   );
   const itemLimit = (name, fallback) => {
     const value = Number(limits[`${name}_${isMobile ? "mobile" : "desktop"}`]);
@@ -276,7 +283,7 @@ export function Home() {
 
       <section
         className="trust-strip"
-        aria-label="Natural Beauty commitments"
+        aria-label="Store commitments"
         hidden={!visible("trust")}
       >
         <div className="homepage-container trust-grid">
@@ -320,7 +327,7 @@ export function Home() {
             <Link
               className="concern-tile"
               to={`/shop?category=${encodeURIComponent(category.slug)}`}
-              key={category.id || category.slug}
+              key={category.placementId || `${category.id}-${category.parentId || "root"}`}
             >
               {category.image && (
                 <img src={category.image} alt={category.name} />
@@ -391,7 +398,7 @@ export function Home() {
               <Link
                 className={`skin-type-tile skin-type-${index + 1}`}
                 to={`/shop?category=${encodeURIComponent(category.slug)}`}
-                key={category.id || category.slug}
+                key={category.placementId || `${category.id}-${category.parentId || "root"}`}
               >
                 {category.image && (
                   <img src={category.image} alt={category.name} />

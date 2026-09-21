@@ -30,6 +30,41 @@ const slugify = (value) =>
     .replace(/^-|-$/g, "")
     .slice(0, 150);
 
+function buildCategoryTree(rows) {
+  const placements = rows.flatMap((row) => {
+    const parentIds = row.parentIds?.length
+      ? row.parentIds
+      : row.parentId == null
+        ? [null]
+        : [row.parentId];
+    return parentIds.map((parentId) => ({
+      ...row,
+      parentId,
+      placementId: `${row.id}:${parentId ?? "root"}`,
+    }));
+  });
+  const byParent = new Map();
+  placements.forEach((row) => {
+    const key = row.parentId == null ? null : row.parentId;
+    if (!byParent.has(key)) byParent.set(key, []);
+    byParent.get(key).push(row);
+  });
+  const result = [];
+  const visit = (parentId, depth, ancestors) => {
+    (byParent.get(parentId) || []).forEach((row) => {
+      const breadcrumb = ancestors.concat(row.name);
+      result.push({ ...row, depth, breadcrumb: breadcrumb.join(" / ") });
+      visit(row.id, depth + 1, breadcrumb);
+    });
+  };
+  visit(null, 0, []);
+  placements.forEach((row) => {
+    if (!result.some((item) => item.placementId === row.placementId))
+      result.push({ ...row, depth: 0, breadcrumb: row.name });
+  });
+  return result;
+}
+
 function Protected({ children }) {
   const { admin } = useAuth();
   if (admin?.effectivePermissions?.includes("catalog.view")) return children;
@@ -46,6 +81,7 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
     name: editing?.name || "",
     slug: editing?.slug || "",
     parentId: editing?.parentId || "",
+    parentIds: editing?.parentIds || (editing?.parentId ? [editing.parentId] : []),
     description: editing?.description || "",
     seoTitle: editing?.seo_title || "",
     seoDescription: editing?.seo_description || "",
@@ -77,7 +113,7 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
       );
       onSaved();
     } catch (caught) {
-      setError(caught.message || "Unable to save this category.");
+      setError(caught.message || "Unable to save this entry.");
     } finally {
       setSaving(false);
     }
@@ -96,10 +132,10 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
         <div className="modal-heading">
           <div>
             <span className="section-kicker">CATALOG / CATEGORIES</span>
-            <h2>{editing?.id ? "Edit category" : "Add a category"}</h2>
+            <h2>{editing?.id ? "Edit entry" : "Add an entry"}</h2>
             <p>
-              Organise products into a clear, customer-friendly discovery
-              hierarchy.
+              Manage hierarchy, content and discovery details for this catalog
+              entry.
             </p>
           </div>
           <button
@@ -114,7 +150,7 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
         <div className="editor-grid">
           <label>
             <span className="field-label">
-              Category name <b>*</b>
+              Name <b>*</b>
             </span>
             <input
               required
@@ -127,7 +163,7 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
                   ...(!slugTouched ? { slug: slugify(name) } : {}),
                 }));
               }}
-              placeholder="e.g. Cleansers"
+              placeholder="e.g. Summer collection"
               autoFocus
             />
           </label>
@@ -150,23 +186,28 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
             />
           </label>
           <label>
-            Parent category
+            Parent entries
             <select
-              value={form.parentId}
-              onChange={(event) => update("parentId", event.target.value)}
+              multiple
+              value={form.parentIds.map(String)}
+              onChange={(event) => {
+                const parentIds = [...event.target.selectedOptions].map((option) => Number(option.value));
+                update("parentIds", parentIds);
+                update("parentId", parentIds[0] || "");
+              }}
             >
-              <option value="">Top-level category</option>
-              {categories
+              {buildCategoryTree(categories)
                 .filter(
                   (category) =>
                     category.id !== editing?.id && !category.deletedAt,
                 )
                 .map((category) => (
                   <option key={category.id} value={category.id}>
-                    {category.name}
+                    {`${"— ".repeat(category.depth)}${category.name}`}
                   </option>
                 ))}
             </select>
+            <small>Select one or more parents to show this entry in multiple branches.</small>
           </label>
           <label>
             Sort order
@@ -178,12 +219,12 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
             />
           </label>
           <label className="field-wide">
-            Category description
+            Description
             <textarea
               rows="4"
               value={form.description}
               onChange={(event) => update("description", event.target.value)}
-              placeholder="A short introduction for this category."
+              placeholder="A short introduction for this catalog entry."
             />
           </label>
           <label>
@@ -191,7 +232,7 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
             <input
               value={form.seoTitle}
               onChange={(event) => update("seoTitle", event.target.value)}
-              placeholder="Category | Natural Beauty"
+              placeholder="Page title"
             />
           </label>
           <label>
@@ -207,7 +248,7 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
             <input
               value={form.seoKeywords}
               onChange={(event) => update("seoKeywords", event.target.value)}
-              placeholder="cleanser, sensitive skin, skincare"
+              placeholder="keyword, phrase, topic"
             />
           </label>
           <label>
@@ -216,7 +257,7 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
               type="url"
               value={form.canonicalUrl}
               onChange={(event) => update("canonicalUrl", event.target.value)}
-              placeholder="https://example.com/shop/category"
+              placeholder="https://example.com/catalog/entry"
             />
           </label>
         </div>
@@ -227,9 +268,9 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
             onChange={(event) => update("isActive", event.target.checked)}
           />
           <span>
-            <b>Visible in storefront</b>
-            <small>
-              Inactive categories stay saved but are hidden from customers.
+              <b>Visible in storefront</b>
+              <small>
+              Inactive entries stay saved but are hidden from customers.
             </small>
           </span>
         </label>
@@ -248,7 +289,7 @@ function CategoryEditor({ editing, categories, onClose, onSaved }) {
               ? "Saving…"
               : editing?.id
                 ? "Save changes"
-                : "Create category"}
+                : "Create entry"}
           </button>
         </div>
       </form>
@@ -266,6 +307,7 @@ export function CategoriesPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState(null);
+  const displayRows = buildCategoryTree(rows);
   const load = async () => {
     setLoading(true);
     setError("");
@@ -429,12 +471,15 @@ export function CategoriesPage() {
           </div>
         ) : (
           <div className="brand-table">
-            {rows.map((category) => (
+            {displayRows.map((category) => (
               <article
                 className={`brand-row ${category.deletedAt ? "is-archived" : ""}`}
-                key={category.id}
+                key={category.placementId || category.id}
               >
-                <div className="brand-identity">
+                <div
+                  className="brand-identity"
+                  style={{ paddingLeft: `${category.depth * 24}px` }}
+                >
                   <div className="brand-logo-frame">
                     {category.image ? (
                       <img
@@ -452,6 +497,11 @@ export function CategoriesPage() {
                       ) : null}
                       {category.name}
                     </h2>
+                    {category.depth > 0 && (
+                      <small className="category-breadcrumb">
+                        Parent path: {category.breadcrumb}
+                      </small>
+                    )}
                     <p>/{category.slug}</p>
                     {category.deletedAt && (
                       <span className="status-pill archived">Archived</span>

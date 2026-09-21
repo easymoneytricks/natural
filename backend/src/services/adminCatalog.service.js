@@ -40,7 +40,7 @@ export async function list(pool, type, q = "", includeDeleted = false) {
       ? "(SELECT COUNT(*) FROM products p WHERE p.brand_id=x.id AND p.deleted_at IS NULL)"
       : "(SELECT COUNT(*) FROM product_categories pc JOIN products p ON p.id=pc.product_id WHERE pc.category_id=x.id AND p.deleted_at IS NULL)";
   const [rows] = await pool.execute(
-    `SELECT x.*, ${count} AS product_count${type === "categories" ? ",(SELECT COUNT(*) FROM categories c WHERE c.parent_id=x.id AND c.deleted_at IS NULL) AS child_count" : ""} FROM ${f.table} x WHERE 1=1${lifecycle}${search} ORDER BY x.deleted_at IS NULL DESC,x.sort_order,x.name`,
+    `SELECT x.*${type === "categories" ? ",parent.name AS parent_name,(SELECT GROUP_CONCAT(link.parent_id ORDER BY link.is_primary DESC,link.parent_id) FROM category_parent_links link WHERE link.category_id=x.id) AS parent_ids" : ""}, ${count} AS product_count${type === "categories" ? ",(SELECT COUNT(*) FROM category_parent_links child_link JOIN categories child ON child.id=child_link.category_id WHERE child_link.parent_id=x.id AND child.deleted_at IS NULL) AS child_count" : ""} FROM ${f.table} x${type === "categories" ? " LEFT JOIN categories parent ON parent.id=x.parent_id" : ""} WHERE 1=1${lifecycle}${search} ORDER BY x.deleted_at IS NULL DESC,x.sort_order,x.name`,
     params,
   );
   return rows.map((row) => ({
@@ -52,6 +52,12 @@ export async function list(pool, type, q = "", includeDeleted = false) {
     productCount: Number(row.product_count || 0),
     childCount: Number(row.child_count || 0),
     parentId: row.parent_id == null ? null : Number(row.parent_id),
+    parentName: row.parent_name || null,
+    parentIds: row.parent_ids
+      ? row.parent_ids.split(",").map(Number)
+      : row.parent_id == null
+        ? []
+        : [Number(row.parent_id)],
   }));
 }
 export async function save(pool, type, input, id, adminId, req) {
@@ -68,44 +74,38 @@ export async function save(pool, type, input, id, adminId, req) {
       "Website URL must use http or https.",
     );
   let parentId = null;
-  if (type === "categories" && input.parentId) {
-    parentId = Number(input.parentId);
-    if (!Number.isInteger(parentId))
-      throw new AuthError(400, "INVALID_PARENT", "Invalid parent category.");
-    if (id && parentId === Number(id))
-      throw new AuthError(
-        400,
-        "CATEGORY_CYCLE",
-        "A category cannot be its own parent.",
+  let parentIds = [];
+  if (type === "categories" && (input.parentId || input.parentIds?.length)) {
+    parentIds = [...new Set((input.parentIds || [input.parentId]).map(Number))].filter(Number.isInteger);
+    parentId = parentIds[0] || null;
+    for (const candidate of parentIds) {
+      const [[p]] = await pool.execute(
+        "SELECT id,deleted_at FROM categories WHERE id=?",
+        [candidate],
       );
-    const [[p]] = await pool.execute(
-      "SELECT id,deleted_at FROM categories WHERE id=?",
-      [parentId],
-    );
-    if (!p || p.deleted_at)
-      throw new AuthError(
-        400,
-        "INVALID_PARENT",
-        "Parent category is unavailable.",
-      );
-    let current = parentId;
-    const seen = new Set();
-    while (current && !seen.has(current)) {
-      seen.add(current);
-      const [[r]] = await pool.execute(
-        "SELECT parent_id FROM categories WHERE id=?",
-        [current],
-      );
-      if (!r) break;
-      if (id && Number(r.parent_id) === Number(id))
-        throw new AuthError(
-          400,
-          "CATEGORY_CYCLE",
-          "A category cannot be nested beneath its descendant.",
-        );
-      current = r.parent_id;
+      if (!p || p.deleted_at)
+        throw new AuthError(400, "INVALID_PARENT", "Parent category is unavailable.");
+      if (id && candidate === Number(id))
+        throw new AuthError(400, "CATEGORY_CYCLE", "A category cannot be its own parent.");
+    }
+    for (const candidate of parentIds) {
+      let current = candidate;
+      const seen = new Set();
+      while (current && !seen.has(current)) {
+        seen.add(current);
+        const [[r]] = await pool.execute("SELECT parent_id FROM categories WHERE id=?", [current]);
+        if (!r) break;
+        if (id && Number(r.parent_id) === Number(id))
+          throw new AuthError(400, "CATEGORY_CYCLE", "A category cannot be nested beneath its descendant.");
+        current = r.parent_id;
+      }
     }
   }
+  /*
+   * parentId remains the primary/legacy parent column. Additional parents are
+   * synchronized into category_parent_links after the category is saved.
+   */
+  if (type === "categories" && !parentIds.length) parentIds = [];
   const table = f.table;
   const values =
     type === "brands"
@@ -150,10 +150,19 @@ export async function save(pool, type, input, id, adminId, req) {
         type === "brands"
           ? "name,slug,description,website_url,is_active,sort_order,seo_title,seo_description,seo_keywords,canonical_url"
           : "parent_id,name,slug,description,is_active,sort_order,seo_title,seo_description,seo_keywords,canonical_url";
-      await pool.execute(
+      const [result] = await pool.execute(
         `INSERT INTO ${table} (${cols}) VALUES (${values.map(() => "?").join(",")})`,
         values,
       );
+      if (type === "categories") id = result.insertId;
+    }
+    if (type === "categories") {
+      await pool.execute("DELETE FROM category_parent_links WHERE category_id=?", [id]);
+      for (const [index, candidate] of parentIds.entries())
+        await pool.execute(
+          "INSERT INTO category_parent_links (category_id,parent_id,is_primary) VALUES (?,?,?)",
+          [id, candidate, index === 0 ? 1 : 0],
+        );
     }
     const [rows] = await pool.execute(
       `SELECT * FROM ${table} WHERE slug=? LIMIT 1`,

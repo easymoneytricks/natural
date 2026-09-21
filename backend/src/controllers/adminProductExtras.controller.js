@@ -22,6 +22,18 @@ export const mediaUpload = [
     }),
   ),
 ];
+export const mediaAttach = w(async (req, res) =>
+  res.status(201).json({
+    data: await s.mediaAttach(
+      pool,
+      req.params.id,
+      req.body.assetId,
+      req.body,
+      req.admin.id,
+      req,
+    ),
+  }),
+);
 export const mediaUpdate = w(async (req, res) =>
   res.json({
     data: await s.mediaUpdate(

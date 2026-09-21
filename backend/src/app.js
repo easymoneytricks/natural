@@ -16,6 +16,7 @@ import paymentRoutes, {
 import adminRoutes from "./routes/admin.routes.js";
 import adminCatalogRoutes from "./routes/adminCatalog.routes.js";
 import adminProductRoutes from "./routes/adminProduct.routes.js";
+import adminAttributesRoutes from "./routes/adminAttributes.routes.js";
 import adminInventoryRoutes from "./routes/adminInventory.routes.js";
 import adminOrderRoutes from "./routes/adminOrder.routes.js";
 import adminCustomerRoutes from "./routes/adminCustomer.routes.js";
@@ -158,6 +159,7 @@ export function createApp() {
   app.use("/api/v1/admin", adminRoutes);
   app.use("/api/v1/admin", adminCatalogRoutes);
   app.use("/api/v1/admin", adminProductRoutes);
+  app.use("/api/v1/admin", adminAttributesRoutes);
   app.use("/api/v1/admin", adminInventoryRoutes);
   app.use("/api/v1/admin", adminOrderRoutes);
   app.use("/api/v1/admin", adminCustomerRoutes);

@@ -5,7 +5,7 @@ const fail = (s, c, m) => {
   throw new AuthError(s, c, m);
 };
 export async function list(pool, q = {}) {
-  const w = ["c.deleted_at IS NULL"],
+  const w = q.includeDeleted ? ["1=1"] : ["c.deleted_at IS NULL"],
     a = [];
   if (q.q) {
     w.push(
@@ -19,7 +19,7 @@ export async function list(pool, q = {}) {
     a.push(q.status);
   }
   const [rows] = await pool.execute(
-    `SELECT c.id,c.first_name,c.last_name,c.email,c.phone,c.status,c.last_login_at,c.created_at,(SELECT COUNT(*) FROM orders o WHERE o.customer_id=c.id) order_count,(SELECT COALESCE(SUM(o.grand_total),0) FROM orders o WHERE o.customer_id=c.id AND o.payment_status IN ('paid','pending')) order_total FROM customers c WHERE ${w.join(" AND ")} ORDER BY c.created_at DESC LIMIT 100`,
+    `SELECT c.id,c.first_name,c.last_name,c.email,c.phone,c.status,c.deleted_at,c.last_login_at,c.created_at,(SELECT COUNT(*) FROM orders o WHERE o.customer_id=c.id) order_count,(SELECT COALESCE(SUM(o.grand_total),0) FROM orders o WHERE o.customer_id=c.id AND o.payment_status IN ('paid','pending')) order_total FROM customers c WHERE ${w.join(" AND ")} ORDER BY c.created_at DESC LIMIT 100`,
     a,
   );
   return rows.map((r) => ({
@@ -43,7 +43,7 @@ export async function summary(pool) {
 }
 export async function detail(pool, id) {
   const [[c]] = await pool.execute(
-    "SELECT id,first_name,last_name,email,phone,status,email_verified_at,phone_verified_at,last_login_at,created_at,updated_at FROM customers WHERE id=? AND deleted_at IS NULL",
+    "SELECT id,first_name,last_name,email,phone,status,deleted_at,email_verified_at,phone_verified_at,last_login_at,created_at,updated_at FROM customers WHERE id=?",
     [id],
   );
   if (!c) fail(404, "CUSTOMER_NOT_FOUND", "Customer not found.");
@@ -125,7 +125,7 @@ export async function setStatus(pool, id, status, adminId, req) {
   return { status };
 }
 
-export async function deletePermanently(pool, id, adminId, req) {
+export async function softDelete(pool, id, adminId, req) {
   const [[customer]] = await pool.execute(
     "SELECT id FROM customers WHERE id=? AND deleted_at IS NULL",
     [id],
@@ -136,6 +136,24 @@ export async function deletePermanently(pool, id, adminId, req) {
     "UPDATE customers SET status='disabled',deleted_at=NOW() WHERE id=? AND deleted_at IS NULL",
     [id],
   );
-  await audit(pool, adminId, "customer.deleted", "customers", id, req);
-  return { deleted: true };
+  await audit(pool, adminId, "customer.soft_deleted", "customers", id, req);
+  return { deleted: true, permanent: false };
+}
+
+export async function restore(pool, id, adminId, req) {
+  const [[customer]] = await pool.execute("SELECT id FROM customers WHERE id=? AND deleted_at IS NOT NULL", [id]);
+  if (!customer) fail(404, "CUSTOMER_NOT_FOUND", "Deleted customer not found.");
+  await pool.execute("UPDATE customers SET status='disabled',deleted_at=NULL WHERE id=?", [id]);
+  await audit(pool, adminId, "customer.restored", "customers", id, req);
+  return { restored: true, status: "disabled" };
+}
+
+export async function deletePermanently(pool, id, adminId, req) {
+  const [[customer]] = await pool.execute("SELECT id,deleted_at FROM customers WHERE id=?", [id]);
+  if (!customer) fail(404, "CUSTOMER_NOT_FOUND", "Customer not found.");
+  if (!customer.deleted_at) fail(409, "CUSTOMER_MUST_BE_DELETED", "Soft-delete the customer before permanent deletion.");
+  await revokeAllSessions(pool, id);
+  await pool.execute("DELETE FROM customers WHERE id=?", [id]);
+  await audit(pool, adminId, "customer.permanently_deleted", "customers", id, req);
+  return { deleted: true, permanent: true, salesHistoryPreserved: true };
 }

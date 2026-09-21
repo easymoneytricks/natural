@@ -19,14 +19,14 @@ import heroImage from "../assets/natural-beauty-hero.png";
 
 const content = {
   "gift-cards": {
-    eyebrow: "Give the ritual",
+    eyebrow: "Give something thoughtful",
     title: "Gift cards for thoughtful care.",
     intro:
-      "Let someone choose the formulas that feel right for them. Natural Beauty gift cards are ideal for birthdays, milestones and everyday acts of care.",
+      "Let someone choose the products that feel right for them. Gift cards are ideal for birthdays, milestones and everyday acts of care.",
     sections: [
       [
         "Choose a considered amount",
-        "Gift cards are available in flexible values from ₹500. Our care team can help you choose an amount that suits a complete routine or a single favourite formula.",
+        "Gift cards are available in flexible values from ₹500. Our team can help you choose an amount that suits a complete order or a single favourite product.",
       ],
       [
         "How it works",
@@ -34,7 +34,7 @@ const content = {
       ],
       [
         "Simple to redeem",
-        "The recipient can enter their gift card code in the cart at checkout. Any remaining balance stays available for a future Natural Beauty order until the card expires.",
+        "The recipient can enter their gift card code in the cart at checkout. Any remaining balance stays available for a future order until the card expires.",
       ],
       [
         "Need help choosing?",
@@ -44,17 +44,17 @@ const content = {
   },
   about: {
     eyebrow: "Our approach",
-    title: "Skincare, made considered.",
+    title: "Products, made considered.",
     intro:
-      "Natural Beauty brings botanical inspiration and modern formulation together for simple, purposeful rituals.",
+      "We bring thoughtful design and useful details together for simple, purposeful routines.",
     sections: [
       [
-        "Formulas with a clear role",
+        "Products with a clear role",
         "Every product is designed to fit naturally into an everyday routine, with considered textures and ingredients you can understand.",
       ],
       [
         "Care that feels personal",
-        "We believe good skincare should meet your skin where it is, without unnecessary complexity or overpromising.",
+        "We believe good products should meet your needs without unnecessary complexity or overpromising.",
       ],
     ],
   },
@@ -62,7 +62,7 @@ const content = {
     eyebrow: "Your privacy",
     title: "Privacy policy",
     intro:
-      "How Natural Beauty collects, uses and protects information when you browse or shop with us.",
+      "How this store collects, uses and protects information when you browse or shop with us.",
     sections: [
       [
         "Information we collect",
@@ -130,7 +130,7 @@ const content = {
       ],
       [
         "Carefully packed",
-        "Every order is packed securely to protect the formulas and reduce unnecessary packaging.",
+        "Every order is packed securely to protect the products and reduce unnecessary packaging.",
       ],
     ],
   },
@@ -141,7 +141,7 @@ const content = {
     sections: [
       [
         "Start a return",
-        "Email hello@naturalbeauty.example with your order number and reason within 7 days of delivery.",
+        "Email our support team with your order number and reason within 7 days of delivery.",
       ],
       [
         "Condition",
@@ -155,16 +155,29 @@ export function RouteShell({ title }) {
   if (title === "contact") return <ContactPage />;
   if (title === "about") return <AboutPage />;
   if (title === "track-order") return <TrackOrderPage />;
-  const page = content[title] || {
-    eyebrow: "Natural Beauty",
+  const businessName = getBusinessName(useStoreSettings());
+  const rawPage = content[title] || {
+    eyebrow: "Our store",
     title: title.replaceAll("-", " "),
-    intro: "Thoughtful details for a simpler skincare ritual.",
+    intro: "Thoughtful details for a simpler shopping experience.",
     sections: [
       [
         "A considered destination",
-        "This page is being prepared with the same care as every Natural Beauty formula.",
+        "This page is being prepared with the same care as every product in our store.",
       ],
     ],
+  };
+  const replaceBrand = (value) =>
+    typeof value === "string" ? value.replaceAll("Natural Beauty", businessName) : value;
+  const page = {
+    ...rawPage,
+    eyebrow: replaceBrand(rawPage.eyebrow),
+    title: replaceBrand(rawPage.title),
+    intro: replaceBrand(rawPage.intro),
+    sections: rawPage.sections.map(([heading, text]) => [
+      replaceBrand(heading),
+      replaceBrand(text),
+    ]),
   };
   return (
     <section className="route-shell container">
@@ -242,7 +255,7 @@ function TrackOrderPage() {
         <form className="track-order-form" onSubmit={submit}>
           <h2>Find your order</h2>
           <p>
-            Use either your Natural Beauty order number or the tracking ID
+            Use either your store order number or the tracking ID
             shared by the courier.
           </p>
           <label>
@@ -328,6 +341,7 @@ function TrackOrderPage() {
 }
 
 function AboutPage() {
+  const businessName = getBusinessName(useStoreSettings());
   const principles = [
     [
       Leaf,
@@ -336,8 +350,8 @@ function AboutPage() {
     ],
     [
       Beaker,
-      "Modern formulation",
-      "Every formula is developed around everyday skin needs, with considered concentrations, pleasant textures and straightforward directions.",
+      "Thoughtful design",
+      "Every product is developed around everyday needs, with considered details and straightforward directions.",
     ],
     [
       ShieldCheck,
@@ -350,9 +364,9 @@ function AboutPage() {
       <div className="about-hero">
         <div>
           <p className="eyebrow">Our story</p>
-          <h1>Skincare with less noise, and more intention.</h1>
+          <h1>Products with less noise, and more intention.</h1>
           <p className="route-intro">
-            Natural Beauty began with a simple belief: a good routine should
+            {businessName} began with a simple belief: a good routine should
             feel easy to understand, lovely to use and genuinely useful to your
             skin.
           </p>
@@ -360,20 +374,20 @@ function AboutPage() {
         <figure className="about-hero-image">
           <img
             src={heroImage}
-            alt="Natural Beauty skincare bottles and botanicals"
+            alt={`${businessName} products and botanicals`}
           />
           <figcaption>Botanical inspiration · modern science</figcaption>
         </figure>
       </div>
       <div className="about-story-copy">
         <p className="eyebrow">A considered approach</p>
-        <h2>Make space for the rituals that stay.</h2>
+        <h2>Make space for the routines that stay.</h2>
         <p>
-          We create uncomplicated formulas for real routines: the cleanser you
+          We create uncomplicated products for real routines: the item you
           reach for every morning, the serum you use when your skin needs
           support, and the moisturiser that brings everything together. Our
           products are designed to work beautifully on their own and even better
-          as a thoughtful, flexible ritual.
+            as a thoughtful, flexible routine.
         </p>
       </div>
       <div className="about-principles">
@@ -387,11 +401,11 @@ function AboutPage() {
       </div>
       <div className="about-footer-cta">
         <div>
-          <p className="eyebrow">Find your everyday ritual</p>
+          <p className="eyebrow">Find what works for you</p>
           <h2>Start with what your skin needs today.</h2>
         </div>
         <Link className="button" to="/shop">
-          Explore skincare <ArrowRight size={15} />
+          Explore products <ArrowRight size={15} />
         </Link>
       </div>
     </section>

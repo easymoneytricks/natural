@@ -107,7 +107,7 @@ function PageEditor({ page, onClose, onSaved }) {
               <input
                 value={form.eyebrow}
                 onChange={(event) => set("eyebrow", event.target.value)}
-                placeholder="THE NATURAL BEAUTY NOTE"
+                placeholder="THE STORE NOTE"
               />
             </label>
             <label>

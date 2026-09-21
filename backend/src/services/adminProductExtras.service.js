@@ -135,6 +135,26 @@ export async function mediaUpload(pool, id, file, adminId, req) {
   }
 }
 
+export async function mediaAttach(pool, id, assetId, input, adminId, req) {
+  return productTransaction(pool, id, async (connection) => {
+    const [[asset]] = await connection.execute(
+      "SELECT id,file_path,alt_text FROM media_assets WHERE id=? AND deleted_at IS NULL",
+      [assetId],
+    );
+    if (!asset) fail(404, "MEDIA_ASSET_NOT_FOUND", "Media library asset not found.");
+    const [[count]] = await connection.execute(
+      "SELECT COUNT(*) AS n,COALESCE(MAX(sort_order),-1)+1 AS next_order FROM product_media WHERE product_id=? AND deleted_at IS NULL",
+      [id],
+    );
+    const [result] = await connection.execute(
+      'INSERT INTO product_media(product_id,media_type,file_path,alt_text,sort_order,is_primary) VALUES(? ,"image",?,?,?,?) ON DUPLICATE KEY UPDATE deleted_at=NULL,alt_text=VALUES(alt_text)',
+      [id, asset.file_path, String(input?.altText || asset.alt_text || "").slice(0, 255) || null, Number(count.next_order), Number(count.n) === 0],
+    );
+    await audit(connection, adminId, "product.media_attached", "product_media", result.insertId, req);
+    return { id: result.insertId, path: asset.file_path, file_path: asset.file_path, alt_text: String(input?.altText || asset.alt_text || "").slice(0, 255) || null, sort_order: Number(count.next_order), is_primary: Number(count.n) === 0 ? 1 : 0 };
+  });
+}
+
 export async function mediaUpdate(pool, id, input, adminId, req) {
   return productTransaction(pool, id, async (connection) => {
     const [[media]] = await connection.execute(
@@ -222,14 +242,17 @@ export async function mediaRemove(pool, id, mediaId, adminId, req) {
 }
 export async function attributes(pool) {
   const [a] = await pool.execute(
-    "SELECT id,name,slug,display_type,sort_order FROM attributes WHERE is_active=1 ORDER BY sort_order,id",
+    "SELECT id,name,slug,display_type,is_variant_axis,sort_order FROM attributes WHERE is_active=1 ORDER BY sort_order,id",
   );
   for (const x of a) {
     const [v] = await pool.execute(
-      "SELECT id,attribute_id,value,slug,display_value,sort_order FROM attribute_values WHERE attribute_id=? AND is_active=1 ORDER BY sort_order,id",
+      "SELECT id,attribute_id,value,slug,display_value,metadata_json,sort_order FROM attribute_values WHERE attribute_id=? AND is_active=1 ORDER BY sort_order,id",
       [x.id],
     );
-    x.values = v;
+    x.values = v.map((value) => ({
+      ...value,
+      metadata: typeof value.metadata_json === "string" ? (() => { try { return JSON.parse(value.metadata_json); } catch { return {}; } })() : (value.metadata_json || {}),
+    }));
   }
   return a;
 }

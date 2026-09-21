@@ -52,11 +52,11 @@ export function Wishlist() {
             <p className="eyebrow">Your wishlist</p>
             <h1>Nothing saved yet.</h1>
             <p>
-              Save the formulas you'd like to come back to and build your ritual
+              Save the products you'd like to come back to and build your collection
               at your own pace.
             </p>
             <Link className="button" to="/shop">
-              Explore skincare <ArrowRight size={15} />
+              Explore products <ArrowRight size={15} />
             </Link>
             <Link className="empty-secondary" to="/shop?sort=best-selling">
               View best sellers
@@ -73,7 +73,7 @@ export function Wishlist() {
       <header className="wishlist-header">
         <p className="eyebrow">Saved for later</p>
         <h1>Your wishlist</h1>
-        <p>Keep the formulas you're considering close at hand.</p>
+        <p>Keep the products you're considering close at hand.</p>
       </header>
       <div className="account-layout wishlist-account-layout">
         <nav className="account-nav" aria-label="Account navigation">

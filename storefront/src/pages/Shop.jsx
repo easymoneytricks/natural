@@ -5,6 +5,7 @@ import { ProductCard } from "../components/product/ProductCard";
 import { getCatalogFilters, getProducts } from "../services/catalogApi";
 import "./ShopIntegration.css";
 import { SeoMeta, StructuredData } from "../components/SeoMeta";
+import { useStoreSettings } from "../context/StoreSettingsContext";
 
 const fallbackGroups = [
   {
@@ -108,6 +109,8 @@ const sortMap = {
 };
 
 export function Shop() {
+  const storeSettings = useStoreSettings();
+  const shopSettings = storeSettings.shop || {};
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
@@ -129,7 +132,7 @@ export function Shop() {
   const sort = searchParams.get("sort") || "featured";
   const search = searchParams.get("q") || "";
   const selected = Object.fromEntries(
-    fallbackGroups.map(({ key }) => [key, searchParams.getAll(key)]),
+    filterGroups.map(({ key }) => [key, searchParams.getAll(key)]),
   );
 
   useEffect(() => {
@@ -140,30 +143,24 @@ export function Shop() {
         setFilterGroups([
           {
             key: "category",
-            title: "Category",
+            title: shopSettings.filter_category_title || "Category",
             options: data.categories.map((item) => item.slug),
             labels: data.categories.map((item) => item.name),
           },
           {
-            key: "skin",
-            title: "Skin type",
-            options: data.skinTypes.map((item) => item.slug),
-            labels: data.skinTypes.map((item) => item.value),
+            key: "brand",
+            title: shopSettings.filter_brand_title || "Brand",
+            options: data.brands.map((item) => item.slug),
+            labels: data.brands.map((item) => item.name),
           },
-          {
-            key: "concern",
-            title: "Concern",
-            options: data.concerns.map((item) => item.slug),
-            labels: data.concerns.map((item) => item.value),
-          },
-          {
-            key: "size",
-            title: "Pack size",
-            options: data.packSizes.map((item) => item.slug),
-            labels: data.packSizes.map((item) => item.value),
-          },
-          fallbackGroups[4],
-          fallbackGroups[5],
+          ...(data.attributes || []).map((attribute) => ({
+            key: attribute.slug,
+            title: attribute.name,
+            options: (attribute.values || []).map((item) => item.slug),
+            labels: (attribute.values || []).map((item) => item.value),
+          })),
+          { ...fallbackGroups[4], title: shopSettings.filter_price_title || fallbackGroups[4].title },
+          { ...fallbackGroups[5], title: shopSettings.filter_availability_title || fallbackGroups[5].title },
         ]);
       })
       .catch(() => {})
@@ -184,14 +181,7 @@ export function Shop() {
       page: searchParams.get("page") || 1,
       limit: 12,
     };
-    for (const key of [
-      "category",
-      "brand",
-      "skin",
-      "concern",
-      "size",
-      "availability",
-    ]) {
+    for (const key of filterGroups.map((group) => group.key)) {
       const values = searchParams.getAll(key);
       if (values.length) params[key] = values.join(",");
     }
@@ -229,7 +219,7 @@ export function Shop() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [searchParams, search, sort]);
+  }, [searchParams, search, sort, filterGroups]);
 
   const updateParams = (key, value, checked) => {
     const next = new URLSearchParams(searchParams);
@@ -248,17 +238,17 @@ export function Shop() {
   const activeFilters = filterGroups.flatMap(({ key, title }) =>
     (selected[key] || []).map((value) => ({ key, title, value })),
   );
-  const resultLabel = `${meta.total} ${meta.total === 1 ? "product" : "products"}`;
+  const resultLabel = `${meta.total} ${meta.total === 1 ? shopSettings.result_product_label || "product" : shopSettings.result_products_label || "products"}`;
 
   return (
     <>
       <SeoMeta
         title={
           selected.category?.[0]
-            ? `${selected.category[0]} skincare`
-            : "Skincare collection"
+            ? `${selected.category[0]} collection`
+            : "Product collection"
         }
-        description="Explore considered skincare formulas by skin type, concern and everyday ritual."
+        description="Explore products by category, attributes and everyday needs."
       />
       <StructuredData
         data={{
@@ -267,7 +257,7 @@ export function Shop() {
             {
               "@type": "CollectionPage",
               "@id": `${window.location.origin}/shop#collection`,
-              name: selected.category?.[0] || "Skincare collection",
+              name: selected.category?.[0] || "Product collection",
               url: window.location.href,
               mainEntity: { "@id": `${window.location.origin}/shop#items` },
             },
@@ -305,11 +295,10 @@ export function Shop() {
         <p className="breadcrumb">
           <Link to="/">Home</Link> <span>/</span> Shop
         </p>
-        <p className="eyebrow">The collection</p>
-        <h1>Skincare, considered.</h1>
+        <p className="eyebrow">{shopSettings.eyebrow || "The collection"}</p>
+        <h1>{shopSettings.title || "Products, considered."}</h1>
         <p>
-          Explore formulas by skin type, concern and the role they play in your
-          everyday ritual.
+          {shopSettings.description || "Explore products by category, attributes and everyday needs."}
         </p>
       </section>
       <main className="shop-content homepage-container">
@@ -356,8 +345,8 @@ export function Shop() {
               next.delete("page");
               setSearchParams(next);
             }}
-            placeholder="Search within skincare"
-            aria-label="Search within skincare"
+            placeholder={shopSettings.search_placeholder || "Search within the collection"}
+            aria-label={shopSettings.search_placeholder || "Search within the collection"}
           />
         </div>
         {activeFilters.length > 0 && (
@@ -536,10 +525,10 @@ function EmptyState({ clearFilters, search }) {
   return (
     <div className="empty-shop">
       <p className="eyebrow">
-        {search ? "No matching formulas" : "A quieter selection"}
+        {search ? "No matching items" : "No matches"}
       </p>
-      <h2>No formulas found</h2>
-      <p>We couldn't find products matching all of those selections.</p>
+      <h2>No items found</h2>
+      <p>We couldn't find items matching all of those selections.</p>
       <button className="button" onClick={clearFilters}>
         Clear filters
       </button>

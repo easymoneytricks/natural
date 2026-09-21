@@ -4,6 +4,7 @@ import {
   Image,
   LoaderCircle,
   Menu,
+  Plus,
   Save,
   Settings2,
 } from "lucide-react";
@@ -14,15 +15,16 @@ const defaults = {
   branding: {
     logo_url: "",
     footer_logo_url: "",
+    auth_image_url: "",
     favicon_url: "",
     announcement: "Complimentary shipping on orders above ₹999",
-    announcement_secondary: "Thoughtfully formulated skincare",
+    announcement_secondary: "Thoughtfully made products",
     announcement_tertiary: "Secure checkout",
   },
   seo: {
-    site_title: "Natural Beauty",
-    meta_description: "Thoughtfully formulated skincare for everyday rituals.",
-    keywords: "natural skincare, botanical skincare, skincare routine",
+    site_title: "Your store",
+    meta_description: "Thoughtfully made products for everyday use.",
+    keywords: "quality products, everyday essentials, considered shopping",
     og_image_url: "",
     robots: "index,follow",
     google_site_verification: "",
@@ -47,7 +49,7 @@ const defaults = {
     pricing_mode: "exclusive",
     seller_state: "Karnataka",
     seller_gstin: "",
-    seller_legal_name: "Natural Beauty",
+    seller_legal_name: "Your store",
     seller_address: "",
     seller_state_code: "29",
     reverse_charge: "false",
@@ -55,10 +57,10 @@ const defaults = {
     invoice_note: "Prices and taxes are shown as configured at checkout.",
   },
   homepage: {
-    hero_eyebrow: "Botanical skincare · Modern science",
+    hero_eyebrow: "Thoughtful products · Modern design",
     hero_title: "Healthy skin, beautifully simple.",
     hero_description:
-      "Thoughtful formulas for everyday concerns — designed to hydrate, restore and bring out your natural glow.",
+      "Thoughtful products for everyday needs — designed to be useful, clear and easy to enjoy.",
     hero_image_url: "",
     primary_cta_label: "Shop bestsellers",
     primary_cta_url: "/best-sellers",
@@ -80,14 +82,14 @@ const defaults = {
     groups_link_label: "Explore all groups",
     groups_link_url: "/shop",
     brand_eyebrow: "Our philosophy",
-    brand_title: "Nature, refined by thoughtful formulation.",
+    brand_title: "Purpose, refined through thoughtful design.",
     brand_description:
       "We believe products should feel considered, uncomplicated and personal.",
     brand_link_label: "Discover our story",
     brand_link_url: "/about",
     brand_image_url: "local:hero",
-    brand_image_alt: "Botanical skincare bottles in soft natural light",
-    brand_note_title: "Formulated with purpose",
+    brand_image_alt: "Products in soft natural light",
+    brand_note_title: "Designed with purpose",
     brand_note_text: "Designed around skin needs, texture and everyday usability.",
     ingredients_eyebrow: "Details with intention",
     ingredients_title: "Details that make a difference.",
@@ -108,23 +110,23 @@ const defaults = {
     highlight_6_title: "Retinol",
     highlight_6_text: "Supports smoother, renewed-looking skin",
     principles_title: "Principles",
-    principle_1_title: "Purposeful formulas",
+    principle_1_title: "Purposeful products",
     principle_1_text: "Every product starts with a clear role in your routine.",
     principle_2_title: "Routine-first design",
-    principle_2_text: "Products made to work naturally within everyday skincare.",
+    principle_2_text: "Products made to work naturally within everyday routines.",
     principle_3_title: "Considered experience",
     principle_3_text:
-      "Texture, usability and presentation matter as much as the formula story.",
-    ritual_eyebrow: "The daily ritual",
-    ritual_title: "Small rituals.\nBeautiful consistency.",
+      "Usability and presentation matter as much as the product story.",
+    ritual_eyebrow: "The daily edit",
+    ritual_title: "Small choices.\nBeautiful consistency.",
     ritual_description:
       "Build a simple routine for morning, evening and everything in between.",
     ritual_link_label: "Build your routine",
     ritual_link_url: "/shop",
     ritual_image_url: "local:hero",
-    ritual_image_alt: "A calm botanical skincare ritual arranged on stone",
+    ritual_image_alt: "A calm product arrangement in natural light",
     new_eyebrow: "Just in",
-    new_title: "New to the ritual",
+    new_title: "New to the collection",
     new_description:
       "Fresh additions designed to find an easy place in your everyday routine.",
     new_link_label: "Shop new arrivals",
@@ -142,7 +144,7 @@ const defaults = {
     routine_secondary_url: "/shop",
     routine_image_url: "local:hero",
     routine_image_alt: "Unbranded products arranged on natural stone",
-    testimonials_eyebrow: "Notes from the ritual",
+    testimonials_eyebrow: "Notes from our customers",
     testimonial_1_name: "Aanya Mehta",
     testimonial_1_product: "Barrier Restore Moisturizer",
     testimonial_1_quote:
@@ -159,28 +161,28 @@ const defaults = {
     testimonial_4_product: "Niacinamide Balance Serum",
     testimonial_4_quote:
       "The website made it surprisingly easy to browse by concern instead of guessing which product I should start with.",
-    newsletter_eyebrow: "The Natural Beauty note",
+    newsletter_eyebrow: "The store note",
     newsletter_title: "A little more care,\ndelivered to your inbox.",
     newsletter_description:
-      "New formulas, thoughtful skincare notes, early access and occasional offers — without the noise.",
+      "New products, useful notes, early access and occasional offers — without the noise.",
     newsletter_label: "Your email address",
     newsletter_placeholder: "Your email address",
     newsletter_button_label: "Join the list",
     newsletter_submitting_label: "Joining…",
     newsletter_privacy:
-      "By subscribing, you agree to receive Natural Beauty updates. You can unsubscribe at any time.",
+      "By subscribing, you agree to receive store updates. You can unsubscribe at any time.",
     newsletter_success:
-      "You’re on the list. Welcome to the Natural Beauty note.",
+      "You’re on the list. Welcome to the store note.",
     featured_eyebrow: "Most loved",
-    featured_title: "The best of Natural Beauty",
+    featured_title: "The best of our store",
     featured_description:
       "Customer favourites selected from the full collection.",
     featured_link_label: "View all products",
     featured_link_url: "/shop",
   },
   trust: {
-    item_1_title: "Thoughtful formulas",
-    item_1_text: "Made for everyday skin rituals",
+    item_1_title: "Thoughtful products",
+    item_1_text: "Made for everyday use",
     item_2_title: "Skin-first care",
     item_2_text: "Solutions organized around your needs",
     item_3_title: "Secure checkout",
@@ -198,6 +200,18 @@ const defaults = {
     quick_links:
       "New arrivals\nTop selling\nEveryday essentials\nGift ideas\nBest sellers",
   },
+  shop: {
+    eyebrow: "The collection",
+    title: "Products, considered.",
+    description: "Explore products by category, attributes and everyday needs.",
+    search_placeholder: "Search within the collection",
+    result_product_label: "product",
+    result_products_label: "products",
+    filter_category_title: "Category",
+    filter_brand_title: "Brand",
+    filter_price_title: "Price",
+    filter_availability_title: "Availability",
+  },
   mega_menu: {
     shop: `Shop by category :: Cleansers, Toners & Mists, Serums, Moisturizers, Sunscreens, Masks & Treatments, Eye Care, Lip Care
 Shop edits :: New Arrivals, Best Sellers, Daily Essentials, Travel Essentials, Gift Sets, Shop All
@@ -213,7 +227,7 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
   },
   footer: {
     tagline:
-      "Thoughtful skincare for everyday rituals. Modern botanical care, made to feel simple and personal.",
+      "Thoughtful products for everyday use, made to feel simple and personal.",
     tagline_secondary:
       "Modern botanical care, made to feel simple and personal.",
     shop_title: "Shop",
@@ -222,7 +236,7 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
     legal_title: "Legal",
     mobile_guidance_title: "Need a little guidance?",
     mobile_guidance_text: "Speak with our team",
-    support_email: "hello@naturalbeauty.example",
+    support_email: "support@example.com",
     support_phone: "+91 98765 43210",
     location: "Bengaluru, Karnataka",
     footer_links:
@@ -247,13 +261,13 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
     eyebrow: "We would love to hear from you",
     title: "Let’s make your routine feel simple.",
     intro:
-      "Questions about a product, an order or finding your next formula? Our care team is here Monday–Saturday, 10:00 AM–6:00 PM.",
-    email: "hello@naturalbeauty.example",
+      "Questions about a product or an order? Our support team is here Monday–Saturday, 10:00 AM–6:00 PM.",
+    email: "support@example.com",
     phone: "+91 98765 43210",
     phone_secondary: "",
-    address_name: "Natural Beauty Studio",
+    address_name: "Store support",
     address_line: "Indiranagar, Bengaluru 560038",
-    cta_label: "Explore skincare",
+    cta_label: "Explore products",
     cta_url: "/shop",
     form_eyebrow: "Customer care",
     form_title: "How can we help?",
@@ -276,7 +290,7 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
       "https://www.openstreetmap.org/export/embed.html?bbox=77.625%2C12.965%2C77.645%2C12.985&layer=mapnik&marker=12.975%2C77.635",
   },
   store: {
-    store_name: "Natural Beauty",
+    store_name: "Your store",
     currency: "INR",
     support_hours: "Mon–Sat · 10:00 AM–6:00 PM",
     maintenance_mode: "open",
@@ -296,7 +310,7 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
     username: "",
     password: "",
     from_email: "",
-    from_name: "Natural Beauty",
+    from_name: "Your store",
     secure: "false",
   },
   homepage_sections: {
@@ -645,6 +659,10 @@ export function SettingsPage() {
   const [testRecipient, setTestRecipient] = useState("");
   const [testingEmail, setTestingEmail] = useState(false);
   const [activeSection, setActiveSection] = useState("storefront");
+  const [catalogAttributes, setCatalogAttributes] = useState([]);
+  const [attributeDraft, setAttributeDraft] = useState({ name: "", displayType: "button", isVariantAxis: true });
+  const [valueDrafts, setValueDrafts] = useState({});
+  const [attributeSaving, setAttributeSaving] = useState(false);
   useEffect(() => {
     Promise.all([
       authFetch("/admin/settings"),
@@ -683,6 +701,35 @@ export function SettingsPage() {
       .catch((caught) => setError(caught.message || "Unable to load settings."))
       .finally(() => setLoading(false));
   }, []);
+  useEffect(() => {
+    if (activeSection !== "catalog") return;
+    authFetch("/admin/catalog-attributes")
+      .then((response) => setCatalogAttributes(response.data || []))
+      .catch((caught) => setError(caught.message || "Unable to load attributes."));
+  }, [activeSection]);
+  const createCatalogAttribute = async () => {
+    if (!attributeDraft.name.trim()) return;
+    setAttributeSaving(true); setError("");
+    try {
+      const response = await authFetch("/admin/catalog-attributes", { method: "POST", body: attributeDraft });
+      setCatalogAttributes((current) => [...current, response.data]);
+      setAttributeDraft({ name: "", displayType: "button", isVariantAxis: true });
+      setNotice("Attribute created.");
+    } catch (caught) { setError(caught.message || "Unable to create attribute."); }
+    finally { setAttributeSaving(false); }
+  };
+  const createCatalogValue = async (attributeId) => {
+    const draft = valueDrafts[attributeId] || { value: "", colorHex: "#dfe9df" };
+    if (!draft.value.trim()) return;
+    setAttributeSaving(true); setError("");
+    try {
+      const response = await authFetch(`/admin/catalog-attributes/${attributeId}/values`, { method: "POST", body: draft });
+      setCatalogAttributes((current) => current.map((item) => Number(item.id) === Number(attributeId) ? response.data : item));
+      setValueDrafts((current) => ({ ...current, [attributeId]: "" }));
+      setNotice("Attribute value created.");
+    } catch (caught) { setError(caught.message || "Unable to create value."); }
+    finally { setAttributeSaving(false); }
+  };
   const save = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -762,15 +809,21 @@ export function SettingsPage() {
           <nav className="settings-section-tabs" aria-label="Settings sections">
             {[
               ["storefront", "Storefront", "Branding, SEO and mega menu"],
-              ["commerce", "Commerce", "Shipping, tax and payments"],
-              ["communications", "Communications", "Email and security"],
-              ["homepage", "Homepage", "Hero, Section and Positions"],
+              ["shop", "Shop", "Collection page copy and filter labels"],
               [
                 "header_footer",
                 "Header & footer",
                 "Navigation, search and footer",
               ],
+              ["homepage", "Homepage", "Hero, Section and Positions"],
               ["contact", "Contact page", "Customer care, address and map"],
+              ["commerce", "Commerce", "Shipping, tax and payments"],
+              ["communications", "Communications", "Email and security"],
+              [
+                "catalog",
+                "Attributes & variants",
+                "Global product options and variant controls",
+              ],
               ["rewards", "Rewards", "Points, value and expiry"],
             ].map(([value, label, description]) => (
               <button
@@ -785,6 +838,52 @@ export function SettingsPage() {
               </button>
             ))}
           </nav>
+          {activeSection === "shop" && (
+            <div className="settings-tab-panel">
+              <SettingsGroup icon={Settings2} title="Shop collection" description="Control the shop page copy and filter headings. Filter values come from your live catalog, categories and global attributes.">
+                <Field label="Eyebrow" group="shop" name="eyebrow" state={state} setState={setState} />
+                <Field label="Title" group="shop" name="title" state={state} setState={setState} />
+                <Field label="Description" group="shop" name="description" type="textarea" state={state} setState={setState} />
+                <Field label="Search placeholder" group="shop" name="search_placeholder" state={state} setState={setState} />
+                <Field label="Singular result label" group="shop" name="result_product_label" state={state} setState={setState} />
+                <Field label="Plural result label" group="shop" name="result_products_label" state={state} setState={setState} />
+                <Field label="Category filter label" group="shop" name="filter_category_title" state={state} setState={setState} />
+                <Field label="Brand filter label" group="shop" name="filter_brand_title" state={state} setState={setState} />
+                <Field label="Price filter label" group="shop" name="filter_price_title" state={state} setState={setState} />
+                <Field label="Availability filter label" group="shop" name="filter_availability_title" state={state} setState={setState} />
+              </SettingsGroup>
+            </div>
+          )}
+          {activeSection === "catalog" && (
+            <div className="settings-tab-panel">
+              <SettingsGroup icon={Settings2} title="Attributes & variants" description="Create the global options and values used by products and SKU combinations.">
+                <div className="settings-inline-row">
+                  <label className="settings-field"><span>New attribute</span><div className="settings-input-wrap"><input value={attributeDraft.name} placeholder="e.g. Finish, Size or Skin type" onChange={(event) => setAttributeDraft((current) => ({ ...current, name: event.target.value }))} /></div></label>
+                  <label className="settings-field"><span>Display control</span><div className="settings-input-wrap"><select value={attributeDraft.displayType} onChange={(event) => setAttributeDraft((current) => ({ ...current, displayType: event.target.value }))}><option value="button">Buttons</option><option value="select">Dropdown</option><option value="swatch">Swatches</option></select></div></label>
+                  <label className="settings-checkbox"><input type="checkbox" checked={attributeDraft.isVariantAxis} onChange={(event) => setAttributeDraft((current) => ({ ...current, isVariantAxis: event.target.checked }))} /> Use for variants</label>
+                  <button type="button" onClick={createCatalogAttribute} disabled={attributeSaving}><Plus size={16} /> Add attribute</button>
+                </div>
+                <div className="settings-attribute-list">
+                  {catalogAttributes.map((attribute) => (
+                    <fieldset className="settings-fieldset" key={attribute.id}>
+                      <legend>{attribute.name} <small>({attribute.display_type}{Number(attribute.is_variant_axis) ? ", variant option" : ", product detail"})</small></legend>
+                      <div className="settings-attribute-values">
+                        {(attribute.values || []).map((value) => <span key={value.id} className={Number(value.is_active) ? "attribute-chip" : "attribute-chip is-muted"} style={attribute.display_type === "swatch" ? { backgroundColor: value.metadata?.color || undefined } : undefined}>{value.display_value || value.value}</span>)}
+                      </div>
+                      <div className="settings-inline-row">
+                        <input value={valueDrafts[attribute.id]?.value || ""} placeholder="Add a value" onChange={(event) => setValueDrafts((current) => ({ ...current, [attribute.id]: { ...(current[attribute.id] || {}), value: event.target.value } }))} />
+                        {attribute.display_type === "swatch" && (
+                          <input aria-label="Swatch color" type="color" value={valueDrafts[attribute.id]?.colorHex || "#dfe9df"} onChange={(event) => setValueDrafts((current) => ({ ...current, [attribute.id]: { ...(current[attribute.id] || {}), colorHex: event.target.value } }))} />
+                        )}
+                        <button type="button" onClick={() => createCatalogValue(attribute.id)} disabled={attributeSaving}>Add value</button>
+                      </div>
+                    </fieldset>
+                  ))}
+                  {!catalogAttributes.length && <p>No global attributes yet. Add the first one above.</p>}
+                </div>
+              </SettingsGroup>
+            </div>
+          )}
           {activeSection === "storefront" && (
             <div className="settings-tab-panel storefront-settings-panel">
               <SettingsGroup
@@ -830,6 +929,15 @@ export function SettingsPage() {
                   setState={setState}
                   placeholder="https://… (recommended: 240 × 64 px, transparent PNG/SVG)"
                   help="Recommended: 240 × 64 px transparent logo; leave blank to reuse the header logo."
+                />
+                <Field
+                  label="Sign-in image URL"
+                  group="branding"
+                  name="auth_image_url"
+                  state={state}
+                  setState={setState}
+                  placeholder="https://… (optional)"
+                  help="Shown on sign-in and registration pages. Leave blank to use the default storefront image."
                 />
                 <Field
                   label="Announcement message"

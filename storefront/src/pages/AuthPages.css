@@ -9,7 +9,7 @@
   isolation: isolate;
   background:
     linear-gradient(145deg, rgba(53, 74, 58, 0.58), rgba(224, 224, 211, 0.1)),
-    url("../assets/natural-beauty-hero.png") center/cover,
+    var(--auth-image, url("../assets/natural-beauty-hero.png")) center/cover,
     linear-gradient(135deg, #cdd6cd 0%, #aebcaf 48%, #e8e6dc 100%);
 }
 .auth-panel {

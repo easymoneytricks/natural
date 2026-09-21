@@ -125,13 +125,12 @@ export function Cart() {
       <>
         <section className="cart-empty-page container">
           <p className="eyebrow">Your bag</p>
-          <h1>Your ritual is waiting.</h1>
+          <h1>Your items are waiting.</h1>
           <p>
-            Explore skincare by concern, skin type or the formulas that catch
-            your eye.
+            Explore products by category or the needs that matter to you.
           </p>
           <Link className="button" to="/shop">
-            Explore skincare <ArrowRight size={15} />
+            Explore products <ArrowRight size={15} />
           </Link>
           <Link className="empty-secondary" to="/best-sellers">
             View best sellers
@@ -149,7 +148,7 @@ export function Cart() {
         </p>
         <header className="cart-header">
           <p className="eyebrow">Your bag</p>
-          <h1>Your skincare ritual</h1>
+          <h1>Your cart</h1>
           <p>Review your selections before continuing to checkout.</p>
         </header>
         <ShippingProgress subtotal={subtotal} />
@@ -244,7 +243,7 @@ function CartLine({ item, onUpdate, onRemove, onWishlist }) {
         <img src={item.image} alt={item.name} />
       </Link>
       <div className="cart-line-info">
-        <p className="product-category">{item.category || "Skincare"}</p>
+        <p className="product-category">{item.category || "Product"}</p>
         <Link to={`/product/${item.slug}`}>
           <h2>{item.name}</h2>
         </Link>
@@ -433,7 +432,7 @@ function Recommendations({ items }) {
   return (
     <section className="cart-recommendations container">
       <p className="eyebrow">You may also like</p>
-      <h2>Complete the ritual.</h2>
+      <h2>Complete your order.</h2>
       <div className="product-grid">
         {items.map((item) => (
           <ProductCard

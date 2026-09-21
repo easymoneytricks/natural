@@ -9,42 +9,46 @@ const router = Router();
 router.use(requireAdminAuth);
 for (const type of ["brands", "categories"]) {
   const base = `/${type}`;
-  router.get(base, requireAdminPermission("catalog.view"), c.list(type));
+  const view = requireAdminPermission(`catalog.${type}.view`, "catalog.view");
+  const create = requireAdminPermission(`catalog.${type}.create`, "catalog.manage");
+  const update = requireAdminPermission(`catalog.${type}.update`, "catalog.manage");
+  const remove = requireAdminPermission(`catalog.${type}.delete`, "catalog.manage");
+  router.get(base, view, c.list(type));
   router.get(
     `${base}/:id`,
-    requireAdminPermission("catalog.view"),
+    view,
     c.detail(type),
   );
-  router.post(base, requireAdminPermission("catalog.manage"), c.save(type));
+  router.post(base, create, c.save(type));
   router.patch(
     `${base}/:id`,
-    requireAdminPermission("catalog.manage"),
+    update,
     c.save(type),
   );
   router.delete(
     `${base}/:id`,
-    requireAdminPermission("catalog.manage"),
+    remove,
     c.remove(type),
   );
   router.post(
     `${base}/:id/restore`,
-    requireAdminPermission("catalog.manage"),
+    update,
     c.restore(type),
   );
   router.delete(
     `${base}/:id/permanent`,
-    requireAdminPermission("catalog.manage"),
+    remove,
     c.permanent(type),
   );
   router.post(
     `${base}/:id/image`,
-    requireAdminPermission("catalog.manage"),
+    update,
     upload.single("image"),
     c.uploadImage(type),
   );
   router.delete(
     `${base}/:id/image`,
-    requireAdminPermission("catalog.manage"),
+    remove,
     c.removeImage(type),
   );
 }

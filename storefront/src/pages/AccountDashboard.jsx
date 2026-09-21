@@ -123,7 +123,7 @@ export function AccountOverview() {
               </>
             ) : (
               <p>
-                No orders yet. <Link to="/shop">Explore skincare</Link>
+                No orders yet. <Link to="/shop">Explore products</Link>
               </p>
             )}
           </div>
@@ -179,7 +179,7 @@ export function Rewards() {
   return (
     <Guard>
       <Layout active="Rewards">
-        <p className="eyebrow">Natural Beauty rewards</p>
+        <p className="eyebrow">Your rewards</p>
         <h2 className="account-title">Your rewards</h2>
         {account === null ? (
           <p className="account-muted">Loading rewards…</p>

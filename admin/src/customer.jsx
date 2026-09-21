@@ -6,7 +6,7 @@ export function CustomersPage() {
   const [rows, setRows] = useState([]),
     [q, setQ] = useState("");
   useEffect(() => {
-    authFetch(`/admin/customers?q=${encodeURIComponent(q)}`)
+    authFetch(`/admin/customers?q=${encodeURIComponent(q)}&includeDeleted=1`)
       .then((r) => setRows(r.data))
       .catch(() => setRows([]));
   }, [q]);
@@ -62,7 +62,7 @@ export function CustomersPage() {
                 </td>
                 <td>
                   <span className={`status-pill status-${r.status}`}>
-                    {r.status}
+                    {r.deleted_at ? "deleted" : r.status}
                   </span>
                 </td>
                 <td>{r.orderCount}</td>
@@ -117,7 +117,7 @@ export function CustomerDetailPage() {
     }
   };
   const removeCustomer = async () => {
-    if (!window.confirm("Permanently remove this customer account?")) return;
+    if (!window.confirm("Move this customer to deleted accounts? You can restore it or permanently delete it later.")) return;
     setActionBusy(true);
     setActionError("");
     try {
@@ -141,24 +141,49 @@ export function CustomerDetailPage() {
         </div>
         <div className="customer-admin-actions">
           <span className={`status-pill status-${customer.status}`}>
-            {customer.status.replaceAll("_", " ")}
+            {customer.deleted_at ? "deleted" : customer.status.replaceAll("_", " ")}
           </span>
-          {customer.status !== "active" && (
+          {customer.deleted_at ? (
             <>
               <button
                 type="button"
                 disabled={actionBusy}
-                onClick={() => updateStatus("active")}
+                onClick={async () => {
+                  setActionBusy(true);
+                  try {
+                    await authFetch(`/admin/customers/${id}/restore`, { method: "POST" });
+                    setData((current) => ({ ...current, customer: { ...current.customer, deleted_at: null, status: "disabled" } }));
+                  } catch (caught) { setActionError(caught.message || "Unable to restore this account."); }
+                  finally { setActionBusy(false); }
+                }}
               >
-                Reactivate account
+                Restore account
               </button>
               <button
                 type="button"
                 className="danger"
                 disabled={actionBusy}
-                onClick={removeCustomer}
+                onClick={async () => {
+                  if (!window.confirm("Permanently delete this customer? Sales history will be preserved.")) return;
+                  setActionBusy(true);
+                  try { await authFetch(`/admin/customers/${id}/permanent`, { method: "DELETE" }); navigate("/customers", { replace: true }); }
+                  catch (caught) { setActionError(caught.message || "Unable to permanently delete this account."); setActionBusy(false); }
+                }}
               >
                 Delete permanently
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                disabled={actionBusy}
+                onClick={() => updateStatus(customer.status === "active" ? "disabled" : "active")}
+              >
+                {customer.status === "active" ? "Deactivate account" : "Reactivate account"}
+              </button>
+              <button type="button" className="danger" disabled={actionBusy} onClick={removeCustomer}>
+                Delete account
               </button>
             </>
           )}

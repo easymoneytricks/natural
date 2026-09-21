@@ -83,13 +83,13 @@ router.get(
 router.get(
   "/abandoned-checkouts",
   requireAdminAuth,
-  requireAdminPermission("orders.view"),
+  requireAdminPermission("orders.abandoned.view", "orders.view"),
   abandonedCheckout.list,
 );
 router.get(
   "/abandoned-checkouts/:id",
   requireAdminAuth,
-  requireAdminPermission("orders.view"),
+  requireAdminPermission("orders.abandoned.view", "orders.view"),
   abandonedCheckout.detail,
 );
 export default router;

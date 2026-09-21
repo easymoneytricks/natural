@@ -63,7 +63,7 @@ export function SeoMeta({
     const effectiveDescription =
       description ||
       seo.meta_description ||
-      "Thoughtfully formulated skincare for everyday rituals.";
+      "Thoughtfully made products for everyday use.";
     const effectiveKeywords = keywords || seo.keywords || "";
     const effectiveImage = image || seo.og_image_url || "";
     document.title = title

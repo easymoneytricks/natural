@@ -38,6 +38,7 @@ const emptyProduct = {
   productType: "simple",
   basePrice: 0,
   baseMrp: 0,
+  weightGrams: "",
   isActive: true,
   brandId: "",
   categories: [],
@@ -113,6 +114,8 @@ export function ProductEditor() {
   const [busy, setBusy] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
+  const [libraryAssets, setLibraryAssets] = useState([]);
+  const [showLibrary, setShowLibrary] = useState(false);
   const [loading, setLoading] = useState(true);
   const [slugTouched, setSlugTouched] = useState(Boolean(id));
   const canManage = admin?.effectivePermissions?.includes("catalog.manage");
@@ -121,6 +124,15 @@ export function ProductEditor() {
 
   const updateForm = (key, value) =>
     setForm((current) => ({ ...current, [key]: value }));
+  const updateAttributeValues = (attributeId, valueIds) =>
+    updateForm(
+      "attributes",
+      form.attributes.map((item) =>
+        Number(item.attributeId) === Number(attributeId)
+          ? { ...item, values: valueIds.map((valueId) => ({ valueId })) }
+          : item,
+      ),
+    );
 
   const load = async () => {
     const [brandResponse, categoryResponse, attributeResponse] =
@@ -153,6 +165,7 @@ export function ProductEditor() {
       productType: product.product_type,
       basePrice: product.base_price,
       baseMrp: product.base_mrp,
+      weightGrams: product.weight_grams ?? "",
       isActive: !!product.is_active,
       isFeatured: !!product.featured,
       isBestSeller: !!product.best_seller,
@@ -201,11 +214,11 @@ export function ProductEditor() {
         },
       );
       const productId = id || response.data.id;
-      setMessage("Product saved successfully.");
+      setMessage("Item saved successfully.");
       if (id) await load();
       navigate(`/catalog/products/${productId}`);
     } catch (caught) {
-      setError(caught.message || "Could not save product.");
+      setError(caught.message || "Could not save entry.");
     } finally {
       setBusy(false);
     }
@@ -230,6 +243,31 @@ export function ProductEditor() {
       setError(caught.message || "Upload failed.");
     } finally {
       input.value = "";
+      setBusy(false);
+    }
+  };
+  const openLibrary = async () => {
+    setError("");
+    try {
+      const response = await authFetch("/admin/media?type=all");
+      setLibraryAssets(response.data || []);
+      setShowLibrary(true);
+    } catch (caught) {
+      setError(caught.message || "Unable to load media library.");
+    }
+  };
+  const attachLibraryAsset = async (asset) => {
+    setBusy(true);
+    try {
+      const response = await authFetch(`/admin/products/${id}/media/library`, {
+        method: "POST",
+        body: { assetId: asset.id, altText: asset.altText },
+      });
+      setMedia((current) => [...current, response.data]);
+      setShowLibrary(false);
+    } catch (caught) {
+      setError(caught.message || "Unable to attach library image.");
+    } finally {
       setBusy(false);
     }
   };
@@ -296,7 +334,7 @@ export function ProductEditor() {
 
   const changeSkuLifecycle = (item, restore) =>
     setConfirmation({
-      title: restore ? "Restore this SKU?" : "Archive this SKU?",
+      title: restore ? "Restore this inventory item?" : "Archive this inventory item?",
       description: restore
         ? "The SKU returns as inactive. Review it before activating."
         : "This hides the SKU from sale. Inventory and historical order records are retained.",
@@ -313,10 +351,10 @@ export function ProductEditor() {
 
   const changeProductLifecycle = () =>
     setConfirmation({
-      title: deleted ? "Restore this product?" : "Archive this product?",
+      title: deleted ? "Restore this item?" : "Archive this item?",
       description: deleted
-        ? "The product returns as a draft for review."
-        : "The product is hidden from sale. Order snapshots and inventory records remain intact.",
+        ? "The item returns as a draft for review."
+        : "The item is hidden from sale. Order snapshots and inventory records remain intact.",
       onConfirm: async () => {
         await authFetch(`/admin/products/${id}${deleted ? "/restore" : ""}`, {
           method: deleted ? "POST" : "DELETE",
@@ -327,7 +365,7 @@ export function ProductEditor() {
 
   const permanentlyDeleteProduct = () =>
     setConfirmation({
-      title: "Permanently delete this product?",
+      title: "Permanently delete this item?",
       description:
         "This removes the product from the catalogue and preserves order snapshots, sales history, and inventory movements. This action cannot be undone.",
       onConfirm: async () => {
@@ -338,14 +376,30 @@ export function ProductEditor() {
       },
     });
 
-  if (loading) return <div className="loading">Loading product editor…</div>;
+  const skuValueUsage = new Set(
+    skus.flatMap((item) =>
+      (item.attributes || []).map(
+        (assignment) =>
+          `${assignment.attribute_id ?? assignment.attributeId}:${assignment.attribute_value_id ?? assignment.valueId}`,
+      ),
+    ),
+  );
+  const skuAttributeUsage = new Set(
+    skus.flatMap((item) =>
+      (item.attributes || []).map((assignment) =>
+        Number(assignment.attribute_id ?? assignment.attributeId),
+      ),
+    ),
+  );
+
+  if (loading) return <div className="loading">Loading item editor…</div>;
   return (
     <div className="product-editor-page">
       <div className="page-head product-page-head">
         <div>
-          <h1>{id ? "Edit product" : "New product"}</h1>
+          <h1>{id ? "Edit item" : "New item"}</h1>
           <p>
-            Manage content, allowed values, media, and explicit sellable SKUs.
+            Manage content, options, media and inventory identifiers.
           </p>
         </div>
         <Link to="/catalog/products">Back to products</Link>
@@ -353,7 +407,7 @@ export function ProductEditor() {
       <div className="actions">
         {id && canManage && (
           <button type="button" onClick={changeProductLifecycle}>
-            {deleted ? "Restore product" : "Archive product"}
+            {deleted ? "Restore item" : "Archive item"}
           </button>
         )}
         {id && deleted && canManage && (
@@ -381,7 +435,7 @@ export function ProductEditor() {
       </div>
       {deleted && (
         <p role="status">
-          This product is archived. Restore it before editing.
+          This item is archived. Restore it before editing.
         </p>
       )}
       {message && <p role="status">{message}</p>}
@@ -443,7 +497,7 @@ export function ProductEditor() {
                     updateForm("slug", slugify(form.name));
                   }
                 }}
-                placeholder="auto-generated from product name"
+                placeholder="auto-generated from item name"
               />
             </label>
             <label>
@@ -461,7 +515,7 @@ export function ProductEditor() {
               </select>
             </label>
             <label>
-              Product type
+              Item type
               <select
                 value={form.productType}
                 onChange={(event) =>
@@ -506,6 +560,20 @@ export function ProductEditor() {
               />
             </label>
             <label>
+              Weight (grams)
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={form.weightGrams}
+                onChange={(event) =>
+                  updateForm("weightGrams", event.target.value)
+                }
+                placeholder="e.g. 100"
+              />
+              <small>Used when the item does not have variant-level weights.</small>
+            </label>
+            <label>
               HSN / SAC code
               <input
                 value={form.hsnSac || ""}
@@ -513,7 +581,7 @@ export function ProductEditor() {
                 placeholder="Example: 3304"
               />
               <small>
-                Product-specific tax classification printed on invoices.
+                Tax classification printed on invoices.
               </small>
             </label>
           </section>
@@ -556,7 +624,7 @@ export function ProductEditor() {
                 onChange={(event) =>
                   updateForm("seoKeywords", event.target.value)
                 }
-                placeholder="hydration, barrier care, moisturizer"
+                placeholder="keyword, phrase, topic"
               />
             </label>
             <label>
@@ -567,16 +635,16 @@ export function ProductEditor() {
                 onChange={(event) =>
                   updateForm("canonicalUrl", event.target.value)
                 }
-                placeholder="https://example.com/product/product-slug"
+                placeholder="https://example.com/catalog/item-slug"
               />
             </label>
             {[
               ["shortDescription", "Short description"],
               ["description", "Description"],
-              ["ingredientsText", "Ingredients text"],
-              ["howToUse", "How to use"],
-              ["texture", "Texture"],
-              ["usageTime", "Usage time"],
+              ["ingredientsText", "Components and details"],
+              ["howToUse", "Instructions"],
+              ["texture", "Specifications"],
+              ["usageTime", "Usage notes"],
             ].map(([key, label]) => (
               <label key={key}>
                 {label}
@@ -589,35 +657,57 @@ export function ProductEditor() {
           </section>
           <section className="card">
             <h2>Categories</h2>
-            <label>
-              Primary category
-              <select
-                value={form.categories.find((item) => item.isPrimary)?.id || ""}
-                onChange={(event) =>
-                  updateForm(
-                    "categories",
-                    form.categories.map((item) => ({
-                      ...item,
-                      isPrimary: Number(item.id) === Number(event.target.value),
-                    })),
-                  )
-                }
-              >
-                <option value="">Select primary category</option>
+            <strong className="product-category-heading">Primary</strong>
+            <div className="product-category-primary-list">
                 {categories
-                  .filter((category) =>
-                    form.categories.some(
-                      (item) => Number(item.id) === Number(category.id),
-                    ),
+                  .filter(
+                    (category) =>
+                      !category.parentId && !(category.parentIds || []).length,
                   )
                   .map((category) => (
-                    <option key={category.id} value={category.id}>
+                    <label key={category.id}>
+                      <input
+                        type="checkbox"
+                        checked={form.categories.some(
+                          (item) => Number(item.id) === Number(category.id),
+                        )}
+                        onChange={(event) => {
+                          if (event.target.checked) {
+                            updateForm("categories", [
+                              ...form.categories,
+                              {
+                                id: category.id,
+                                isPrimary: !form.categories.some(
+                                  (item) => item.isPrimary,
+                                ),
+                              },
+                            ]);
+                          } else {
+                            updateForm(
+                              "categories",
+                              form.categories.filter(
+                                (item) =>
+                                  Number(item.id) !== Number(category.id),
+                              ),
+                            );
+                          }
+                        }}
+                      />
                       {category.name}
-                    </option>
+                    </label>
                   ))}
-              </select>
-            </label>
-            {categories.map((category) => (
+                {!categories.some(
+                  (category) =>
+                    !category.parentId && !(category.parentIds || []).length,
+                ) && <span>Not available</span>}
+            </div>
+            <strong className="product-category-heading">Categories</strong>
+            {categories
+              .filter(
+                (category) =>
+                  category.parentId || (category.parentIds || []).length,
+              )
+              .map((category) => (
               <label key={category.id}>
                 <input
                   type="checkbox"
@@ -628,11 +718,11 @@ export function ProductEditor() {
                     updateForm(
                       "categories",
                       event.target.checked
-                        ? [
-                            ...form.categories,
-                            {
+                          ? [
+                              ...form.categories,
+                              {
                               id: category.id,
-                              isPrimary: form.categories.length === 0,
+                              isPrimary: false,
                             },
                           ]
                         : form.categories.filter(
@@ -645,10 +735,11 @@ export function ProductEditor() {
               </label>
             ))}
           </section>
+          {form.productType === "variant" && (
           <section className="card">
-            <h2>Product attributes</h2>
+            <h2>Attributes</h2>
             <p>
-              Allowed values do not automatically create variants. Save product
+              Allowed values do not automatically create variants. Save the item
               attribute changes before adding or editing a SKU combination.
             </p>
             {attributes.map((attribute) => {
@@ -656,11 +747,16 @@ export function ProductEditor() {
                 (item) => Number(item.attributeId) === Number(attribute.id),
               );
               return (
-                <div key={attribute.id}>
-                  <label>
+                <fieldset
+                  className={`product-attribute-group${assignment ? " is-selected" : ""}`}
+                  key={attribute.id}
+                >
+                  <legend>
+                    <label className="product-attribute-title">
                     <input
                       type="checkbox"
                       checked={!!assignment}
+                      disabled={skuAttributeUsage.has(Number(attribute.id))}
                       onChange={(event) =>
                         updateForm(
                           "attributes",
@@ -681,10 +777,18 @@ export function ProductEditor() {
                         )
                       }
                     />
-                    {attribute.name}
-                  </label>
+                      <span>{attribute.name}</span>
+                      <small>
+                        {skuAttributeUsage.has(Number(attribute.id))
+                          ? "Used by an SKU"
+                          : assignment
+                            ? "Selected"
+                            : "Available"}
+                      </small>
+                    </label>
+                  </legend>
                   {assignment && (
-                    <label>
+                    <label className="product-attribute-required">
                       <input
                         type="checkbox"
                         checked={assignment.isRequired}
@@ -702,50 +806,75 @@ export function ProductEditor() {
                       Required for SKU combinations
                     </label>
                   )}
-                  {assignment &&
-                    (attribute.values || []).map((value) => (
-                      <label key={value.id}>
-                        <input
-                          type="checkbox"
-                          checked={(assignment.values || []).some(
-                            (item) =>
-                              Number(item.valueId ?? item.id ?? item) ===
-                              Number(value.id),
-                          )}
+                  {assignment && (
+                    <div className={`product-attribute-values is-${attribute.display_type || "button"}`}>
+                      {attribute.display_type === "select" ? (
+                        <select
+                          multiple
+                          value={(assignment.values || []).map((item) => String(item.valueId ?? item.id ?? item))}
                           onChange={(event) =>
-                            updateForm(
-                              "attributes",
-                              form.attributes.map((item) =>
-                                Number(item.attributeId) !==
-                                Number(attribute.id)
-                                  ? item
-                                  : {
-                                      ...item,
-                                      values: event.target.checked
-                                        ? [
-                                            ...(item.values || []),
-                                            { valueId: value.id },
-                                          ]
-                                        : (item.values || []).filter(
-                                            (entry) =>
-                                              Number(
-                                                entry.valueId ??
-                                                  entry.id ??
-                                                  entry,
-                                              ) !== Number(value.id),
-                                          ),
-                                    },
-                              ),
+                            updateAttributeValues(
+                              attribute.id,
+                              Array.from(event.target.selectedOptions, (option) => Number(option.value)),
                             )
                           }
-                        />
-                        {value.display_value || value.value}
-                      </label>
-                    ))}
-                </div>
+                        >
+                          {(attribute.values || []).map((value) => (
+                            <option
+                              key={value.id}
+                              value={value.id}
+                              disabled={skuValueUsage.has(`${attribute.id}:${value.id}`)}
+                            >
+                              {value.display_value || value.value}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        (attribute.values || []).map((value) => {
+                          const selected = (assignment.values || []).some(
+                            (item) => Number(item.valueId ?? item.id ?? item) === Number(value.id),
+                          );
+                          return (
+                            <label key={value.id} className="product-attribute-value">
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                disabled={skuValueUsage.has(`${attribute.id}:${value.id}`)}
+                                onChange={(event) =>
+                                  updateAttributeValues(
+                                    attribute.id,
+                                    event.target.checked
+                                      ? [...(assignment.values || []).map((item) => Number(item.valueId ?? item.id ?? item)), Number(value.id)]
+                                      : (assignment.values || []).map((item) => Number(item.valueId ?? item.id ?? item)).filter((id) => id !== Number(value.id)),
+                                  )
+                                }
+                              />
+                              <span
+                                style={
+                                  attribute.display_type === "swatch"
+                                    ? { backgroundColor: value.metadata?.color || "#dfe9df" }
+                                    : undefined
+                                }
+                              >
+                                {value.display_value || value.value}
+                              </span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                  {assignment && skuAttributeUsage.has(Number(attribute.id)) && (
+                    <p className="product-attribute-hint">
+                      Values used by existing SKUs are locked. Update or archive those SKUs before removing them.
+                    </p>
+                  )}
+                  {!assignment && <p className="product-attribute-hint">Select this option to choose allowed values.</p>}
+                </fieldset>
               );
             })}
           </section>
+          )}
           <section className="card">
             <h2>Gallery</h2>
             {id ? (
@@ -757,6 +886,25 @@ export function ProductEditor() {
                   accept="image/jpeg,image/png,image/webp"
                   onChange={uploadMedia}
                 />
+                <button type="button" onClick={openLibrary} disabled={busy}>
+                  Choose from media library
+                </button>
+                {showLibrary && (
+                  <div className="media-library-picker">
+                    <div className="media-library-picker-head">
+                      <b>Choose an image</b>
+                      <button type="button" onClick={() => setShowLibrary(false)}>Close</button>
+                    </div>
+                    <div className="media-library-picker-grid">
+                      {libraryAssets.map((asset) => (
+                        <button type="button" key={`${asset.type}-${asset.id}`} onClick={() => attachLibraryAsset(asset)}>
+                          <img src={imageUrl(asset.path)} alt={asset.altText || asset.name} />
+                          <span>{asset.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="media-grid">
                   {media.map((item) => (
                     <ProductMediaCard
@@ -771,9 +919,10 @@ export function ProductEditor() {
                 </div>
               </>
             ) : (
-              <p>Save the product before uploading gallery media.</p>
+              <p>Save the item before uploading gallery media.</p>
             )}
           </section>
+          {form.productType === "variant" && (
           <section className="card">
             <h2>Explicit SKUs</h2>
             <p>
@@ -947,6 +1096,7 @@ export function ProductEditor() {
               </div>
             )}
           </section>
+          )}
           <ProductContentFields
             items={form.benefits}
             onChange={(items) => updateForm("benefits", items)}
@@ -957,7 +1107,7 @@ export function ProductEditor() {
             onChange={(items) => updateForm("ingredients", items)}
           />
           {error && <div className="error">{error}</div>}
-          <button>{busy ? "Saving…" : "Save product"}</button>
+          <button>{busy ? "Saving…" : "Save item"}</button>
         </fieldset>
       </form>
     </div>

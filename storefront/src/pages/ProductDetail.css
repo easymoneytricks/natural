@@ -261,6 +261,10 @@
   font: var(--display-md) / 1.1 var(--serif);
   margin: 0 0 28px;
 }
+.product-copy {
+  white-space: pre-line;
+  line-height: 1.7;
+}
 .how-to-use {
   list-style: none;
   padding: 0;

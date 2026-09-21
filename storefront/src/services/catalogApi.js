@@ -2,7 +2,9 @@ import { apiRequest, mediaUrl } from "../lib/api";
 
 const normalizeImage = (image) => {
   if (!image?.src) return null;
-  return image.src.startsWith("/uploads/") ? mediaUrl(image.src) : image.src;
+  return image.src.startsWith("/uploads/") || image.src.startsWith("uploads/")
+    ? mediaUrl(image.src)
+    : image.src;
 };
 const normalizeListItem = (item) => ({
   ...item,
@@ -83,12 +85,30 @@ export async function getCategories(options) {
     ...payload,
     data: payload.data.map((category) => ({
       ...category,
-      image: category.image?.startsWith("/uploads/")
+      image:
+        category.image?.startsWith("/uploads/") ||
+        category.image?.startsWith("uploads/")
         ? mediaUrl(category.image)
         : category.image || "",
     })),
   };
 }
-export const getBrands = (options) => apiRequest("/brands", options);
+export async function getBrands(options) {
+  const payload = await apiRequest("/brands", options);
+  return {
+    ...payload,
+    data: payload.data.map((brand) => ({
+      ...brand,
+      image:
+        brand.image?.startsWith("/uploads/") || brand.image?.startsWith("uploads/")
+          ? mediaUrl(brand.image)
+          : brand.image || "",
+      logo:
+        brand.logo?.startsWith("/uploads/") || brand.logo?.startsWith("uploads/")
+          ? mediaUrl(brand.logo)
+          : brand.logo || "",
+    })),
+  };
+}
 export const getCatalogFilters = (options) =>
   apiRequest("/catalog/filters", options);

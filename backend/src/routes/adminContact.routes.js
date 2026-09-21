@@ -6,11 +6,14 @@ import {
 import * as controller from "../controllers/adminContact.controller.js";
 
 const router = Router();
-router.use(requireAdminAuth, requireAdminPermission("customers.view"));
+router.use(
+  requireAdminAuth,
+  requireAdminPermission("contact.view", "customers.view"),
+);
 router.get("/contact-submissions", controller.list);
 router.patch(
   "/contact-submissions/:id",
-  requireAdminPermission("customers.manage"),
+  requireAdminPermission("contact.update", "customers.manage"),
   controller.update,
 );
 export default router;

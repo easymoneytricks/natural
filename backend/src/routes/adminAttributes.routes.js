@@ -1,0 +1,11 @@
+import { Router } from "express";
+import { requireAdminAuth, requireAdminPermission } from "../middleware/adminAuth.js";
+import * as controller from "../controllers/adminAttributes.controller.js";
+const router = Router();
+router.use(requireAdminAuth, requireAdminPermission("settings.catalog.view", "settings.manage", "catalog.manage"));
+router.get("/catalog-attributes", controller.list);
+router.post("/catalog-attributes", requireAdminPermission("settings.catalog.update", "settings.manage", "catalog.manage"), controller.create);
+router.patch("/catalog-attributes/:id", requireAdminPermission("settings.catalog.update", "settings.manage", "catalog.manage"), controller.update);
+router.post("/catalog-attributes/:id/values", requireAdminPermission("settings.catalog.update", "settings.manage", "catalog.manage"), controller.createValue);
+router.patch("/catalog-attribute-values/:id", requireAdminPermission("settings.catalog.update", "settings.manage", "catalog.manage"), controller.updateValue);
+export default router;

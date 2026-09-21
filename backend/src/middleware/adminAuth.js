@@ -29,8 +29,9 @@ export async function requireAdminAuth(req, res, next) {
     next(e);
   }
 }
-export const requireAdminPermission = (permission) => (req, res, next) => {
-  if (!req.admin?.effectivePermissions?.includes(permission))
+export const requireAdminPermission = (...permissions) => (req, res, next) => {
+  const allowed = permissions.filter(Boolean);
+  if (!allowed.some((permission) => req.admin?.effectivePermissions?.includes(permission)))
     return next(
       new AuthError(
         403,

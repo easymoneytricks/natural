@@ -262,7 +262,7 @@ function BrandEditor({ editing, onClose, onSaved }) {
       );
       onSaved();
     } catch (caught) {
-      setError(caught.message || "Unable to save this brand.");
+      setError(caught.message || "Unable to save this entry.");
     } finally {
       setSaving(false);
     }
@@ -282,10 +282,10 @@ function BrandEditor({ editing, onClose, onSaved }) {
         <div className="modal-heading">
           <div>
             <span className="section-kicker">CATALOG / BRANDS</span>
-            <h2>{editing?.id ? "Edit brand" : "Add a brand"}</h2>
+            <h2>{editing?.id ? "Edit entry" : "Add an entry"}</h2>
             <p>
-              Keep the identity, story and discovery details consistent across
-              your storefront.
+              Manage identity, content and discovery details for this catalog
+              entry.
             </p>
           </div>
           <button
@@ -300,7 +300,7 @@ function BrandEditor({ editing, onClose, onSaved }) {
         <div className="editor-grid">
           <label>
             <span className="field-label">
-              Brand name <b>*</b>
+              Name <b>*</b>
             </span>
             <input
               value={form.name}
@@ -341,7 +341,7 @@ function BrandEditor({ editing, onClose, onSaved }) {
               type="url"
               value={form.websiteUrl}
               onChange={(event) => update("websiteUrl", event.target.value)}
-              placeholder="https://brand.example"
+              placeholder="https://example.com"
             />
           </label>
           <label>
@@ -354,12 +354,12 @@ function BrandEditor({ editing, onClose, onSaved }) {
             />
           </label>
           <label className="field-wide">
-            Brand description
+            Description
             <textarea
               value={form.description}
               rows="4"
               onChange={(event) => update("description", event.target.value)}
-              placeholder="A short editorial introduction for the brand page."
+              placeholder="A short introduction for this catalog entry."
             />
           </label>
           <label>
@@ -367,7 +367,7 @@ function BrandEditor({ editing, onClose, onSaved }) {
             <input
               value={form.seoTitle}
               onChange={(event) => update("seoTitle", event.target.value)}
-              placeholder="Brand name | Natural Beauty"
+              placeholder="Page title"
             />
           </label>
           <label>
@@ -383,7 +383,7 @@ function BrandEditor({ editing, onClose, onSaved }) {
             <input
               value={form.seoKeywords}
               onChange={(event) => update("seoKeywords", event.target.value)}
-              placeholder="hydration, moisturizer, skincare"
+              placeholder="keyword, phrase, topic"
             />
           </label>
           <label>
@@ -392,7 +392,7 @@ function BrandEditor({ editing, onClose, onSaved }) {
               type="url"
               value={form.canonicalUrl}
               onChange={(event) => update("canonicalUrl", event.target.value)}
-              placeholder="https://example.com/brands/brand-name"
+              placeholder="https://example.com/catalog/entry"
             />
           </label>
         </div>
@@ -405,7 +405,7 @@ function BrandEditor({ editing, onClose, onSaved }) {
           <span>
             <b>Visible in storefront</b>
             <small>
-              Inactive brands stay saved but are hidden from customers.
+              Inactive entries stay saved but are hidden from customers.
             </small>
           </span>
         </label>
@@ -420,7 +420,7 @@ function BrandEditor({ editing, onClose, onSaved }) {
           </button>
           <button type="submit" disabled={saving}>
             {saving && <LoaderCircle className="spin" size={16} />}
-            {saving ? "Saving…" : editing?.id ? "Save changes" : "Create brand"}
+            {saving ? "Saving…" : editing?.id ? "Save changes" : "Create entry"}
           </button>
         </div>
       </form>

@@ -18,6 +18,7 @@ import { useCompare, useWishlist } from "../context/PreferenceContext";
 import { useAuth } from "../context/AuthContext";
 import "./ProductDetail.css";
 import { SeoMeta, StructuredData } from "../components/SeoMeta";
+import { getBusinessName, useStoreSettings } from "../context/StoreSettingsContext";
 
 const money = (value) => `₹${value.toLocaleString("en-IN")}`;
 const slugify = (value) => value.toUpperCase().replace(/[^A-Z0-9]+/g, "-");
@@ -60,6 +61,7 @@ function makeVariants(product, detail) {
 }
 
 export function ProductDetail() {
+  const businessName = getBusinessName(useStoreSettings());
   const { slug } = useParams();
   const navigate = useNavigate();
   const { addItem } = useCart();
@@ -87,7 +89,7 @@ export function ProductDetail() {
         setDetail({
           ...apiProduct,
           name: apiProduct.name || apiProduct.title || slug,
-          positioning: apiProduct.shortDescription,
+          positioning: apiProduct.shortDescription || apiProduct.description,
           benefits: (apiProduct.benefits || []).map((benefit) => [benefit, ""]),
           ingredients: (apiProduct.keyIngredients || []).map((ingredient) => [
             ingredient.name,
@@ -115,11 +117,13 @@ export function ProductDetail() {
     [product, detail],
   );
   const dimensions = product
-    ? [
-        ...new Set(
-          variants.flatMap((variant) => Object.keys(variant.attributes)),
-        ),
-      ]
+    ? product.productType === "variant"
+      ? [
+          ...new Set(
+            variants.flatMap((variant) => Object.keys(variant.attributes)),
+          ),
+        ]
+      : []
     : [];
   const [selection, setSelection] = useState({});
   const [quantity, setQuantity] = useState(1);
@@ -191,23 +195,23 @@ export function ProductDetail() {
   if (loading)
     return (
       <section className="product-detail-loading container">
-        <p className="eyebrow">Natural Beauty</p>
-        <h1>Finding your formula…</h1>
+        <p className="eyebrow">{businessName}</p>
+        <h1>Loading product…</h1>
       </section>
     );
   if (loadError === "not-found" || !product)
     return (
       <section className="product-not-found container">
-        <p className="eyebrow">Natural Beauty</p>
+        <p className="eyebrow">{businessName}</p>
         <h1>
           {loadError === "error"
-            ? "We couldn't load that formula."
-            : "We couldn't find that formula."}
+            ? "We couldn't load that product."
+            : "We couldn't find that product."}
         </h1>
         <p>
           {loadError === "error"
             ? "Please try again in a moment."
-            : "This product may have moved, but there are still considered rituals waiting in the collection."}
+            : "This product may have moved, but there are still great products waiting in the collection."}
         </p>
         <Link className="button" to="/shop">
           Return to shop
@@ -423,7 +427,9 @@ export function ProductDetail() {
               {dimensions.map((dimension) => (
                 <fieldset key={dimension}>
                   <legend>
-                    Select {dimension === "skinType" ? "skin type" : dimension}
+                    Select {detail.attributes?.find(
+                      (item) => item.slug === dimension,
+                    )?.name || dimension}
                   </legend>
                   <div className="variant-options">
                     {[
@@ -569,58 +575,43 @@ export function ProductDetail() {
             </article>
           ))}
         </section>
+        {(detail.howToUse || detail.componentsAndDetails || detail.specifications || detail.usageNotes || detail.ingredients.length > 0) && (
         <section className="editorial-columns">
           <div>
-            <p className="eyebrow">How to use</p>
-            <h2>A quiet ritual, morning or evening.</h2>
-            <ol className="how-to-use">
-              {[
-                "Cleanse|Start with clean, slightly damp or dry skin.",
-                "Apply|Massage a small amount across face and neck.",
-                "Layer|Use after serums and before sunscreen in your morning routine.",
-                "Repeat|Use morning and/or evening according to your routine.",
-              ].map((step) => {
-                const [title, text] = step.split("|");
-                return (
-                  <li key={title}>
-                    <b>
-                      {String(
-                        ["Cleanse", "Apply", "Layer", "Repeat"].indexOf(title) +
-                          1,
-                      ).padStart(2, "0")}
-                    </b>
-                    <span>
-                      <strong>{title}</strong>
-                      {text}
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
+            <p className="eyebrow">Instructions</p>
+            <h2>How to use this item.</h2>
+            {detail.howToUse && <p className="product-copy">{detail.howToUse}</p>}
           </div>
           <div>
-            <p className="eyebrow">Key ingredients</p>
-            <h2>Comfort, considered.</h2>
+            <p className="eyebrow">Product details</p>
+            <h2>What this item includes.</h2>
+                {detail.componentsAndDetails && (
+                  <p className="product-copy">{detail.componentsAndDetails}</p>
+                )}
+                {detail.specifications && <p className="product-copy"><strong>Specifications:</strong> {detail.specifications}</p>}
+                {detail.usageNotes && <p className="product-copy"><strong>Usage notes:</strong> {detail.usageNotes}</p>}
             {detail.ingredients.map(([name, text]) => (
               <div className="ingredient-line" key={name}>
                 <strong>{name}</strong>
                 <span>{text}</span>
               </div>
             ))}
-            <p className="full-ingredients">
-              <strong>Full ingredient list</strong>
-              {detail.fullIngredients}
-            </p>
           </div>
         </section>
+        )}
         <section className="info-accordions">
           {[
             "Description",
-            "Ingredients",
+            "Product details",
             "How to Use",
             "Who It's For",
             "Shipping & Returns",
-          ].map((title) => (
+          ].filter((title) => {
+            if (title === "Description") return Boolean(detail.description || detail.positioning);
+            if (title === "Product details") return Boolean(detail.componentsAndDetails || detail.specifications || detail.usageNotes || detail.fullIngredients);
+            if (title === "How to Use") return Boolean(detail.howToUse);
+            return false;
+          }).map((title) => (
             <div key={title}>
               <button
                 aria-expanded={openInfo === title}
@@ -632,14 +623,14 @@ export function ProductDetail() {
               {openInfo === title && (
                 <p>
                   {title === "Description"
-                    ? detail.positioning
-                    : title === "Ingredients"
-                      ? detail.fullIngredients
+                    ? detail.description || detail.positioning
+                    : title === "Product details"
+                      ? [detail.componentsAndDetails, detail.specifications, detail.usageNotes, detail.fullIngredients].filter(Boolean).join("\n")
                       : title === "Who It's For"
-                        ? "For dry, dehydrated and stressed-feeling skin seeking comfortable daily moisture."
+                        ? "For anyone looking for a considered addition to their everyday routine."
                         : title === "Shipping & Returns"
                           ? "Complimentary shipping applies above ₹999. Returns are handled according to the store policy."
-                          : "Apply after cleansing and serums, morning and/or evening."}
+                          : detail.howToUse}
                 </p>
               )}
             </div>

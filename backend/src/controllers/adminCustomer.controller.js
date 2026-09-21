@@ -23,6 +23,12 @@ export const status = w(async (req, res) =>
 );
 export const remove = w(async (req, res) =>
   res.json({
-    data: await s.deletePermanently(pool, req.params.id, req.admin.id, req),
+    data: await s.softDelete(pool, req.params.id, req.admin.id, req),
   }),
+);
+export const restore = w(async (req, res) =>
+  res.json({ data: await s.restore(pool, req.params.id, req.admin.id, req) }),
+);
+export const permanentlyRemove = w(async (req, res) =>
+  res.json({ data: await s.deletePermanently(pool, req.params.id, req.admin.id, req) }),
 );

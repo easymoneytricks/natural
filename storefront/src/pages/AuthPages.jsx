@@ -14,7 +14,7 @@ import {
   RecaptchaWidget,
   isRecaptchaEnabled,
 } from "../components/RecaptchaWidget";
-import { useStoreSettings } from "../context/StoreSettingsContext";
+import { getBusinessName, useStoreSettings } from "../context/StoreSettingsContext";
 
 const safeReturn = (value, fallback = "/account") => {
   if (!value || !value.startsWith("/") || value.startsWith("//"))
@@ -81,6 +81,8 @@ export function Login() {
   const { login, isAuthenticated, authStatus, authErrorMessage } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const settings = useStoreSettings();
+  const businessName = getBusinessName(settings);
   const returnTo = safeReturn(
     new URLSearchParams(location.search).get("returnTo"),
   );
@@ -119,7 +121,7 @@ export function Login() {
     return (
       <AuthLayout
         eyebrow="Welcome back"
-        heading="Return to your ritual."
+        heading="Return to your account."
         copy="Sign in to view your orders, saved addresses and account details."
       >
         <p className="auth-loading">Checking your session…</p>
@@ -128,7 +130,7 @@ export function Login() {
   return (
     <AuthLayout
       eyebrow="Welcome back"
-      heading="Return to your ritual."
+      heading="Return to your account."
       copy="Sign in to view your orders, saved addresses and account details."
     >
       <form className="auth-form" onSubmit={submit}>
@@ -159,7 +161,7 @@ export function Login() {
           {loading ? "Signing in..." : "Sign in"}
         </button>
         <p className="auth-switch">
-          New to Natural Beauty?{" "}
+          New to {businessName}?{" "}
           <Link to={`/register?returnTo=${encodeURIComponent(returnTo)}`}>
             Create an account
           </Link>
@@ -177,6 +179,7 @@ export function Register() {
     new URLSearchParams(location.search).get("returnTo"),
   );
   const settings = useStoreSettings();
+  const businessName = getBusinessName(settings);
   const [recaptchaToken, setRecaptchaToken] = useState("");
   const [form, setForm] = useState({
     firstName: "",
@@ -230,8 +233,8 @@ export function Register() {
   };
   return (
     <AuthLayout
-      eyebrow="Join Natural Beauty"
-      heading="Make your ritual yours."
+      eyebrow={`Join ${businessName}`}
+      heading="Make your account yours."
       copy="Create an account to keep track of orders, addresses and the products you love."
     >
       <form className="auth-form register-form" onSubmit={submit}>
@@ -295,7 +298,7 @@ export function Register() {
             checked={form.marketing}
             onChange={(event) => update("marketing", event.target.checked)}
           />{" "}
-          Send me Natural Beauty skincare notes and offers.
+          Send me {businessName} updates and offers.
         </label>
         <RecaptchaWidget onToken={setRecaptchaToken} />
         <button className="button" type="submit" disabled={loading}>
@@ -510,12 +513,19 @@ export function ResetPassword() {
 }
 
 function AuthLayout({ eyebrow, heading, copy, children }) {
+  const settings = useStoreSettings();
+  const businessName = getBusinessName(settings);
+  const imageUrl = settings.branding?.auth_image_url || "";
   return (
     <main className="auth-page">
-      <div className="auth-visual" aria-hidden="true" />
+      <div
+        className="auth-visual"
+        aria-hidden="true"
+        style={imageUrl ? { "--auth-image": `url("${imageUrl}")` } : undefined}
+      />
       <section className="auth-panel">
         <Link className="wordmark" to="/">
-          Natural Beauty
+          {businessName}
         </Link>
         <p className="eyebrow">{eyebrow}</p>
         <h1>{heading}</h1>
@@ -607,7 +617,7 @@ export function Account() {
             <article>
               <p>Rewards</p>
               <h2>A little something to look forward to.</h2>
-              <span>Your Natural Beauty rewards will appear here.</span>
+              <span>Your rewards will appear here.</span>
             </article>
           </div>
         </section>

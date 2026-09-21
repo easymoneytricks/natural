@@ -4,16 +4,16 @@ import * as service from "../services/adminStaff.service.js";
 const wrap = (handler) => (req, res, next) => handler(req, res).catch(next);
 
 export const users = wrap(async (req, res) =>
-  res.json({ data: await service.users(pool, req.query) }),
+  res.json({ data: await service.users(pool, req.query, req.admin) }),
 );
 export const roles = wrap(async (req, res) =>
-  res.json({ data: await service.roles(pool) }),
+  res.json({ data: await service.roles(pool, req.admin) }),
 );
 export const permissions = wrap(async (req, res) =>
   res.json({ data: await service.permissions(pool) }),
 );
 export const roleDetail = wrap(async (req, res) =>
-  res.json({ data: await service.roleDetail(pool, req.params.id) }),
+  res.json({ data: await service.roleDetail(pool, req.params.id, req.admin) }),
 );
 export const saveUser = wrap(async (req, res) =>
   res.json({

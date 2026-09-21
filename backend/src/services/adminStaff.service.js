@@ -12,9 +12,20 @@ const normalizeRoles = (roles) => [
   ),
 ];
 
-export async function users(pool, query = {}) {
+const isSuperAdmin = (admin) =>
+  Boolean(admin?.roles?.some((role) => role.slug === "super-admin"));
+
+export async function users(pool, query = {}, admin) {
   const values = [];
   const where = ["u.deleted_at IS NULL"];
+  if (!isSuperAdmin(admin)) {
+    where.push(
+      `NOT EXISTS (SELECT 1 FROM admin_user_roles hidden_ur
+        JOIN admin_roles hidden_r ON hidden_r.id=hidden_ur.role_id
+        WHERE hidden_ur.admin_user_id=u.id AND hidden_r.slug='super-admin'
+          AND hidden_r.deleted_at IS NULL)`,
+    );
+  }
   if (query.q) {
     where.push("(u.first_name LIKE ? OR u.last_name LIKE ? OR u.email LIKE ?)");
     values.push(`%${query.q}%`, `%${query.q}%`, `%${query.q}%`);
@@ -43,7 +54,8 @@ export async function users(pool, query = {}) {
   }));
 }
 
-export async function roles(pool) {
+export async function roles(pool, admin) {
+  const visibility = isSuperAdmin(admin) ? "" : " AND r.slug <> 'super-admin'";
   const [rows] = await pool.execute(
     `SELECT r.id,r.name,r.slug,r.description,r.is_system,r.created_at,
       COUNT(DISTINCT ur.admin_user_id) AS user_count,
@@ -51,7 +63,7 @@ export async function roles(pool) {
      FROM admin_roles r
      LEFT JOIN admin_user_roles ur ON ur.role_id=r.id
      LEFT JOIN admin_role_permissions rp ON rp.role_id=r.id
-     WHERE r.deleted_at IS NULL GROUP BY r.id ORDER BY r.is_system DESC,r.name`,
+     WHERE r.deleted_at IS NULL${visibility} GROUP BY r.id ORDER BY r.is_system DESC,r.name`,
   );
   return rows.map((row) => ({
     ...row,
@@ -69,9 +81,10 @@ export async function permissions(pool) {
   return rows.map((row) => ({ ...row, id: Number(row.id) }));
 }
 
-export async function roleDetail(pool, id) {
+export async function roleDetail(pool, id, admin) {
   const [[role]] = await pool.execute(
-    "SELECT id,name,slug,description,is_system FROM admin_roles WHERE id=? AND deleted_at IS NULL",
+    `SELECT id,name,slug,description,is_system FROM admin_roles
+     WHERE id=? AND deleted_at IS NULL${isSuperAdmin(admin) ? "" : " AND slug <> 'super-admin'"}`,
     [id],
   );
   if (!role) fail(404, "ROLE_NOT_FOUND", "Role not found.");
@@ -99,6 +112,22 @@ export async function saveUser(pool, input, id, actorId, req) {
   if (!id && String(input.password || "").length < 10)
     fail(400, "PASSWORD_TOO_SHORT", "Password must be at least 10 characters.");
   if (!roleIds.length) fail(400, "ROLE_REQUIRED", "Assign at least one role.");
+  const actorIsSuperAdmin = isSuperAdmin(req.admin);
+  const [[superRole]] = await pool.execute(
+    "SELECT id FROM admin_roles WHERE slug='super-admin' AND deleted_at IS NULL LIMIT 1",
+  );
+  if (!actorIsSuperAdmin && superRole && roleIds.includes(Number(superRole.id)))
+    fail(403, "SUPER_ADMIN_ROLE_RESTRICTED", "Only Super Admin can assign the Super Admin role.");
+  if (id && !actorIsSuperAdmin) {
+    const [[target]] = await pool.execute(
+      `SELECT 1 AS is_super FROM admin_user_roles ur
+       JOIN admin_roles r ON r.id=ur.role_id
+       WHERE ur.admin_user_id=? AND r.slug='super-admin' AND r.deleted_at IS NULL LIMIT 1`,
+      [id],
+    );
+    if (target)
+      fail(403, "SUPER_ADMIN_ROLE_RESTRICTED", "Only Super Admin can edit a Super Admin account.");
+  }
   if (id && Number(id) === Number(actorId) && input.status === "disabled")
     fail(409, "CANNOT_DISABLE_SELF", "You cannot disable your own account.");
   const connection = await pool.getConnection();
@@ -161,7 +190,7 @@ export async function saveUser(pool, input, id, actorId, req) {
       userId,
       req,
     );
-    return (await users(pool, { q: email })).find((user) => user.id === userId);
+    return (await users(pool, { q: email }, req.admin)).find((user) => user.id === userId);
   } catch (error) {
     await connection.rollback();
     if (error.code === "ER_DUP_ENTRY")
@@ -184,6 +213,8 @@ export async function saveRole(pool, input, id, actorId, req) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
   if (!name || !slug) fail(400, "VALIDATION_ERROR", "Role name is required.");
+  if (!isSuperAdmin(req.admin) && slug === "super-admin")
+    fail(403, "SUPER_ADMIN_ROLE_RESTRICTED", "Only Super Admin can create or edit the Super Admin role.");
   const roleIds = normalizeRoles(input.permissionIds);
   const connection = await pool.getConnection();
   try {
@@ -195,6 +226,8 @@ export async function saveRole(pool, input, id, actorId, req) {
         [roleId],
       );
       if (!role) fail(404, "ROLE_NOT_FOUND", "Role not found.");
+      if (role.slug === "super-admin" && !isSuperAdmin(req.admin))
+        fail(403, "SUPER_ADMIN_ROLE_RESTRICTED", "Only Super Admin can edit the Super Admin role.");
       if (
         role.is_system &&
         ((input.slug && input.slug !== role.slug) ||
@@ -230,7 +263,7 @@ export async function saveRole(pool, input, id, actorId, req) {
       roleId,
       req,
     );
-    return roleDetail(pool, roleId);
+    return roleDetail(pool, roleId, req.admin);
   } catch (error) {
     await connection.rollback();
     if (error.code === "ER_DUP_ENTRY")
@@ -248,7 +281,7 @@ export async function updateRolePermissions(
   actorId,
   req,
 ) {
-  const detail = await roleDetail(pool, id);
+  const detail = await roleDetail(pool, id, req.admin);
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -270,7 +303,7 @@ export async function updateRolePermissions(
       id,
       req,
     );
-    return roleDetail(pool, id);
+    return roleDetail(pool, id, req.admin);
   } catch (error) {
     await connection.rollback();
     throw error;

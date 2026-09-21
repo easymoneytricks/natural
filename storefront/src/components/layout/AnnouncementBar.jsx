@@ -5,7 +5,7 @@ export function AnnouncementBar() {
   const branding = settings.branding || {};
   const messages = [
     branding.announcement ?? "Complimentary shipping on orders above ₹999",
-    branding.announcement_secondary ?? "Thoughtfully formulated skincare",
+    branding.announcement_secondary ?? "Thoughtfully made products",
     branding.announcement_tertiary ?? "Secure checkout",
   ].filter((message) => String(message || "").trim());
 

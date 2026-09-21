@@ -13,12 +13,12 @@ import { upload as uploadMiddleware } from "../services/mediaStorage.service.js"
 
 const router = Router();
 router.use(requireAdminAuth);
-router.get("/media", requireAdminPermission("catalog.view"), list);
-router.delete("/media/:id", requireAdminPermission("catalog.manage"), remove);
-router.patch("/media/:id", requireAdminPermission("catalog.manage"), update);
+router.get("/media", requireAdminPermission("catalog.media.view", "catalog.view"), list);
+router.delete("/media/:id", requireAdminPermission("catalog.media.delete", "catalog.manage"), remove);
+router.patch("/media/:id", requireAdminPermission("catalog.media.update", "catalog.manage"), update);
 router.post(
   "/media",
-  requireAdminPermission("catalog.manage"),
+  requireAdminPermission("catalog.media.upload", "catalog.manage"),
   uploadMiddleware.single("image"),
   upload,
 );

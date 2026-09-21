@@ -90,7 +90,7 @@ export async function detail(pool, id) {
     attribute.values = values;
   }
   const [skus] = await pool.execute(
-    "SELECT s.*,COALESCE(i.quantity_on_hand,0) on_hand,COALESCE(i.reserved_quantity,0) reserved FROM product_skus s LEFT JOIN inventory i ON i.sku_id=s.id WHERE s.product_id=? ORDER BY s.sort_order,s.id",
+    "SELECT s.*,COALESCE(i.quantity_on_hand,0) on_hand,COALESCE(i.reserved_quantity,0) reserved FROM product_skus s LEFT JOIN inventory i ON i.sku_id=s.id WHERE s.product_id=? AND s.deleted_at IS NULL ORDER BY s.sort_order,s.id",
     [id],
   );
   for (const s of skus) {
@@ -137,6 +137,12 @@ async function saveProduct(pool, input, id, adminId, req) {
     mrp < price
   )
     fail(400, "INVALID_PRICE", "Base price/MRP is invalid.");
+  if (
+    input.weightGrams !== "" &&
+    input.weightGrams != null &&
+    (!Number.isInteger(Number(input.weightGrams)) || Number(input.weightGrams) < 0)
+  )
+    fail(400, "INVALID_WEIGHT", "Weight must be a non-negative whole number.");
   const vals = [
     input.brandId || null,
     name,
@@ -151,6 +157,9 @@ async function saveProduct(pool, input, id, adminId, req) {
     input.productType || "simple",
     price,
     mrp,
+    input.weightGrams === "" || input.weightGrams == null
+      ? null
+      : Number(input.weightGrams),
     !!input.isFeatured,
     !!input.isBestSeller,
     !!input.isNewArrival,
@@ -169,7 +178,7 @@ async function saveProduct(pool, input, id, adminId, req) {
         [id],
       );
       const [r] = await pool.execute(
-        "UPDATE products SET brand_id=?,name=?,slug=?,short_description=?,description=?,ingredients_text=?,how_to_use=?,texture=?,usage_time=?,status=?,product_type=?,base_price=?,base_mrp=?,featured=?,best_seller=?,new_arrival=?,is_active=?,seo_title=?,seo_description=?,seo_keywords=?,canonical_url=?,hsn_sac=? WHERE id=? AND deleted_at IS NULL",
+        "UPDATE products SET brand_id=?,name=?,slug=?,short_description=?,description=?,ingredients_text=?,how_to_use=?,texture=?,usage_time=?,status=?,product_type=?,base_price=?,base_mrp=?,weight_grams=?,featured=?,best_seller=?,new_arrival=?,is_active=?,seo_title=?,seo_description=?,seo_keywords=?,canonical_url=?,hsn_sac=? WHERE id=? AND deleted_at IS NULL",
         [...vals, id],
       );
       if (!r.affectedRows) fail(404, "PRODUCT_NOT_FOUND", "Product not found.");
@@ -180,7 +189,7 @@ async function saveProduct(pool, input, id, adminId, req) {
         );
     } else {
       const [r] = await pool.execute(
-        "INSERT INTO products (brand_id,name,slug,short_description,description,ingredients_text,how_to_use,texture,usage_time,status,product_type,base_price,base_mrp,featured,best_seller,new_arrival,is_active,seo_title,seo_description,seo_keywords,canonical_url,hsn_sac) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO products (brand_id,name,slug,short_description,description,ingredients_text,how_to_use,texture,usage_time,status,product_type,base_price,base_mrp,weight_grams,featured,best_seller,new_arrival,is_active,seo_title,seo_description,seo_keywords,canonical_url,hsn_sac) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         vals,
       );
       pid = r.insertId;
@@ -198,7 +207,13 @@ async function saveProduct(pool, input, id, adminId, req) {
           [pid, c.id, Number(c.id) === Number(primary), c.sortOrder || 0],
         );
     }
-    await writeContent(pool, pid, input, adminId, req);
+    await writeContent(
+      pool,
+      pid,
+      input.productType === "variant" ? input : { ...input, attributes: [] },
+      adminId,
+      req,
+    );
     await catalogAudit(
       pool,
       adminId,
@@ -220,7 +235,7 @@ export async function sku(pool, productId, input, skuId, adminId, req) {
   try {
     await conn.beginTransaction();
     const [[product]] = await conn.execute(
-      "SELECT id,deleted_at FROM products WHERE id=? FOR UPDATE",
+      "SELECT id,product_type,deleted_at FROM products WHERE id=? FOR UPDATE",
       [productId],
     );
     if (!product || product.deleted_at)
@@ -229,6 +244,8 @@ export async function sku(pool, productId, input, skuId, adminId, req) {
         "PRODUCT_NOT_FOUND",
         "Restore the product before editing SKUs.",
       );
+    if (product.product_type !== "variant")
+      fail(409, "SIMPLE_PRODUCT_NO_VARIANTS", "Simple products cannot have variant SKUs.");
     const assignments = (input.attributes || []).map((a) => ({
       attributeId: Number(a.attributeId),
       attributeValueId: Number(a.valueId ?? a.attributeValueId),

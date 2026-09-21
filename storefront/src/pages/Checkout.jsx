@@ -10,6 +10,7 @@ import { getQuote, getShippingMethods } from "../services/checkoutApi";
 import { createOrder } from "../services/orderApi";
 import { createCashfreeOrder, createRazorpayOrder, verifyRazorpay } from "../services/paymentApi";
 import { apiRequest } from "../lib/api";
+import { getBusinessName, useStoreSettings } from "../context/StoreSettingsContext";
 import "./Checkout.css";
 
 const money = (value) => `₹${Math.max(0, value).toLocaleString("en-IN")}`;
@@ -59,6 +60,7 @@ const readSession = (key, fallback) => {
 };
 
 export function Checkout() {
+  const businessName = getBusinessName(useStoreSettings());
   const { items, clearCart, serverMode } = useCart();
   const { user, isAuthenticated, authFetch } = useAuth();
   const navigate = useNavigate();
@@ -432,7 +434,7 @@ export function Checkout() {
               key: onlineOrder.data.keyId,
               amount: onlineOrder.data.amount,
               currency: onlineOrder.data.currency,
-              name: "Natural Beauty",
+              name: businessName,
               order_id: onlineOrder.data.orderId,
               prefill: { email: draft.email, contact: draft.mobile },
               handler: async (response) => {
@@ -522,7 +524,7 @@ export function Checkout() {
     <main className="checkout-page container">
       <div className="checkout-top">
         <Link to="/" className="wordmark">
-          Natural Beauty
+          {businessName}
         </Link>
         <span>
           <Lock size={13} /> Secure checkout
@@ -877,9 +879,9 @@ function EmptyCheckout() {
   return (
     <section className="checkout-guard container">
       <p className="eyebrow">Your bag is empty</p>
-      <h1>Add something to your ritual first.</h1>
+      <h1>Add something to your cart first.</h1>
       <Link className="button" to="/shop">
-        Explore skincare
+        Explore products
       </Link>
       <Link className="empty-secondary" to="/cart">
         Return to bag
@@ -889,11 +891,12 @@ function EmptyCheckout() {
 }
 
 export function OrderSuccess() {
+  const businessName = getBusinessName(useStoreSettings());
   const order = readSession("natural-beauty-order", null);
   if (!order)
     return (
       <section className="checkout-guard container">
-        <p className="eyebrow">Natural Beauty</p>
+        <p className="eyebrow">{businessName}</p>
         <h1>No recent order found.</h1>
         <Link className="button" to="/shop">
           Return to shop
@@ -903,9 +906,9 @@ export function OrderSuccess() {
   return (
     <main className="order-page container">
       <p className="eyebrow">Order confirmed</p>
-      <h1>Your ritual is on its way.</h1>
+      <h1>Your order is on its way.</h1>
       <p>
-        Thank you for choosing Natural Beauty. We've received your order and
+        Thank you for choosing {businessName}. We've received your order and
         will keep you updated as it moves along.
       </p>
       <div className="order-meta">

@@ -112,9 +112,7 @@ async function readTaxSettings(pool) {
       .toLowerCase(),
     hsnSac: String(values.hsn_sac || "").trim(),
     sellerGstin: String(values.seller_gstin || "").trim(),
-    sellerLegalName: String(
-      values.seller_legal_name || "Natural Beauty",
-    ).trim(),
+    sellerLegalName: String(values.seller_legal_name || "Your store").trim(),
     sellerAddress: String(values.seller_address || "").trim(),
     sellerStateCode: String(values.seller_state_code || "").trim(),
     reverseCharge:

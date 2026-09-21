@@ -174,7 +174,7 @@ function Login() {
         <div className="login-mark">
           <Leaf size={28} />
         </div>
-        <span className="section-kicker">NATURAL BEAUTY / ADMINISTRATION</span>
+        <span className="section-kicker">STORE ADMINISTRATION</span>
         <h1>Welcome back.</h1>
         <p>Sign in to manage your store.</p>
         <label>
@@ -265,7 +265,7 @@ function Shell({ children }) {
   const businessName =
     storeSettings.store?.store_name ||
     storeSettings.seo?.site_title ||
-    "Natural Beauty";
+    "Your store";
 
   useEffect(() => {
     document.title = "Admin Panel";

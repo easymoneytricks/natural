@@ -376,7 +376,13 @@ p {
   cursor: pointer;
 }
 .customer-admin-actions button.danger {
-  color: #9b3f36;
+  border-color: #a9443b;
+  background: #a9443b;
+  color: #fff;
+}
+.customer-admin-actions button.danger:hover:not(:disabled) {
+  border-color: #87352f;
+  background: #87352f;
 }
 
 .status-active,

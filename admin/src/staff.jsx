@@ -575,7 +575,11 @@ export function RolePermissionsPage() {
   const grouped = useMemo(
     () =>
       permissions.reduce((groups, permission) => {
-        const group = permission.slug.split(".")[0];
+        const parts = permission.slug.split(".");
+        const group =
+          parts.length > 2
+            ? `${parts[0]} / ${parts[1]}`
+            : parts[0];
         (groups[group] ||= []).push(permission);
         return groups;
       }, {}),

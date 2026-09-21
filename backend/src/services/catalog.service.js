@@ -62,6 +62,16 @@ function buildProductFilters(query) {
         [attributeSlug, ...values],
       );
   }
+  const reservedKeys = new Set(["q", "sort", "page", "limit", "category", "brand", "skin", "concern", "size", "availability", "minPrice", "maxPrice"]);
+  for (const [attributeSlug, rawValues] of Object.entries(query)) {
+    if (reservedKeys.has(attributeSlug) || !/^[a-z0-9-]+$/.test(attributeSlug)) continue;
+    const values = parseList(rawValues);
+    if (!values.length) continue;
+    addExists(
+      `SELECT 1 FROM product_attribute_values pav JOIN attributes a ON a.id=pav.attribute_id JOIN attribute_values av ON av.id=pav.attribute_value_id WHERE pav.product_id=p.id AND a.slug=? AND av.slug IN (${values.map(() => "?").join(",")}) AND a.is_active=1 AND av.is_active=1`,
+      [attributeSlug, ...values],
+    );
+  }
   if (query.q)
     addExists(
       `SELECT 1 FROM brands sb WHERE sb.id = p.brand_id AND (p.name LIKE ? OR p.short_description LIKE ? OR sb.name LIKE ?)`,
@@ -343,6 +353,7 @@ export async function getProduct(connection, slug) {
       id: product.id,
       slug: product.slug,
       name: product.name,
+      productType: product.product_type,
       brand: product.brand_id
         ? {
             id: product.brand_id,
@@ -361,18 +372,23 @@ export async function getProduct(connection, slug) {
       })),
       shortDescription: product.short_description,
       description: product.description,
+      componentsAndDetails: product.ingredients_text,
       howToUse: product.how_to_use,
       texture: product.texture,
       usageTime: product.usage_time,
+      specifications: product.texture,
+      usageNotes: product.usage_time,
       gallery: media.map((item) => ({
         src: item.file_path,
         alt: item.alt_text,
         type: item.media_type,
       })),
       benefits: benefits.map((item) => item.benefit),
-      keyIngredients: ingredients
-        .filter((item) => item.is_key)
-        .map((item) => ({ name: item.name, description: item.description })),
+      keyIngredients: ingredients.map((item) => ({
+        name: item.name,
+        description: item.description,
+        featured: Boolean(item.is_key),
+      })),
       attributes,
       skus,
       price: {
@@ -410,22 +426,36 @@ export async function listCategories(connection) {
   const [rows] =
     await connection.execute(`SELECT c.id, c.name, c.slug, c.description, c.image_path, c.parent_id, c.sort_order, c.seo_title, c.seo_description, c.seo_keywords, c.canonical_url
     FROM categories c WHERE c.is_active = 1 AND c.deleted_at IS NULL ORDER BY c.sort_order, c.id`);
+  const [links] = await connection.execute(
+    "SELECT category_id,parent_id,is_primary FROM category_parent_links ORDER BY is_primary DESC,parent_id",
+  );
+  const parents = new Map();
+  links.forEach((link) => {
+    if (!parents.has(Number(link.category_id))) parents.set(Number(link.category_id), []);
+    parents.get(Number(link.category_id)).push(Number(link.parent_id));
+  });
   return {
-    data: rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      slug: row.slug,
-      description: row.description,
-      image: row.image_path,
-      parentId: row.parent_id,
-      sortOrder: row.sort_order,
-      seo: {
-        title: row.seo_title,
-        description: row.seo_description,
-        keywords: row.seo_keywords,
-        canonicalUrl: row.canonical_url,
-      },
-    })),
+    data: rows.flatMap((row) => {
+      const parentIds = parents.get(Number(row.id)) ||
+        (row.parent_id == null ? [null] : [Number(row.parent_id)]);
+      return parentIds.map((parentId, index) => ({
+        id: row.id,
+        placementId: `${row.id}:${parentId ?? "root"}`,
+        name: row.name,
+        slug: row.slug,
+        description: row.description,
+        image: row.image_path,
+        parentId,
+        parentIds,
+        sortOrder: row.sort_order,
+        seo: {
+          title: row.seo_title,
+          description: row.seo_description,
+          keywords: row.seo_keywords,
+          canonicalUrl: row.canonical_url,
+        },
+      }));
+    }),
   };
 }
 
@@ -512,20 +542,22 @@ export async function getFilters(connection) {
     "SELECT id, name, slug FROM brands WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order, id",
   );
   const [values] = await connection.execute(
-    `SELECT a.slug AS attribute_slug, av.id, av.value, av.slug FROM attributes a JOIN attribute_values av ON av.attribute_id = a.id WHERE a.is_active = 1 AND av.is_active = 1 AND a.slug IN ('skin-type', 'concern', 'pack-size') ORDER BY a.sort_order, av.sort_order, av.id`,
+    `SELECT a.id AS attribute_id, a.name AS attribute_name, a.slug AS attribute_slug, av.id, av.value, av.slug FROM attributes a JOIN attribute_values av ON av.attribute_id = a.id WHERE a.is_active = 1 AND av.is_active = 1 ORDER BY a.sort_order, a.id, av.sort_order, av.id`,
   );
   const [price] = await connection.execute(
     `SELECT MIN(ps.price) AS min_price, MAX(ps.price) AS max_price FROM product_skus ps JOIN products p ON p.id = ps.product_id WHERE p.status = 'active' AND p.is_active = 1 AND p.deleted_at IS NULL AND ps.is_active = 1 AND ps.deleted_at IS NULL`,
   );
   const grouped = { skinTypes: [], concerns: [], packSizes: [] };
+  const attributes = [];
   for (const row of values) {
-    const key =
-      row.attribute_slug === "skin-type"
-        ? "skinTypes"
-        : row.attribute_slug === "pack-size"
-          ? "packSizes"
-          : "concerns";
-    grouped[key].push({ id: row.id, value: row.value, slug: row.slug });
+    const key = row.attribute_slug === "skin-type" ? "skinTypes" : row.attribute_slug === "pack-size" ? "packSizes" : row.attribute_slug === "concern" ? "concerns" : null;
+    if (key) grouped[key].push({ id: row.id, value: row.value, slug: row.slug });
+    let attribute = attributes.find((item) => Number(item.id) === Number(row.attribute_id));
+    if (!attribute) {
+      attribute = { id: row.attribute_id, name: row.attribute_name, slug: row.attribute_slug, values: [] };
+      attributes.push(attribute);
+    }
+    attribute.values.push({ id: row.id, value: row.value, slug: row.slug });
   }
   return {
     data: {
@@ -540,6 +572,7 @@ export async function getFilters(connection) {
         slug: row.slug,
       })),
       ...grouped,
+      attributes,
       priceRange: {
         min: decimal(price[0]?.min_price) || 0,
         max: decimal(price[0]?.max_price) || 0,

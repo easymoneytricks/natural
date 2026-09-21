@@ -123,12 +123,12 @@ export async function customerInvoice(req, res, next) {
       .fillColor("#294936")
       .fontSize(24)
       .font("Helvetica-Bold")
-      .text("Natural Beauty");
+      .text(order.pricing?.tax?.sellerLegalName || "Your store");
     document
       .fillColor("#68766c")
       .fontSize(9)
       .font("Helvetica")
-      .text("BOTANICAL SKINCARE · MODERN SCIENCE");
+      .text("STORE ORDER · CUSTOMER COPY");
     document.moveDown(1.5);
     document
       .fillColor("#202521")
@@ -153,7 +153,7 @@ export async function customerInvoice(req, res, next) {
       .fillColor("#202521")
       .fontSize(10)
       .font("Helvetica")
-      .text(taxSnapshot.sellerLegalName || "Natural Beauty", 48, infoTop + 16, {
+      .text(taxSnapshot.sellerLegalName || "Your store", 48, infoTop + 16, {
         width: 220,
       })
       .fillColor("#68766c")
@@ -306,7 +306,7 @@ export async function customerInvoice(req, res, next) {
     document
       .fillColor("#68766c")
       .fontSize(8)
-      .text("Thank you for choosing thoughtful skincare.", 48, 770, {
+      .text("Thank you for choosing our store.", 48, 770, {
         align: "center",
         width: 499,
       });
