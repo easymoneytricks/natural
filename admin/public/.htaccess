@@ -1,0 +1,8 @@
+Options -MultiViews
+RewriteEngine On
+
+# Keep admin deep links working when a route is opened directly or refreshed.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^ index.html [L]

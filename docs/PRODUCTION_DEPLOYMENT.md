@@ -96,13 +96,15 @@ Do not use `*` for authenticated APIs. Browser unsafe requests from an unexpecte
 
 ## 7. Build and start
 
-Build output is `storefront/dist` and `admin/dist`; the backend runtime uses the non-development command:
+Build output is `storefront/dist` and `admin/dist`; the backend runtime uses the non-development command. Both dist folders include an `.htaccess` SPA fallback so direct visits and refreshes of client routes such as `/shop` and `/journal` resolve to `index.html` on Apache:
 
 ```bash
 npm run build:storefront
 npm run build:admin
 npm run --workspace natural-beauty-api start
 ```
+
+When deploying to Apache/cPanel, copy hidden files from each `dist` folder and ensure `mod_rewrite` and `AllowOverride FileInfo` (or `All`) are enabled for the document root. If `.htaccess` is blocked by the host, add the equivalent rewrite rule in the virtual-host configuration.
 
 The backend listens on `PORT` (default `4000`) and binds all interfaces. Health check:
 

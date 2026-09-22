@@ -6,6 +6,13 @@ import App from "./App";
 import { CartProvider } from "./context/CartContext";
 import { CompareProvider, WishlistProvider } from "./context/PreferenceContext";
 import { AuthProvider } from "./context/AuthContext";
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>

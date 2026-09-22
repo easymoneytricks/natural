@@ -55,6 +55,13 @@ import { UsefulInfoPage } from "./usefulInfo";
 import { AbandonedCheckoutsPage } from "./abandonedCheckouts";
 import "./styles.css";
 import "./workspace.css";
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}
+
 const API = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1"
 ).replace(/\/$/, "");

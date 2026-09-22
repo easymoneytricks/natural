@@ -1,0 +1,9 @@
+Options -MultiViews
+RewriteEngine On
+
+# Vite/React uses client-side routing. Serve real assets normally and send
+# every other storefront URL to the SPA entry point on direct visits/refresh.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+RewriteRule ^ index.html [L]
