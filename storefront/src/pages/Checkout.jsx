@@ -73,7 +73,7 @@ export function Checkout() {
       billingSame: true,
       billing: blankAddress,
       shippingMethod: "standard",
-      payment: "online",
+      payment: "cod",
       terms: false,
     }),
   );
@@ -82,7 +82,7 @@ export function Checkout() {
   const [paymentProvider, setPaymentProvider] = useState(null);
   const [shippingMethods, setShippingMethods] = useState([]);
   const [quoteLoading, setQuoteLoading] = useState(false);
-  const [, setQuoteError] = useState("");
+  const [quoteError, setQuoteError] = useState("");
   useEffect(() => {
     apiRequest("/checkout/payment-methods")
       .then((result) => setPaymentProvider(result.data || null))
@@ -224,6 +224,7 @@ export function Checkout() {
         : {
             items: items.map((item) => ({
               skuId: item.skuId,
+              sku: item.sku,
               quantity: item.quantity,
             })),
           }),
@@ -233,7 +234,15 @@ export function Checkout() {
     };
     getQuote(body, serverMode ? authFetch : null)
       .then((result) => {
-        if (!controller.signal.aborted) setQuote(result.data);
+        if (!controller.signal.aborted) {
+          setQuote(result.data);
+          setQuoteError(
+            result.data.checkoutReady
+              ? ""
+              : result.data.issues?.[0]?.message ||
+                  "Some items in your bag need attention before checkout.",
+          );
+        }
       })
       .catch(() => {
         if (!controller.signal.aborted) {
@@ -369,7 +378,8 @@ export function Checkout() {
   const placeOrder = async (event) => {
     event.preventDefault();
     if (placing || quoteLoading || !quote || !quote.checkoutReady) {
-      setQuoteError("We couldn't verify your order total. Please try again.");
+      if (!quote?.issues?.length)
+        setQuoteError("We couldn't verify your order total. Please try again.");
       return;
     }
     if (!validate()) return;
@@ -401,6 +411,7 @@ export function Checkout() {
         : {
             items: items.map((item) => ({
               skuId: item.skuId,
+              sku: item.sku,
               quantity: item.quantity,
             })),
           }),
@@ -502,7 +513,7 @@ export function Checkout() {
       setQuoteError(
         error?.code === "INSUFFICIENT_STOCK"
           ? "Some items are no longer available in the requested quantity."
-          : "We could not place your order right now. Please try again.",
+          : error?.message || "We could not place your order right now. Please try again.",
       );
     } finally {
       setPlacing(false);
@@ -534,6 +545,11 @@ export function Checkout() {
         <Link to="/cart">Bag</Link> <span>→</span> Checkout <span>→</span>{" "}
         Confirmation
       </p>
+      {quoteError && (
+        <p className="checkout-error" role="alert">
+          {quoteError}
+        </p>
+      )}
       <form onSubmit={placeOrder} className="checkout-layout">
         <section className="checkout-form">
           <CheckoutSection title="Contact">
@@ -623,6 +639,7 @@ export function Checkout() {
                 title={paymentProvider?.provider ? `Online payment · ${paymentProvider.provider}` : "Online payment"}
                 text="UPI · Cards · Net Banking"
                 price={paymentProvider?.online ? "Secure" : "Unavailable"}
+                disabled={!paymentProvider?.online}
               />
               <Method
                 checked={draft.payment === "cod"}
@@ -634,8 +651,8 @@ export function Checkout() {
             </div>
             {draft.payment === "online" && (
               <p className="payment-note">
-                You will be securely redirected to Cashfree to complete your
-                payment after reviewing this order.
+                You will be securely redirected to our payment partner to
+                complete your payment after reviewing this order.
               </p>
             )}
             {errors.payment && <p className="field-error">{errors.payment}</p>}
@@ -812,10 +829,10 @@ function AddressFields({ address, update, errors, inputRef }) {
     </div>
   );
 }
-function Method({ checked, onChange, title, text, price }) {
+function Method({ checked, onChange, title, text, price, disabled = false }) {
   return (
-    <label className="method-row">
-      <input type="radio" checked={checked} onChange={onChange} />
+    <label className={`method-row${disabled ? " is-disabled" : ""}`}>
+      <input type="radio" checked={checked} onChange={onChange} disabled={disabled} />
       <span>
         <strong>{title}</strong>
         <small>{text}</small>

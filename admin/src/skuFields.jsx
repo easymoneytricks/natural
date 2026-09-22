@@ -1,5 +1,15 @@
 import React from "react";
 
+const API_ROOT = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1"
+).replace(/\/api\/v1\/?$/, "");
+const imageUrl = (path) =>
+  path
+    ? path.startsWith("http")
+      ? path
+      : `${API_ROOT}/${path.replace(/^\//, "")}`
+    : "";
+
 export function SkuFields({
   sku,
   onChange,
@@ -24,12 +34,16 @@ export function SkuFields({
     <>
       <fieldset>
         <legend>SKU gallery images</legend>
-        <p>Select existing product images. The first selection is primary.</p>
-        {media.map((image) => (
-          <label key={image.id}>
+        <p className="sku-gallery-help">Select the images for this SKU. The first selected image is used as the storefront primary image.</p>
+        <div className="sku-gallery-selection-list">
+        {media.map((image) => {
+          const selectedIndex = (sku.mediaIds || []).indexOf(Number(image.id));
+          const isSelected = selectedIndex !== -1;
+          return (
+          <label key={image.id} className={`sku-gallery-selection ${isSelected && selectedIndex === 0 ? "is-primary" : ""}`}>
             <input
               type="checkbox"
-              checked={(sku.mediaIds || []).includes(Number(image.id))}
+              checked={isSelected}
               onChange={(event) =>
                 setField(
                   "mediaIds",
@@ -39,9 +53,19 @@ export function SkuFields({
                 )
               }
             />
-            {image.alt_text || `Gallery image ${image.id}`}
+            {imageUrl(image.file_path || image.path) && (
+              <img
+                className="sku-gallery-selection-thumb"
+                src={imageUrl(image.file_path || image.path)}
+                alt={image.alt_text || `Gallery image ${image.id}`}
+              />
+            )}
+            <span className="sku-gallery-selection-name">{image.alt_text || `Gallery image ${image.id}`}</span>
+            {isSelected && <span className="sku-gallery-selection-badge">{selectedIndex === 0 ? "Primary" : `Image ${selectedIndex + 1}`}</span>}
           </label>
-        ))}
+          );
+        })}
+        </div>
       </fieldset>
       <label>
         Barcode

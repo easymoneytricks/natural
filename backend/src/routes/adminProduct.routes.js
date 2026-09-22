@@ -27,5 +27,6 @@ r.delete("/products/:id/media/:mediaId", remove, e.mediaRemove);
 r.post("/products/:productId/skus", create, c.sku);
 r.patch("/products/:productId/skus/:skuId", update, c.sku);
 r.delete("/products/:productId/skus/:skuId", remove, c.removeSku);
+r.delete("/products/:productId/skus/:skuId/permanent", remove, c.permanentlyRemoveSku);
 r.post("/products/:productId/skus/:skuId/restore", update, c.restoreSku);
 export default r;

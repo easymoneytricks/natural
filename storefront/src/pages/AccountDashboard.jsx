@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useWishlist } from "../context/PreferenceContext";
 import { getAddresses } from "../services/authApi";
+import { Wishlist as WishlistPage } from "./Wishlist";
 import "./AccountDashboard.css";
 
 function Guard({ children }) {
@@ -163,6 +164,16 @@ export function AccountOverview() {
             </Link>
           </article>
         </div>
+      </Layout>
+    </Guard>
+  );
+}
+
+export function AccountWishlist() {
+  return (
+    <Guard>
+      <Layout active="Wishlist">
+        <WishlistPage accountMode />
       </Layout>
     </Guard>
   );

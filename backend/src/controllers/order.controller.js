@@ -6,6 +6,7 @@ import {
   trackPublicOrder,
 } from "../services/order.service.js";
 import rateLimit from "express-rate-limit";
+import { read as readSettings } from "../services/storeSettings.service.js";
 
 export const trackOrder = [
   rateLimit({
@@ -94,6 +95,7 @@ export async function customerInvoice(req, res, next) {
     }
 
     const order = await getOrder(pool, rows[0].id, req.customer.id);
+    const settings = await readSettings(pool);
     const document = new PDFDocument({ size: "A4", margin: 48 });
     const money = (value) => `INR ${Number(value || 0).toFixed(2)}`;
     const address = order.shippingAddress || {};
@@ -118,12 +120,19 @@ export async function customerInvoice(req, res, next) {
       `attachment; filename="${order.orderNumber}-invoice.pdf"`,
     );
     document.pipe(res);
+    const taxSnapshot = order.pricing.tax || {};
+    const businessName =
+      taxSnapshot.sellerLegalName && taxSnapshot.sellerLegalName !== "Your store"
+        ? taxSnapshot.sellerLegalName
+        : settings.store?.store_name || taxSnapshot.sellerLegalName || "Your store";
+    const businessAddress =
+      taxSnapshot.sellerAddress || settings.tax?.seller_address || settings.contact?.address_line || "Registered address pending";
 
     document
       .fillColor("#294936")
       .fontSize(24)
       .font("Helvetica-Bold")
-      .text(order.pricing?.tax?.sellerLegalName || "Your store");
+      .text(businessName);
     document
       .fillColor("#68766c")
       .fontSize(9)
@@ -143,7 +152,6 @@ export async function customerInvoice(req, res, next) {
     document.moveDown(1.5);
 
     const infoTop = document.y;
-    const taxSnapshot = order.pricing.tax || {};
     document
       .fillColor("#294936")
       .fontSize(9)
@@ -153,13 +161,13 @@ export async function customerInvoice(req, res, next) {
       .fillColor("#202521")
       .fontSize(10)
       .font("Helvetica")
-      .text(taxSnapshot.sellerLegalName || "Your store", 48, infoTop + 16, {
+      .text(businessName, 48, infoTop + 16, {
         width: 220,
       })
       .fillColor("#68766c")
       .fontSize(9)
       .text(
-        taxSnapshot.sellerAddress || "Registered address pending",
+        businessAddress,
         48,
         infoTop + 33,
         {
@@ -241,42 +249,45 @@ export async function customerInvoice(req, res, next) {
     });
     document.y = rowY + 12;
     const totalsX = 340;
-    document
-      .fontSize(10)
-      .fillColor("#526057")
-      .text("Subtotal", totalsX, document.y);
-    document.text(money(order.pricing.subtotal), 455, document.y, {
-      width: 92,
-      align: "right",
-    });
-    document.text("Discount", totalsX, document.y + 20);
-    document.text(
-      `- ${money(order.pricing.couponDiscount)}`,
-      455,
-      document.y + 20,
-      { width: 92, align: "right" },
+    const productDiscount = Math.max(
+      0,
+      Number(order.pricing.mrpTotal || order.pricing.subtotal) -
+        Number(order.pricing.subtotal),
     );
-    document.text("Shipping", totalsX, document.y + 40);
-    document.text(money(order.pricing.shipping), 455, document.y + 40, {
-      width: 92,
-      align: "right",
+    const totalRows = [
+      ["Subtotal", order.pricing.subtotal, false],
+      ...(productDiscount ? [["Product discount", productDiscount, true]] : []),
+      ...(order.pricing.couponDiscount
+        ? [["Coupon discount", order.pricing.couponDiscount, true]]
+        : []),
+      ...(order.pricing.giftCardApplied
+        ? [["Gift card", order.pricing.giftCardApplied, true]]
+        : []),
+      ["Shipping", order.pricing.shipping, false],
+      [order.pricing.tax?.label || "Tax", order.pricing.tax?.amount, false],
+    ];
+    document.fontSize(10).fillColor("#526057");
+    const totalsTop = document.y;
+    totalRows.forEach(([label, value, discount], index) => {
+      const y = totalsTop + index * 20;
+      document.text(label, totalsX, y);
+      document.text(`${discount ? "- " : ""}${money(value)}`, 455, y, {
+        width: 92,
+        align: "right",
+      });
     });
-    document.text(order.pricing.tax?.label || "Tax", totalsX, document.y + 60);
-    document.text(money(order.pricing.tax?.amount), 455, document.y + 60, {
-      width: 92,
-      align: "right",
-    });
+    const totalY = totalsTop + totalRows.length * 20;
     document
       .strokeColor("#294936")
-      .moveTo(totalsX, document.y + 85)
-      .lineTo(547, document.y + 85)
+      .moveTo(totalsX, totalY + 5)
+      .lineTo(547, totalY + 5)
       .stroke();
     document
       .fillColor("#294936")
       .font("Helvetica-Bold")
       .fontSize(14)
-      .text("Total", totalsX, document.y + 98);
-    document.text(money(order.pricing.total), 430, document.y + 98, {
+      .text("Total", totalsX, totalY + 18);
+    document.text(money(order.pricing.total), 430, totalY + 18, {
       width: 117,
       align: "right",
     });
@@ -291,17 +302,17 @@ export async function customerInvoice(req, res, next) {
       .fillColor("#68766c")
       .font("Helvetica")
       .fontSize(9)
-      .text(taxBreakdown, 48, document.y + 120)
-      .text(tax.hsnSac ? `HSN / SAC: ${tax.hsnSac}` : "", 48, document.y + 135)
+      .text(taxBreakdown, 48, totalY + 42)
+      .text(tax.hsnSac ? `HSN / SAC: ${tax.hsnSac}` : "", 48, totalY + 57)
       .text(
         `Place of supply: ${tax.placeOfSupply || "Not specified"} · Reverse charge: ${tax.reverseCharge ? "Yes" : "No"}`,
         48,
-        document.y + 150,
+        totalY + 72,
       )
       .text(
         `Payment: ${order.paymentMethod || "—"} · ${order.paymentStatus || "pending"}`,
         48,
-        document.y + 170,
+        totalY + 92,
       );
     document
       .fillColor("#68766c")

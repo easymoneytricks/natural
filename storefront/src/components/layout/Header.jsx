@@ -146,7 +146,11 @@ export function Header({ onSearch, onCart, onMenu }) {
           <Link
             className="with-badge"
             aria-label={`Wishlist, ${wishlistCount} items`}
-            to="/account/wishlist"
+            to={
+              accountReady && isAuthenticated
+                ? "/account/wishlist"
+                : "/wishlist"
+            }
           >
             <Heart />
             {wishlistCount > 0 && <i>{wishlistCount}</i>}

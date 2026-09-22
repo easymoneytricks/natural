@@ -3,6 +3,28 @@ import { env } from "../config/env.js";
 import { pool } from "../config/database.js";
 import { read as readSettings } from "../services/storeSettings.service.js";
 import { releaseOrderReservations } from "../services/order.service.js";
+import { issuePurchase } from "../services/giftCardPurchase.service.js";
+import { giftCardEmail, sendEmail } from "../services/mail.service.js";
+
+async function issueGiftCardForOrder(orderId) {
+  const purchase = await issuePurchase(pool, orderId, env.auth.accessSecret);
+  if (purchase?.code && !purchase.alreadyIssued) {
+    const recipient = purchase.delivery_mode === "gift"
+      ? purchase.recipient_email
+      : purchase.buyer_email;
+    if (recipient) {
+      sendEmail(giftCardEmail({
+        recipient,
+        recipientName: purchase.recipient_name,
+        amount: purchase.amount,
+        code: purchase.code,
+        orderNumber: purchase.order_number || purchase.orderNumber,
+        message: purchase.message,
+      })).catch(() => {});
+    }
+  }
+  return purchase;
+}
 
 const cashfreeBase = () =>
   env.cashfree.environment === "production"
@@ -59,7 +81,7 @@ export async function createCashfreeOrder(req, res, next) {
     const configuration = await paymentConfiguration();
     if (configuration.selected !== "cashfree" || !configuration.available)
       throw unavailable();
-    const { orderNumber, customer } = req.body || {};
+    const { orderNumber, customer, returnPath } = req.body || {};
     if (!orderNumber) {
       const error = new Error("An internal order number is required.");
       error.statusCode = 400;
@@ -76,6 +98,10 @@ export async function createCashfreeOrder(req, res, next) {
       error.code = "ORDER_NOT_FOUND";
       throw error;
     }
+    const storefrontReturnPath = String(returnPath || "/order-success").startsWith("/")
+      ? String(returnPath || "/order-success")
+      : "/order-success";
+    const returnSeparator = storefrontReturnPath.includes("?") ? "&" : "?";
     const response = await fetch(`${cashfreeBase()}/orders`, {
       method: "POST",
       headers: {
@@ -95,7 +121,7 @@ export async function createCashfreeOrder(req, res, next) {
           customer_phone: customer?.phone || order.customer_phone,
         },
         order_meta: {
-          return_url: `${process.env.STOREFRONT_URL || "http://localhost:5173"}/order-success?order=${encodeURIComponent(order.order_number)}`,
+          return_url: `${process.env.STOREFRONT_URL || "http://localhost:5173"}${storefrontReturnPath}${returnSeparator}order=${encodeURIComponent(order.order_number)}`,
           notify_url: `${process.env.PUBLIC_API_URL || "http://localhost:4000"}/api/v1/webhooks/cashfree`,
         },
       }),
@@ -235,7 +261,7 @@ export async function cashfreeWebhook(req, res, next) {
           "SELECT id FROM orders WHERE order_number=?",
           [orderNumber],
         );
-        if (order) {
+          if (order) {
           const connection = await pool.getConnection();
           try {
             await connection.beginTransaction();
@@ -289,6 +315,7 @@ export async function cashfreeWebhook(req, res, next) {
           } finally {
             connection.release();
           }
+          if (paymentStatus === "paid") await issueGiftCardForOrder(order.id);
         }
       }
     }
@@ -356,7 +383,8 @@ export async function verifyRazorpay(req, res, next) {
       "UPDATE orders SET payment_status='paid',status=IF(status='pending','confirmed',status) WHERE id=? AND payment_status NOT IN ('paid','refunded')",
       [payment.order_id],
     );
-    res.json({ data: { verified: true } });
+    const giftCard = await issueGiftCardForOrder(payment.order_id);
+    res.json({ data: { verified: true, giftCard: giftCard?.code ? { orderNumber: giftCard.order_number, code: giftCard.code } : null } });
   } catch (e) {
     next(e);
   }
@@ -454,6 +482,7 @@ export async function webhook(req, res, next) {
         } finally {
           connection.release();
         }
+        if (paymentStatus === "paid") await issueGiftCardForOrder(payment.order_id);
       }
     }
     return res.json({

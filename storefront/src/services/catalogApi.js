@@ -76,6 +76,13 @@ export async function getProductBySlug(slug, options) {
       product.gallery
         ?.map((image) => normalizeImage(image, product.slug))
         .filter(Boolean) || [],
+    skus:
+      product.skus?.map((sku) => ({
+        ...sku,
+        primaryImage: sku.primaryImage
+          ? normalizeImage({ src: sku.primaryImage }, product.slug)
+          : null,
+      })) || [],
   };
 }
 

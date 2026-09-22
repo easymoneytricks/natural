@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Minus, Plus, X, Trash2, ShoppingBag } from "lucide-react";
 import { useFocusTrap } from "../ui/useFocusTrap";
 import { useCart } from "../../context/CartContext";
@@ -62,9 +62,17 @@ export function CartDrawer({ open, onClose }) {
           {items.length ? (
             items.map((item) => (
               <article className="cart-item" key={item.sku}>
-                <img src={item.image} alt={item.name} />
+                <Link
+                  to={`/product/${item.slug}`}
+                  onClick={onClose}
+                  aria-label={`View ${item.name}`}
+                >
+                  <img src={item.image} alt={item.name} />
+                </Link>
                 <div>
-                  <h3>{item.name}</h3>
+                  <Link to={`/product/${item.slug}`} onClick={onClose}>
+                    <h3>{item.name}</h3>
+                  </Link>
                   <p>
                     {item.attributes.size}
                     {item.attributes.skinType

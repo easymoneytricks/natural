@@ -24,6 +24,7 @@ const groups = [
   "homepage_limits",
   "trust",
   "payments",
+  "gift_cards",
   "recaptcha",
 ];
 

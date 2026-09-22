@@ -22,8 +22,8 @@ async function guestItems(pool, input = []) {
       const quantity = Number(item?.quantity);
       if (!Number.isInteger(quantity) || quantity < 1) continue;
       const [rows] = await connection.execute(
-        `SELECT ps.id sku_id,ps.sku,ps.price,ps.mrp,ps.weight_grams,ps.track_inventory,ps.allow_backorder,ps.is_active sku_active,ps.deleted_at sku_deleted,p.id product_id,p.slug,p.name,p.hsn_sac,p.is_active product_active,p.deleted_at product_deleted,i.quantity_on_hand,i.reserved_quantity FROM product_skus ps JOIN products p ON p.id=ps.product_id LEFT JOIN inventory i ON i.sku_id=ps.id WHERE ps.id=?`,
-        [Number(item.skuId)],
+        `SELECT ps.id sku_id,ps.sku,ps.price,ps.mrp,ps.weight_grams,ps.track_inventory,ps.allow_backorder,ps.is_active sku_active,ps.deleted_at sku_deleted,p.id product_id,p.slug,p.name,p.hsn_sac,p.is_active product_active,p.deleted_at product_deleted,i.quantity_on_hand,i.reserved_quantity FROM product_skus ps JOIN products p ON p.id=ps.product_id LEFT JOIN inventory i ON i.sku_id=ps.id WHERE ps.id=? OR ps.sku=? LIMIT 1`,
+        [Number(item.skuId) || 0, String(item.sku || "").trim()],
       );
       if (rows[0]) result.push({ ...rows[0], quantity });
     }
@@ -95,11 +95,24 @@ async function readTaxSettings(pool) {
   const [shippingRows] = await pool.execute(
     "SELECT setting_key,value_json FROM store_settings WHERE setting_group='shipping'",
   );
+  const [storeRows] = await pool.execute(
+    "SELECT setting_group,setting_key,value_json FROM store_settings WHERE setting_group IN ('store','contact')",
+  );
   const shippingValues = shippingRows.reduce((result, row) => {
     try {
       result[row.setting_key] = JSON.parse(row.value_json);
     } catch {
       result[row.setting_key] = row.value_json;
+    }
+    return result;
+  }, {});
+  const identityValues = storeRows.reduce((result, row) => {
+    try {
+      result[row.setting_group] ||= {};
+      result[row.setting_group][row.setting_key] = JSON.parse(row.value_json);
+    } catch {
+      result[row.setting_group] ||= {};
+      result[row.setting_group][row.setting_key] = row.value_json;
     }
     return result;
   }, {});
@@ -112,8 +125,12 @@ async function readTaxSettings(pool) {
       .toLowerCase(),
     hsnSac: String(values.hsn_sac || "").trim(),
     sellerGstin: String(values.seller_gstin || "").trim(),
-    sellerLegalName: String(values.seller_legal_name || "Your store").trim(),
-    sellerAddress: String(values.seller_address || "").trim(),
+    sellerLegalName: String(
+      values.seller_legal_name || identityValues.store?.store_name || "Your store",
+    ).trim(),
+    sellerAddress: String(
+      values.seller_address || identityValues.contact?.address_line || "",
+    ).trim(),
     sellerStateCode: String(values.seller_state_code || "").trim(),
     reverseCharge:
       values.reverse_charge === true || values.reverse_charge === "true",
@@ -259,6 +276,7 @@ export async function quote(
     (sum, item) => sum + item.weightGrams * item.quantity,
     0,
   );
+  const taxSettings = await readTaxSettings(pool);
   const configuredRate =
     taxSettings.shippingMode === "slab"
       ? (taxSettings.shippingSlabs.find(
@@ -275,7 +293,6 @@ export async function quote(
     : 0;
   const couponDiscount = paise(coupon?.discount);
   const beforeGift = Math.max(0, subtotal - couponDiscount + shipping);
-  const taxSettings = await readTaxSettings(pool);
   const taxable = Math.max(0, subtotal - couponDiscount + shipping);
   const taxAmount = taxSettings.enabled
     ? Math.round((taxable * taxSettings.rate) / 100)

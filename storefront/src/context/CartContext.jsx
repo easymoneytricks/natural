@@ -2,15 +2,26 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthContext";
 import * as cartApi from "../services/cartApi";
+import { mediaUrl } from "../lib/api";
 
 const CartContext = createContext(null);
+const normalizeCartImage = (value) => {
+  const src = typeof value === "string" ? value : value?.src;
+  if (!src) return "";
+  return src.startsWith("/uploads/") || src.startsWith("uploads/")
+    ? mediaUrl(src)
+    : src;
+};
 const decorate = (lines) =>
   lines.map((line) => {
+    const image = normalizeCartImage(
+      line.image || line.product?.image || "",
+    );
     return {
       ...line,
       name: line.product?.name || line.name,
       slug: line.product?.slug || line.slug,
-      image: line.image?.src || line.image || line.product?.image || "",
+      image,
       attributes: line.attributes || {},
       stock: line.availability?.available,
       availableStock: line.availability?.available,
@@ -27,7 +38,7 @@ export function CartProvider({ children }) {
         localStorage.getItem("natural-beauty-cart") || "[]",
       );
       return Array.isArray(stored)
-        ? stored.filter((item) => item && item.sku && item.quantity > 0)
+        ? decorate(stored.filter((item) => item && item.sku && item.quantity > 0))
         : [];
     } catch {
       return [];

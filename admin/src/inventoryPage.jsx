@@ -45,7 +45,7 @@ export function InventoryPage() {
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = "natural-beauty-inventory.csv";
+    link.download = "inventory-export.csv";
     link.click();
     URL.revokeObjectURL(url);
   };

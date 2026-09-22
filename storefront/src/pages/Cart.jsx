@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Minus, Plus, Trash2, Heart, ArrowRight, Check } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ProductCard } from "../components/product/ProductCard";
 import { useCart } from "../context/CartContext";
 import { shippingRules } from "../config/commerce";
 import { useWishlist } from "../context/PreferenceContext";
 import { useAuth } from "../context/AuthContext";
+import { getProducts } from "../services/catalogApi";
 import "./Cart.css";
 
 const money = (value) => `₹${Math.max(0, value).toLocaleString("en-IN")}`;
@@ -42,6 +43,7 @@ export function Cart() {
   );
   const [giftMessage, setGiftMessage] = useState("");
   const [wishlistMessage, setWishlistMessage] = useState("");
+  const [recommendations, setRecommendations] = useState([]);
   useEffect(() => {
     if (authStatus !== "authenticated" || gift) return;
     authFetch("/customer/gift-cards")
@@ -80,7 +82,19 @@ export function Cart() {
     : 0;
   const total = Math.max(0, subtotal - couponDiscount + shipping - giftApplied);
   const unavailable = items.some((item) => item.stock < 1);
-  const recommendations = [];
+  useEffect(() => {
+    let active = true;
+    getProducts({ sort: "best-selling", page: 1, limit: 4 })
+      .then(({ data }) => {
+        if (!active) return;
+        const cartSlugs = new Set(items.map((item) => item.slug));
+        setRecommendations(data.filter((product) => !cartSlugs.has(product.slug)).slice(0, 4));
+      })
+      .catch(() => {
+        if (active) setRecommendations([]);
+      });
+    return () => { active = false; };
+  }, [items]);
 
   const applyCoupon = () => {
     const code = couponInput.trim().toUpperCase();
@@ -429,16 +443,18 @@ function OrderSummary({
   );
 }
 function Recommendations({ items }) {
+  const navigate = useNavigate();
+  if (!items.length) return null;
   return (
     <section className="cart-recommendations container">
       <p className="eyebrow">You may also like</p>
-      <h2>Complete your order.</h2>
+      <h2>Explore more from the collection.</h2>
       <div className="product-grid">
         {items.map((item) => (
           <ProductCard
             key={item.slug}
             product={item}
-            onChooseOptions={() => {}}
+            onChooseOptions={(product) => navigate(`/product/${product.slug}`)}
           />
         ))}
       </div>

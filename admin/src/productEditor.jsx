@@ -258,6 +258,7 @@ export function ProductEditor() {
   };
   const attachLibraryAsset = async (asset) => {
     setBusy(true);
+    setError("");
     try {
       const response = await authFetch(`/admin/products/${id}/media/library`, {
         method: "POST",
@@ -266,7 +267,20 @@ export function ProductEditor() {
       setMedia((current) => [...current, response.data]);
       setShowLibrary(false);
     } catch (caught) {
-      setError(caught.message || "Unable to attach library image.");
+      if (caught.code === "MEDIA_ASSET_NOT_FOUND") {
+        setError(
+          "This media item is no longer available. The library has been refreshed; please choose another image.",
+        );
+        try {
+          const response = await authFetch("/admin/media?type=all");
+          setLibraryAssets(response.data || []);
+          setShowLibrary(true);
+        } catch {
+          setShowLibrary(false);
+        }
+      } else {
+        setError(caught.message || "Unable to attach library image.");
+      }
     } finally {
       setBusy(false);
     }
@@ -345,6 +359,16 @@ export function ProductEditor() {
         );
         setEditingSkuId(null);
         setSku(emptySku);
+        await refreshChildren();
+      },
+    });
+
+  const permanentlyDeleteSku = (item) =>
+    setConfirmation({
+      title: "Permanently delete this SKU?",
+      description: "This cannot be undone. SKUs with inventory movement history will be kept for records.",
+      onConfirm: async () => {
+        await authFetch(`/admin/products/${id}/skus/${item.id}/permanent`, { method: "DELETE" });
         await refreshChildren();
       },
     });
@@ -525,6 +549,12 @@ export function ProductEditor() {
                 <option value="simple">Simple</option>
                 <option value="variant">Variant</option>
               </select>
+              {form.productType === "simple" && (
+                <small>
+                  A standard SKU is created automatically when you save this
+                  product.
+                </small>
+              )}
             </label>
             <label>
               Status
@@ -641,19 +671,45 @@ export function ProductEditor() {
             {[
               ["shortDescription", "Short description"],
               ["description", "Description"],
-              ["ingredientsText", "Components and details"],
-              ["howToUse", "Instructions"],
-              ["texture", "Specifications"],
-              ["usageTime", "Usage notes"],
+              ["howToUse", "Instructions (left side)"],
             ].map(([key, label]) => (
               <label key={key}>
                 {label}
+                {key === "howToUse" && (
+                  <small className="field-help">
+                    Add one step per line. Example: Step 1: Enter the first instruction. Step 2: Enter the next instruction.
+                  </small>
+                )}
                 <textarea
                   value={form[key] || ""}
+                  placeholder={
+                    key === "howToUse"
+                      ? "Step 1: ...\nStep 2: ..."
+                      : undefined
+                  }
                   onChange={(event) => updateForm(key, event.target.value)}
                 />
               </label>
             ))}
+            <div className="product-editor-detail-group">
+              <div className="product-editor-detail-group-heading">
+                <strong>Product details (right side)</strong>
+                <small>Shown together in the product details area.</small>
+              </div>
+              {[
+                ["ingredientsText", "Components & details"],
+                ["texture", "Specifications"],
+                ["usageTime", "Usage notes"],
+              ].map(([key, label]) => (
+                <label key={key}>
+                  {label}
+                  <textarea
+                    value={form[key] || ""}
+                    onChange={(event) => updateForm(key, event.target.value)}
+                  />
+                </label>
+              ))}
+            </div>
           </section>
           <section className="card">
             <h2>Categories</h2>
@@ -981,6 +1037,15 @@ export function ProductEditor() {
                     onClick={() => changeSkuLifecycle(item, false)}
                   >
                     Safe delete
+                  </button>
+                )}
+                {item.deleted_at && (
+                  <button
+                    type="button"
+                    className="sku-permanent-delete"
+                    onClick={() => permanentlyDeleteSku(item)}
+                  >
+                    Permanently delete
                   </button>
                 )}
                 {editingSkuId === item.id && !item.deleted_at && (

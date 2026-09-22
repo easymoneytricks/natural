@@ -130,6 +130,7 @@ export async function adjust(
       "INVENTORY_NOT_TRACKED",
       "This SKU does not track physical inventory.",
     );
+  await pool.execute("INSERT IGNORE INTO inventory(sku_id) VALUES(?)", [id]);
   let result;
   const c = await pool.getConnection();
   try {
@@ -147,6 +148,7 @@ export async function reorder(pool, id, value, adminId, req) {
       "INVALID_REORDER_LEVEL",
       "Reorder level must be a non-negative integer.",
     );
+  await pool.execute("INSERT IGNORE INTO inventory(sku_id) VALUES(?)", [id]);
   const [[r]] = await pool.execute(
     "SELECT reorder_level FROM inventory WHERE sku_id=?",
     [id],
@@ -181,6 +183,7 @@ export async function correct(
       "INVALID_QUANTITY",
       "Actual on-hand must be a non-negative integer.",
     );
+  await pool.execute("INSERT IGNORE INTO inventory(sku_id) VALUES(?)", [id]);
   const [[r]] = await pool.execute(
     "SELECT quantity_on_hand FROM inventory WHERE sku_id=?",
     [id],

@@ -380,6 +380,14 @@ p {
   background: #a9443b;
   color: #fff;
 }
+.field-help {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+}
 .customer-admin-actions button.danger:hover:not(:disabled) {
   border-color: #87352f;
   background: #87352f;
@@ -618,14 +626,75 @@ form > button:last-child:hover {
 }
 
 .sku-editor {
-  padding: 16px;
-  margin: 10px 0;
-  line-height: 1.8;
+  position: relative;
+  padding: 20px 22px;
+  margin: 14px 0;
+  line-height: 1.65;
+  box-shadow: 0 8px 24px rgba(41, 73, 54, 0.05);
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.sku-editor:hover {
+  border-color: #b8cfbb;
+  box-shadow: 0 12px 28px rgba(41, 73, 54, 0.09);
+  transform: translateY(-1px);
+}
+
+.sku-editor > b {
+  display: inline-block;
+  color: #173d27;
+  font-size: 15px;
+  letter-spacing: .02em;
+}
+
+.sku-editor > p {
+  margin: 7px 0 0;
+  color: #6e7f73;
+  font-size: 13px;
+}
+
+.sku-editor > p:last-of-type {
+  padding: 9px 11px;
+  border: 1px solid #e1ebe2;
+  border-radius: 8px;
+  background: #f6faf5;
+  color: #496354;
+  font-size: 12px;
+}
+
+.sku-editor > a {
+  display: inline-flex;
+  margin-top: 14px;
+  padding: 9px 14px;
+  border: 1px solid #c7d8c8;
+  border-radius: 8px;
+  background: #f3f8f0;
+  color: #315940;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .16s ease, border-color .16s ease;
+}
+
+.sku-editor > a:hover {
+  border-color: #8fb49a;
+  background: #e7f1e5;
 }
 
 .sku-editor > button {
-  float: right;
+  float: none;
+  margin-top: 14px;
+  margin-right: 6px;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 12px;
 }
+.sku-editor > .sku-permanent-delete {
+  border-color: #e2b9b0;
+  background: #fff7f5;
+  color: #8a4f47;
+}
+
 
 .media-grid {
   display: grid;
@@ -1030,6 +1099,21 @@ button:active {
   font-size: 16px;
   margin: 30px 0 12px;
 }
+.abandoned-contact-summary {
+  display: grid;
+  gap: 3px;
+  margin: 18px 0 22px;
+  padding: 14px 16px;
+  border: 1px solid #dce7dd;
+  border-radius: 10px;
+  background: #f6faf5;
+  color: #52665a;
+  font-size: 13px;
+}
+.abandoned-contact-summary strong {
+  color: #294936;
+  font-size: 14px;
+}
 .abandoned-item,
 .abandoned-total {
   display: flex;
@@ -1048,8 +1132,32 @@ button:active {
 .media-upload-button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  min-width: 148px;
+  min-height: 44px;
+  padding: 11px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #5f8d6f, #426a52);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   cursor: pointer;
+  transition: 0.16s ease;
+  white-space: nowrap;
+}
+
+.media-upload-button:hover {
+  background: linear-gradient(135deg, #527d62, #365943);
+  box-shadow: 0 8px 18px rgba(50, 100, 68, 0.18);
+  transform: translateY(-1px);
+}
+
+.media-upload-button:focus-within {
+  outline: 3px solid #5575632e;
+  outline-offset: 2px;
 }
 
 @media (max-width: 720px) {

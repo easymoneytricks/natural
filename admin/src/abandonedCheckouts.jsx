@@ -146,6 +146,32 @@ export function AbandonedCheckoutsPage() {
               {selected.phone || "No phone provided"} · Last active{" "}
               {new Date(selected.last_seen_at).toLocaleString("en-IN")}
             </p>
+            {(selected.checkout?.address?.firstName ||
+              selected.checkout?.address?.lastName ||
+              selected.checkout?.address?.address1) && (
+              <div className="abandoned-contact-summary">
+                <strong>
+                  {[selected.checkout.address.firstName, selected.checkout.address.lastName]
+                    .filter(Boolean)
+                    .join(" ") || "Guest shopper"}
+                </strong>
+                {selected.checkout.address.address1 && (
+                  <span>{selected.checkout.address.address1}</span>
+                )}
+                {selected.checkout.address.address2 && (
+                  <span>{selected.checkout.address.address2}</span>
+                )}
+                <span>
+                  {[
+                    selected.checkout.address.city,
+                    selected.checkout.address.state,
+                    selected.checkout.address.pin,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
+                </span>
+              </div>
+            )}
             <h3>Items left in bag</h3>
             {selected.cart.map((item) => (
               <div

@@ -22,6 +22,12 @@ import { getBusinessName, useStoreSettings } from "../context/StoreSettingsConte
 
 const money = (value) => `₹${value.toLocaleString("en-IN")}`;
 const slugify = (value) => value.toUpperCase().replace(/[^A-Z0-9]+/g, "-");
+const hasText = (value) => Boolean(String(value || "").trim());
+const instructionLines = (value) =>
+  String(value || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 
 function makeVariants(product, detail) {
   if (detail?.skus?.length)
@@ -229,9 +235,15 @@ export function ProductDetail() {
               variant.attributes[dimension] === selection[dimension],
           ),
         );
-  const gallery = product.gallery?.length
+  const productGallery = product.gallery?.length
     ? product.gallery
     : [product.image, product.hoverImage].filter(Boolean);
+  const gallery = selectedVariant?.image
+    ? [
+        selectedVariant.image,
+        ...productGallery.filter((image) => image !== selectedVariant.image),
+      ]
+    : productGallery;
   const availableValues = (dimension) => [
     ...new Set(
       variants
@@ -249,6 +261,9 @@ export function ProductDetail() {
   ];
   const choose = (dimension, value) => {
     const next = { ...selection, [dimension]: value };
+    if (selection[dimension] === value) {
+      delete next[dimension];
+    }
     dimensions.slice(dimensions.indexOf(dimension) + 1).forEach((later) => {
       if (
         !variants.some((variant) =>
@@ -261,6 +276,7 @@ export function ProductDetail() {
     });
     setSelection(next);
     setQuantity(1);
+    setGalleryIndex(0);
   };
   const price =
     selectedVariant?.price ||
@@ -399,7 +415,7 @@ export function ProductDetail() {
               >
                 <img src={gallery[galleryIndex]} alt={product.name} />
                 <span>
-                  <ZoomIn size={15} /> Inspect image
+                  <ZoomIn size={15} /> View image
                 </span>
               </button>
             </div>
@@ -407,7 +423,9 @@ export function ProductDetail() {
           <section className="purchase-panel">
             <p className="eyebrow">{product.category}</p>
             <h1>{product.name}</h1>
-            <p className="product-positioning">{detail.positioning}</p>
+            {hasText(detail.positioning) && (
+              <p className="product-positioning">{detail.positioning}</p>
+            )}
             <p className="detail-rating">
               ★ <strong>{product.rating}</strong>{" "}
               <span>Based on {product.reviews} reviews</span>
@@ -424,13 +442,13 @@ export function ProductDetail() {
               )}
             </div>
             <div className="variant-selector">
-              {dimensions.map((dimension) => (
-                <fieldset key={dimension}>
-                  <legend>
-                    Select {detail.attributes?.find(
-                      (item) => item.slug === dimension,
-                    )?.name || dimension}
-                  </legend>
+              {dimensions.map((dimension) => {
+                const attribute = detail.attributes?.find(
+                  (item) => item.slug === dimension,
+                );
+                return (
+                  <fieldset key={dimension}>
+                  <legend>Select {attribute?.name || dimension}</legend>
                   <div className="variant-options">
                     {[
                       ...new Set(
@@ -441,13 +459,18 @@ export function ProductDetail() {
                     ].map((value) => {
                       const enabled =
                         availableValues(dimension).includes(value);
+                      const option = attribute?.values?.find(
+                        (item) =>
+                          item.value === value || item.displayValue === value,
+                      );
+                      const isSwatch = attribute?.displayType === "swatch";
+                      const color = option?.metadata?.color;
                       return (
                         <button
                           key={value}
-                          className={
-                            selection[dimension] === value ? "is-selected" : ""
-                          }
-                          disabled={!enabled}
+                          className={`${selection[dimension] === value ? "is-selected" : ""}${!enabled ? " is-unavailable" : ""}${isSwatch ? " is-swatch" : ""}`}
+                          style={isSwatch && color ? { backgroundColor: color } : undefined}
+                          title={option?.displayValue || value}
                           aria-pressed={selection[dimension] === value}
                           onClick={() => choose(dimension, value)}
                         >
@@ -456,14 +479,15 @@ export function ProductDetail() {
                       );
                     })}
                   </div>
-                </fieldset>
-              ))}
+                  </fieldset>
+                );
+              })}
             </div>
             <div
               className={`stock-message ${selectedVariant && stock > 0 ? "in-stock" : ""}`}
             >
               {!selectedVariant
-                ? "Choose options to resolve an exact SKU."
+                ? "Select one option from each group to continue."
                 : stock === 0
                   ? "OUT OF STOCK — This SKU is currently unavailable."
                   : stock <= 3
@@ -567,49 +591,53 @@ export function ProductDetail() {
             </div>
           </section>
         </div>
-        <section className="benefits-section">
-          {detail.benefits.map(([title, text]) => (
+        {detail.benefits.some(([title, text]) => hasText(title) || hasText(text)) && <section className="benefits-section">
+          {detail.benefits.filter(([title, text]) => hasText(title) || hasText(text)).map(([title, text]) => (
             <article key={title}>
-              <p>{title}</p>
-              <span>{text}</span>
+              {hasText(title) && <p>{title}</p>}
+              {hasText(text) && <span>{text}</span>}
             </article>
           ))}
-        </section>
-        {(detail.howToUse || detail.componentsAndDetails || detail.specifications || detail.usageNotes || detail.ingredients.length > 0) && (
+        </section>}
+        {(hasText(detail.howToUse) || hasText(detail.componentsAndDetails) || hasText(detail.specifications) || hasText(detail.usageNotes) || detail.ingredients.length > 0) && (
         <section className="editorial-columns">
-          <div>
+          {hasText(detail.howToUse) && <div>
             <p className="eyebrow">Instructions</p>
             <h2>How to use this item.</h2>
-            {detail.howToUse && <p className="product-copy">{detail.howToUse}</p>}
-          </div>
-          <div>
+            {instructionLines(detail.howToUse).length > 1 ? (
+              <ol className="product-instruction-list">
+                {instructionLines(detail.howToUse).map((step, index) => (
+                  <li key={`${step}-${index}`}>{step}</li>
+                ))}
+              </ol>
+            ) : (
+              <p className="product-copy">{detail.howToUse}</p>
+            )}
+          </div>}
+          {(hasText(detail.componentsAndDetails) || hasText(detail.specifications) || hasText(detail.usageNotes) || detail.ingredients.length > 0) && <div>
             <p className="eyebrow">Product details</p>
             <h2>What this item includes.</h2>
-                {detail.componentsAndDetails && (
+                {hasText(detail.componentsAndDetails) && (
                   <p className="product-copy">{detail.componentsAndDetails}</p>
                 )}
-                {detail.specifications && <p className="product-copy"><strong>Specifications:</strong> {detail.specifications}</p>}
-                {detail.usageNotes && <p className="product-copy"><strong>Usage notes:</strong> {detail.usageNotes}</p>}
+                {hasText(detail.specifications) && <p className="product-copy"><strong>Specifications:</strong> {detail.specifications}</p>}
+                {hasText(detail.usageNotes) && <p className="product-copy"><strong>Usage notes:</strong> {detail.usageNotes}</p>}
             {detail.ingredients.map(([name, text]) => (
               <div className="ingredient-line" key={name}>
                 <strong>{name}</strong>
                 <span>{text}</span>
               </div>
             ))}
-          </div>
+          </div>}
         </section>
         )}
         <section className="info-accordions">
           {[
             "Description",
-            "Product details",
-            "How to Use",
             "Who It's For",
             "Shipping & Returns",
           ].filter((title) => {
             if (title === "Description") return Boolean(detail.description || detail.positioning);
-            if (title === "Product details") return Boolean(detail.componentsAndDetails || detail.specifications || detail.usageNotes || detail.fullIngredients);
-            if (title === "How to Use") return Boolean(detail.howToUse);
             return false;
           }).map((title) => (
             <div key={title}>

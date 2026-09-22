@@ -265,7 +265,7 @@ function Shell({ children }) {
   const businessName =
     storeSettings.store?.store_name ||
     storeSettings.seo?.site_title ||
-    "Your store";
+    "";
 
   useEffect(() => {
     document.title = "Admin Panel";
@@ -327,7 +327,7 @@ function Shell({ children }) {
         <header className="admin-topbar">
           <div className="admin-topbar-context">
             <span className="admin-topbar-kicker">
-              {businessName.toUpperCase()} / ADMIN PANEL
+              {businessName ? `${businessName.toUpperCase()} / ` : ""}ADMIN PANEL
             </span>
           </div>
           <div className="admin-topbar-account">

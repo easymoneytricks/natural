@@ -115,7 +115,7 @@ export function InventoryDetail() {
         </div>
       </div>
       {message && (
-        <div className="notice" role="status">
+        <div className="notice inventory-notice" role="status">
           <CheckCircle2 size={17} /> {message}
         </div>
       )}

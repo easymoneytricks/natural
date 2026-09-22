@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { pool } from "../config/database.js";
-import { readPrivate } from "./storeSettings.service.js";
+import { read, readPrivate } from "./storeSettings.service.js";
 
 let transport;
 let transportKey = "";
@@ -21,12 +21,15 @@ const button = (label, href) =>
   `<a href="${esc(href)}" style="display:inline-block;background:#385941;color:#fffdf8;text-decoration:none;padding:13px 20px;font-size:12px;letter-spacing:1px;text-transform:uppercase;font-weight:bold">${esc(label)} &rarr;</a>`;
 
 const rawShell = ({ eyebrow, title, preview, body }) =>
-  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title></head><body style="margin:0;background:#f5f4ee;color:#24352b;font-family:Arial,Helvetica,sans-serif;line-height:1.6"><div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preview)}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f4ee;padding:28px 12px"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#fffdf8;border:1px solid #e2e4da"><tr><td style="padding:28px 36px;border-bottom:1px solid #e2e4da"><span style="font-family:Georgia,serif;font-size:27px;color:#1d2c22">Natural Beauty</span><div style="margin-top:6px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#5c725f">Thoughtful skincare, simply considered</div></td></tr><tr><td style="padding:38px 36px"><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#55715b;font-weight:bold">${esc(eyebrow)}</div><h1 style="margin:13px 0 18px;font-family:Georgia,serif;font-size:36px;line-height:1.12;font-weight:normal;color:#1d2c22">${esc(title)}</h1>${body}</td></tr><tr><td style="padding:20px 36px;background:#edf1e8;border-top:1px solid #e2e4da;color:#627267;font-size:12px">You are receiving this email from Natural Beauty. Need help? Reply to this email and our care team will be happy to help.</td></tr></table><div style="max-width:640px;padding:18px 12px;color:#7b877d;font-size:11px">Natural Beauty · Bengaluru, India</div></td></tr></table></body></html>`;
+  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title></head><body style="margin:0;background:#f5f4ee;color:#24352b;font-family:Arial,Helvetica,sans-serif;line-height:1.6"><div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(preview)}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f4ee;padding:28px 12px"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#fffdf8;border:1px solid #e2e4da"><tr><td style="padding:28px 36px;border-bottom:1px solid #e2e4da"><span style="font-family:Georgia,serif;font-size:27px;color:#1d2c22">{{BUSINESS_NAME}}</span><div style="margin-top:6px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#5c725f">Thoughtful products, simply considered</div></td></tr><tr><td style="padding:38px 36px"><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#55715b;font-weight:bold">${esc(eyebrow)}</div><h1 style="margin:13px 0 18px;font-family:Georgia,serif;font-size:36px;line-height:1.12;font-weight:normal;color:#1d2c22">${esc(title)}</h1>${body}</td></tr><tr><td style="padding:20px 36px;background:#edf1e8;border-top:1px solid #e2e4da;color:#627267;font-size:12px">You are receiving this email from {{BUSINESS_NAME}}. Need help? Reply to this email and our care team will be happy to help.</td></tr></table><div style="max-width:640px;padding:18px 12px;color:#7b877d;font-size:11px">{{BUSINESS_NAME}}</div></td></tr></table></body></html>`;
 
-const shell = (args) =>
-  rawShell(args)
-    .replaceAll("Natural Beauty", "Your store")
-    .replaceAll("natural beauty", "your store")
+const shell = (args) => rawShell(args);
+
+const applyBusinessBranding = (value, businessName) =>
+  String(value || "")
+    .replaceAll("{{BUSINESS_NAME}}", businessName)
+    .replaceAll("Natural Beauty", businessName)
+    .replaceAll("natural beauty", businessName)
     .replaceAll("skincare", "products")
     .replaceAll("Skincare", "Products")
     .replaceAll("formulas", "products")
@@ -68,6 +71,13 @@ export async function sendEmail({
   referenceId = null,
 }) {
   if (!to) return { skipped: true, reason: "missing_recipient" };
+  const publicSettings = await read(pool, true);
+  const businessName = String(
+    publicSettings.store?.store_name || publicSettings.seo?.site_title || "Your store",
+  ).trim() || "Your store";
+  subject = applyBusinessBranding(subject, businessName);
+  text = applyBusinessBranding(text, businessName);
+  html = applyBusinessBranding(html, businessName);
   const [created] = await pool.execute(
     "INSERT INTO email_deliveries(event_type,recipient,subject,reference_type,reference_id,status) VALUES(?,?,?,?,?,'queued')",
     [eventType, to, subject, referenceType, referenceId],
@@ -79,7 +89,7 @@ export async function sendEmail({
       const { transport, settings } = await getTransport();
       const fromEmail =
         settings.from_email || process.env.SMTP_FROM_EMAIL || settings.username;
-      const fromName = settings.from_name || "Your store";
+      const fromName = applyBusinessBranding(settings.from_name || businessName, businessName);
       const result = await transport.sendMail({
         from: `${fromName} <${fromEmail}>`,
         to,
@@ -130,6 +140,20 @@ export function orderEmail({ order, recipient, name, admin = false }) {
   };
 }
 
+export function giftCardEmail({ recipient, recipientName, amount, code, orderNumber, message }) {
+  const subject = `Your gift card is ready · ${orderNumber}`;
+  const body = `${paragraph(`Hi ${esc(recipientName || "there")},`)}${paragraph("Your gift card payment was confirmed. Use the secure code below whenever you are ready to redeem it.")}${message ? paragraph(`<strong>Message from the purchaser:</strong><br>${esc(message)}`) : ""}<div style="margin:24px 0;padding:24px;background:#edf1e8;text-align:center"><div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#55715b">Gift card value</div><div style="margin-top:5px;font-family:Georgia,serif;font-size:28px">${money(amount)}</div><div style="margin-top:18px;font-family:monospace;font-size:22px;letter-spacing:2px;color:#1d2c22">${esc(code)}</div></div>${button("Shop with your gift card", `${process.env.STOREFRONT_URL || "http://localhost:5173"}/shop`)}`;
+  return {
+    eventType: "gift_card.issued",
+    to: recipient,
+    subject,
+    referenceType: "gift_card_purchase",
+    referenceId: orderNumber,
+    text: `Your gift card worth ${plainMoney(amount)} is ready. Code: ${code}`,
+    html: shell({ eyebrow: "Gift card", title: "A thoughtful gift, ready to use", preview: subject, body }),
+  };
+}
+
 export function orderStatusEmail({ order, recipient, name, status, note }) {
   const titles = {
     confirmed: "Your order is confirmed",
@@ -146,14 +170,19 @@ export function orderStatusEmail({ order, recipient, name, status, note }) {
   };
   const number = order.orderNumber || order.order_number;
   const title = titles[status] || "Your order status was updated";
-  const body = `${paragraph(`Hi ${esc(name || "there")},`)}${paragraph(`The status of order <strong>${esc(number)}</strong> is now <strong>${esc(status)}</strong>.`)}${note ? paragraph(`Note from our team: ${esc(note)}`) : ""}${button("View order", `${process.env.STOREFRONT_URL || "http://localhost:5173"}/account/orders/${encodeURIComponent(number)}`)}`;
+  const shipping = order.shipping || {};
+  const tracking =
+    status === "shipped" && (shipping.courier || shipping.trackingId)
+      ? `<div style="margin:20px 0;padding:16px 18px;background:#edf1e8;color:#52665a"><strong>Shipment tracking</strong><br>${shipping.courier ? `Courier: ${esc(shipping.courier)}<br>` : ""}${shipping.trackingId ? `Tracking ID: ${esc(shipping.trackingId)}` : ""}</div>`
+      : "";
+  const body = `${paragraph(`Hi ${esc(name || "there")},`)}${paragraph(`The status of order <strong>${esc(number)}</strong> is now <strong>${esc(status)}</strong>.`)}${tracking}${note ? paragraph(`Note from our team: ${esc(note)}`) : ""}${button("View order", `${process.env.STOREFRONT_URL || "http://localhost:5173"}/account/orders/${encodeURIComponent(number)}`)}`;
   return {
     eventType: `order.${status}`,
     to: recipient,
     subject: `${title} · ${number}`,
     referenceType: "order",
     referenceId: number,
-    text: `Order ${number} is now ${status}.`,
+    text: `Order ${number} is now ${status}.${status === "shipped" && (shipping.courier || shipping.trackingId) ? ` Courier: ${shipping.courier || "Not provided"}. Tracking ID: ${shipping.trackingId || "Not provided"}.` : ""}`,
     html: shell({
       eyebrow: "Order update",
       title,

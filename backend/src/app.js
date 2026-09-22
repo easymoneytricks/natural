@@ -34,6 +34,7 @@ import reviewRoutes from "./routes/review.routes.js";
 import seoRoutes from "./routes/seo.routes.js";
 import adminRewardRoutes from "./routes/adminReward.routes.js";
 import customerGiftCardRoutes from "./routes/customerGiftCard.routes.js";
+import giftCardPurchaseRoutes from "./routes/giftCardPurchase.routes.js";
 import adminReviewRoutes from "./routes/adminReview.routes.js";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -170,6 +171,7 @@ export function createApp() {
   app.use("/api/v1/admin", adminSystemRoutes);
   app.use("/api/v1/customer", rewardRoutes);
   app.use("/api/v1/customer", customerGiftCardRoutes);
+  app.use("/api/v1", giftCardPurchaseRoutes);
   app.use("/api/v1/admin", adminRewardRoutes);
   app.use("/api/v1/admin", adminReviewRoutes);
   app.use(

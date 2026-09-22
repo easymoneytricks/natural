@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Archive,
   ExternalLink,
@@ -761,6 +762,7 @@ export const BrandsPage = () => <BrandsManager />;
 export { CategoriesPage } from "./categories";
 export function ProductsPage() {
   const { authFetch } = useAuth();
+  const navigate = useNavigate();
   const [deleted, setDeleted] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -839,7 +841,20 @@ export function ProductsPage() {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id}>
+                <tr
+                  key={r.id}
+                  className="product-list-row"
+                  onClick={() => navigate(`/catalog/products/${r.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      navigate(`/catalog/products/${r.id}`);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="link"
+                  aria-label={`Edit ${r.name}`}
+                >
                   <td>
                     {r.primaryImage && (
                       <img
@@ -848,7 +863,7 @@ export function ProductsPage() {
                         alt=""
                       />
                     )}
-                    <a href={`/catalog/products/${r.id}`}>{r.name}</a>
+                    <span className="product-list-name">{r.name}</span>
                     <small>{r.slug}</small>
                   </td>
                   <td>{r.brand?.name || "—"}</td>

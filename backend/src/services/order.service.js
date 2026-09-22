@@ -3,12 +3,58 @@ import { AuthError } from "./auth.service.js";
 import { quote } from "./checkoutPricing.service.js";
 import { earnForOrder } from "./reward.service.js";
 import { env } from "../config/env.js";
-import { getStoreMode } from "./storeSettings.service.js";
+import { getStoreMode, read as readSettings } from "./storeSettings.service.js";
 
 const hash = (value) =>
   crypto.createHash("sha256").update(JSON.stringify(value)).digest("hex");
-const orderNumber = () =>
-  `NB-${new Date().getFullYear()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+const formatOrderNumber = (template, sequence, date = new Date()) => {
+  let value = String(template || "NB-{YYYY}-{SEQ:6}").trim();
+  const year = String(date.getFullYear());
+  value = value.replace(/\{YYYY\}/g, year).replace(/\{YY\}/g, year.slice(-2));
+  value = value.replace(/\{SEQ(?::(\d+))?\}/g, (_, width) =>
+    String(sequence).padStart(Number(width || 1), "0"),
+  );
+  value = value.replace(/(0+)\*$/, (_, zeros) =>
+    String(sequence).padStart(zeros.length + 1, "0"),
+  );
+  return value.includes("{") ? value.replace(/\{[^}]+\}/g, "") : value;
+};
+const nextOrderNumber = async (pool) => {
+  const [rows] = await pool.execute(
+    "SELECT setting_key,value_json FROM store_settings WHERE setting_group='store' AND setting_key IN ('order_number_format','order_sequence_start')",
+  );
+  const settings = Object.fromEntries(
+    rows.map((row) => {
+      try {
+        return [row.setting_key, JSON.parse(row.value_json)];
+      } catch {
+        return [row.setting_key, row.value_json];
+      }
+    }),
+  );
+  const start = Math.max(1, Number(settings.order_sequence_start) || 1);
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.execute(
+      "INSERT INTO order_number_counters(counter_key,next_value) VALUES('orders',?) ON DUPLICATE KEY UPDATE counter_key=VALUES(counter_key)",
+      [start],
+    );
+    const [[counter]] = await connection.execute(
+      "SELECT next_value FROM order_number_counters WHERE counter_key='orders' FOR UPDATE",
+    );
+    await connection.execute(
+      "UPDATE order_number_counters SET next_value=next_value+1 WHERE counter_key='orders'",
+    );
+    await connection.commit();
+    return formatOrderNumber(settings.order_number_format, Number(counter.next_value));
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
 const normalizeAddress = (a = {}) => ({
   firstName: String(a.firstName || "").trim(),
   lastName: String(a.lastName || "").trim(),
@@ -39,12 +85,13 @@ export async function placeCodOrder(pool, input = {}, customer) {
       "ONLINE_PAYMENT_NOT_AVAILABLE_YET",
       "Online payment is not available yet.",
     );
-  if (input.paymentMethod === "online" && !env.cashfree.enabled)
-    throw new AuthError(
-      503,
-      "ONLINE_PAYMENT_NOT_AVAILABLE_YET",
-      "Online payment is not available yet.",
-    );
+  if (input.paymentMethod === "online") {
+    const settings = await readSettings(pool, true);
+    const provider = settings.payments?.provider === "razorpay" ? "razorpay" : "cashfree";
+    const onlineEnabled = provider === "razorpay" ? env.razorpay.enabled : env.cashfree.enabled;
+    if (!onlineEnabled)
+      throw new AuthError(503, "ONLINE_PAYMENT_NOT_AVAILABLE_YET", "Online payment is not available yet.");
+  }
   if (!input.idempotencyKey)
     throw new AuthError(
       400,
@@ -164,7 +211,7 @@ export async function placeCodOrder(pool, input = {}, customer) {
         );
     }
     const p = calculated.pricing;
-    const createdOrderNumber = orderNumber();
+    const createdOrderNumber = await nextOrderNumber(pool);
     const [created] = await connection.execute(
       `INSERT INTO orders (order_number,idempotency_key,request_fingerprint,customer_id,customer_email,customer_phone,status,payment_method,payment_status,items_subtotal,mrp_total,product_discount,coupon_discount,shipping_amount,tax_amount,tax_rate,tax_label,tax_type,tax_cgst,tax_sgst,tax_igst,hsn_sac,seller_gstin,seller_legal_name,seller_address,seller_state_code,place_of_supply,reverse_charge,gift_card_amount,grand_total,coupon_code,shipping_method_code,shipping_method_name,shipping_estimated_days_min,shipping_estimated_days_max,customer_note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
@@ -391,6 +438,7 @@ export async function getOrder(pool, id, customerId) {
     placedAt: order.placed_at,
     pricing: {
       subtotal: Number(order.items_subtotal),
+      mrpTotal: Number(order.mrp_total),
       couponDiscount: Number(order.coupon_discount),
       shipping: Number(order.shipping_amount),
       tax: {

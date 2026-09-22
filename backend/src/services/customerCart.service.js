@@ -41,7 +41,7 @@ function availability(row) {
 async function readCart(connection, customerId) {
   const id = await cartId(connection, customerId);
   const [rows] = await connection.execute(
-    `SELECT ci.*, ps.sku, ps.price, ps.mrp, ps.is_active, ps.deleted_at AS sku_deleted, ps.track_inventory, ps.allow_backorder, p.id AS product_id, p.slug, p.name, p.is_active AS product_active, p.deleted_at AS product_deleted, i.quantity_on_hand, i.reserved_quantity FROM customer_cart_items ci JOIN product_skus ps ON ps.id = ci.sku_id JOIN products p ON p.id = ps.product_id LEFT JOIN inventory i ON i.sku_id = ps.id WHERE ci.cart_id = ? ORDER BY ci.created_at`,
+    `SELECT ci.*, ps.sku, ps.price, ps.mrp, ps.is_active, ps.deleted_at AS sku_deleted, ps.track_inventory, ps.allow_backorder, p.id AS product_id, p.slug, p.name, p.is_active AS product_active, p.deleted_at AS product_deleted, COALESCE((SELECT pm.file_path FROM sku_media sm JOIN product_media pm ON pm.id = sm.product_media_id WHERE sm.sku_id = ps.id AND pm.deleted_at IS NULL ORDER BY sm.sort_order, sm.id LIMIT 1), (SELECT pm.file_path FROM product_media pm WHERE pm.product_id = p.id AND pm.deleted_at IS NULL ORDER BY pm.is_primary DESC, pm.sort_order, pm.id LIMIT 1)) AS product_image, i.quantity_on_hand, i.reserved_quantity FROM customer_cart_items ci JOIN product_skus ps ON ps.id = ci.sku_id JOIN products p ON p.id = ps.product_id LEFT JOIN inventory i ON i.sku_id = ps.id WHERE ci.cart_id = ? ORDER BY ci.created_at`,
     [id],
   );
   const items = rows.map((row) => {
@@ -55,7 +55,12 @@ async function readCart(connection, customerId) {
       id: row.id,
       skuId: row.sku_id,
       sku: row.sku,
-      product: { id: row.product_id, slug: row.slug, name: row.name },
+      product: {
+        id: row.product_id,
+        slug: row.slug,
+        name: row.name,
+        image: row.product_image || "",
+      },
       quantity: row.quantity,
       price: Number(row.price),
       mrp: Number(row.mrp),

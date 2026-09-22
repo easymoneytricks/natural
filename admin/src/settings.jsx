@@ -22,7 +22,7 @@ const defaults = {
     announcement_tertiary: "Secure checkout",
   },
   seo: {
-    site_title: "Your store",
+    site_title: "",
     meta_description: "Thoughtfully made products for everyday use.",
     keywords: "quality products, everyday essentials, considered shopping",
     og_image_url: "",
@@ -37,10 +37,14 @@ const defaults = {
     mode: "fixed",
     free_threshold: "999",
     default_rate: "149",
+    courier_names: "Delhivery\nBlue Dart\nDTDC",
     weight_slabs:
       '[{"up_to_grams":500,"rate":79},{"up_to_grams":1000,"rate":99},{"up_to_grams":2000,"rate":149}]',
     processing_days: "1-2",
     delivery_days: "3-5",
+  },
+  gift_cards: {
+    denominations: "[500,1000,2000,5000]",
   },
   tax: {
     enabled: "false",
@@ -49,7 +53,7 @@ const defaults = {
     pricing_mode: "exclusive",
     seller_state: "Karnataka",
     seller_gstin: "",
-    seller_legal_name: "Your store",
+    seller_legal_name: "",
     seller_address: "",
     seller_state_code: "29",
     reverse_charge: "false",
@@ -290,7 +294,9 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
       "https://www.openstreetmap.org/export/embed.html?bbox=77.625%2C12.965%2C77.645%2C12.985&layer=mapnik&marker=12.975%2C77.635",
   },
   store: {
-    store_name: "Your store",
+    store_name: "",
+    order_number_format: "NB-{YYYY}-{SEQ:6}",
+    order_sequence_start: "1",
     currency: "INR",
     support_hours: "Mon–Sat · 10:00 AM–6:00 PM",
     maintenance_mode: "open",
@@ -310,7 +316,7 @@ feature|Rituals worth keeping|Curated for the moments your skin needs most.|View
     username: "",
     password: "",
     from_email: "",
-    from_name: "Your store",
+    from_name: "",
     secure: "false",
   },
   homepage_sections: {
@@ -631,6 +637,67 @@ function RewardField({ rewardState, setRewardField, ...props }) {
   );
 }
 
+function GiftCardDenominations({ state, setState }) {
+  const rawValue = state.gift_cards?.denominations;
+  let parsedValues = [];
+  try {
+    const candidate = Array.isArray(rawValue) ? rawValue : JSON.parse(rawValue || "[]");
+    parsedValues = Array.isArray(candidate)
+      ? candidate.map(Number).filter((value) => Number.isFinite(value) && value > 0)
+      : [];
+  } catch {
+    parsedValues = [];
+  }
+  const values = parsedValues.length ? parsedValues : [500];
+  const update = (nextValues) =>
+    setState((current) => ({
+      ...current,
+      gift_cards: {
+        ...current.gift_cards,
+        denominations: JSON.stringify(nextValues),
+      },
+    }));
+  return (
+    <div className="gift-card-denominations-editor">
+      <span className="settings-field-label">Gift card values</span>
+      <p className="settings-help">
+        Add the fixed amounts customers can purchase. Values are shown in rupees.
+      </p>
+      <div className="gift-card-denomination-list">
+        {values.map((value, index) => (
+          <div className="gift-card-denomination-row" key={`${value}-${index}`}>
+            <span aria-hidden="true">₹</span>
+            <input
+              aria-label={`Gift card value ${index + 1}`}
+              type="number"
+              min="1"
+              step="1"
+              value={value}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                const nextValues = [...values];
+                nextValues[index] = Number.isFinite(next) && next > 0 ? next : value;
+                update(nextValues);
+              }}
+            />
+            <button
+              type="button"
+              className="gift-card-denomination-remove"
+              onClick={() => update(values.filter((_, valueIndex) => valueIndex !== index))}
+              disabled={values.length === 1}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+      </div>
+      <button type="button" className="gift-card-denomination-add" onClick={() => update([...values, 500])}>
+        + Add amount
+      </button>
+    </div>
+  );
+}
+
 function SettingsGroup({ icon: Icon, title, description, children }) {
   return (
     <section className="card settings-group">
@@ -809,13 +876,13 @@ export function SettingsPage() {
           <nav className="settings-section-tabs" aria-label="Settings sections">
             {[
               ["storefront", "Storefront", "Branding, SEO and mega menu"],
-              ["shop", "Shop", "Collection page copy and filter labels"],
               [
                 "header_footer",
                 "Header & footer",
                 "Navigation, search and footer",
               ],
               ["homepage", "Homepage", "Hero, Section and Positions"],
+              ["shop", "Shop Page", "Shop page content and filter labels"],
               ["contact", "Contact page", "Customer care, address and map"],
               ["commerce", "Commerce", "Shipping, tax and payments"],
               ["communications", "Communications", "Email and security"],
@@ -824,7 +891,7 @@ export function SettingsPage() {
                 "Attributes & variants",
                 "Global product options and variant controls",
               ],
-              ["rewards", "Rewards", "Points, value and expiry"],
+              ["rewards", "Rewards & gift cards", "Points, value, expiry and gift cards"],
             ].map(([value, label, description]) => (
               <button
                 key={value}
@@ -840,7 +907,7 @@ export function SettingsPage() {
           </nav>
           {activeSection === "shop" && (
             <div className="settings-tab-panel">
-              <SettingsGroup icon={Settings2} title="Shop collection" description="Control the shop page copy and filter headings. Filter values come from your live catalog, categories and global attributes.">
+              <SettingsGroup icon={Settings2} title="Shop Page" description="Control the shop page copy and filter headings. Filter values come from your live catalog, categories and global attributes.">
                 <Field label="Eyebrow" group="shop" name="eyebrow" state={state} setState={setState} />
                 <Field label="Title" group="shop" name="title" state={state} setState={setState} />
                 <Field label="Description" group="shop" name="description" type="textarea" state={state} setState={setState} />
@@ -891,18 +958,6 @@ export function SettingsPage() {
                 title="Branding"
                 description="Control the logo, favicon and announcement strip used across the storefront."
               >
-                <Field
-                  label="Shipping rate mode"
-                  group="shipping"
-                  name="mode"
-                  options={[
-                    ["fixed", "Fixed rate"],
-                    ["slab", "Weight slabs"],
-                  ]}
-                  state={state}
-                  setState={setState}
-                  help="Fixed uses the default rate. Weight slabs use the total SKU weight multiplied by quantity."
-                />
                 <Field
                   label="Logo URL"
                   group="branding"
@@ -961,6 +1016,30 @@ export function SettingsPage() {
                   state={state}
                   setState={setState}
                   help="Shown as the third announcement item."
+                />
+              </SettingsGroup>
+              <SettingsGroup
+                icon={Settings2}
+                title="Order and invoice numbering"
+                description="Set the format used for new order numbers and invoice references. Existing orders keep their current numbers."
+              >
+                <Field
+                  label="Number format"
+                  group="store"
+                  name="order_number_format"
+                  state={state}
+                  setState={setState}
+                  placeholder="AA-{YYYY}-{SEQ:4}"
+                  help="Use {YYYY} for the year, {YY} for a two-digit year, and {SEQ:4} for a padded sequence. Example: AA-{YYYY}-{SEQ:4} creates AA-2026-0001. The style AA-{YYYY}-000* is also supported."
+                />
+                <Field
+                  label="Starting sequence"
+                  group="store"
+                  name="order_sequence_start"
+                  type="number"
+                  state={state}
+                  setState={setState}
+                  help="Used when this numbering format starts for the first time."
                 />
               </SettingsGroup>
               <SettingsGroup
@@ -1354,6 +1433,18 @@ export function SettingsPage() {
                 description="Configure delivery, tax and day-to-day store defaults."
               >
                 <Field
+                  label="Shipping rate mode"
+                  group="shipping"
+                  name="mode"
+                  options={[
+                    ["fixed", "Fixed rate"],
+                    ["slab", "Weight slabs"],
+                  ]}
+                  state={state}
+                  setState={setState}
+                  help="Fixed uses the default rate. Weight slabs use the total SKU weight multiplied by quantity."
+                />
+                <Field
                   label="Free shipping threshold (₹)"
                   group="shipping"
                   name="free_threshold"
@@ -1378,6 +1469,16 @@ export function SettingsPage() {
                   setState={setState}
                   placeholder={"500=79, 1000=99, 2000=149"}
                   help="One slab per line in grams=rate format. Example: 500=79 means up to 500g costs ₹79. The first matching slab rate is charged."
+                />
+                <Field
+                  label="Courier services"
+                  group="shipping"
+                  name="courier_names"
+                  type="textarea"
+                  state={state}
+                  setState={setState}
+                  placeholder={"Delhivery\nBlue Dart\nDTDC"}
+                  help="Add one courier per line. These options appear when updating an order's shipping details."
                 />
                 <Field
                   label="Processing time"
@@ -1603,6 +1704,13 @@ export function SettingsPage() {
                   setRewardField={setRewardField}
                   help="Applied when expiry is enabled."
                 />
+              </SettingsGroup>
+              <SettingsGroup
+                icon={Settings2}
+                title="Gift cards"
+                description="Set the fixed values customers can purchase and send by email."
+              >
+                <GiftCardDenominations state={state} setState={setState} />
               </SettingsGroup>
             </div>
           )}

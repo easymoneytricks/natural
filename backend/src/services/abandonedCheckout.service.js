@@ -74,13 +74,17 @@ export async function list(pool, query = {}) {
   const [rows] = await pool.execute(
     `SELECT a.id,a.session_key,a.email,a.phone,a.status,a.subtotal,a.estimated_total,
       a.last_seen_at,a.created_at,a.converted_order_number,JSON_LENGTH(a.cart_json) item_count,
-      c.first_name,c.last_name
+      c.first_name,c.last_name,
+      JSON_UNQUOTE(JSON_EXTRACT(a.checkout_json,'$.address.firstName')) guest_first_name,
+      JSON_UNQUOTE(JSON_EXTRACT(a.checkout_json,'$.address.lastName')) guest_last_name
      FROM abandoned_checkouts a LEFT JOIN customers c ON c.id=a.customer_id
      WHERE ${where} ORDER BY a.last_seen_at DESC LIMIT 200`,
     params,
   );
   return rows.map((row) => ({
     ...row,
+    first_name: row.first_name || row.guest_first_name || null,
+    last_name: row.last_name || row.guest_last_name || null,
     items: Number(row.item_count || 0),
     subtotal: Number(row.subtotal),
     estimatedTotal: Number(row.estimated_total),

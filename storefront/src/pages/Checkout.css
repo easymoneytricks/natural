@@ -27,6 +27,18 @@
   margin: 0 9px;
   color: var(--sage);
 }
+.checkout-error {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border: 1px solid #e3b8ae;
+  background: #fff5f2;
+  color: #984f45;
+  font-size: 13px;
+}
+.method-row.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .checkout-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.9fr);

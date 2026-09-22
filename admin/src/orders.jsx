@@ -43,6 +43,7 @@ function OrderDetail({ orderNumber, onClose, onUpdated }) {
   const [status, setStatus] = useState("");
   const [note, setNote] = useState("");
   const [courier, setCourier] = useState("");
+  const [courierOptions, setCourierOptions] = useState([]);
   const [trackingId, setTrackingId] = useState("");
   const [returnStatus, setReturnStatus] = useState("none");
   const [refundAmount, setRefundAmount] = useState("");
@@ -73,6 +74,19 @@ function OrderDetail({ orderNumber, onClose, onUpdated }) {
   useEffect(() => {
     load();
   }, [orderNumber]);
+  useEffect(() => {
+    authFetch("/admin/settings")
+      .then((response) => {
+        const configured = response.data?.shipping?.courier_names || "";
+        setCourierOptions(
+          String(configured)
+            .split(/[\r\n,]+/)
+            .map((value) => value.trim())
+            .filter(Boolean),
+        );
+      })
+      .catch(() => setCourierOptions([]));
+  }, []);
 
   const updateStatus = async (event) => {
     event.preventDefault();
@@ -80,6 +94,18 @@ function OrderDetail({ orderNumber, onClose, onUpdated }) {
     setSaving(true);
     setError("");
     try {
+      if (status === "shipped") {
+        await authFetch(
+          `/admin/orders/${encodeURIComponent(orderNumber)}/shipping`,
+          {
+            method: "PATCH",
+            body: {
+              courier: courier.trim() || null,
+              trackingId: trackingId.trim() || null,
+            },
+          },
+        );
+      }
       await authFetch(
         `/admin/orders/${encodeURIComponent(orderNumber)}/status`,
         {
@@ -281,12 +307,21 @@ function OrderDetail({ orderNumber, onClose, onUpdated }) {
                   <Truck size={17} />
                   <b>Shipping details</b>
                 </div>
-                <input
+                <select
                   value={courier}
                   onChange={(event) => setCourier(event.target.value)}
-                  placeholder="Courier name"
                   disabled={saving}
-                />
+                >
+                  <option value="">Select courier</option>
+                  {courier && !courierOptions.includes(courier) && (
+                    <option value={courier}>{courier} (current)</option>
+                  )}
+                  {courierOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
                 <input
                   value={trackingId}
                   onChange={(event) => setTrackingId(event.target.value)}

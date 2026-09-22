@@ -9,12 +9,15 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   RecaptchaWidget,
   isRecaptchaEnabled,
 } from "../components/RecaptchaWidget";
-import { useStoreSettings } from "../context/StoreSettingsContext";
+import {
+  getBusinessName,
+  useStoreSettings,
+} from "../context/StoreSettingsContext";
 import heroImage from "../assets/natural-beauty-hero.png";
 
 const content = {
@@ -155,8 +158,32 @@ export function RouteShell({ title }) {
   if (title === "contact") return <ContactPage />;
   if (title === "about") return <AboutPage />;
   if (title === "track-order") return <TrackOrderPage />;
+  const [cmsPage, setCmsPage] = useState(null);
+  useEffect(() => {
+    if (title !== "gift-cards") return undefined;
+    let active = true;
+    const api = (
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api/v1"
+    ).replace(/\/$/, "");
+    fetch(`${api}/pages/gift-cards`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => {
+        if (active && payload?.data) setCmsPage(payload.data);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [title]);
   const businessName = getBusinessName(useStoreSettings());
-  const rawPage = content[title] || {
+  const rawPage = cmsPage
+    ? {
+        eyebrow: cmsPage.eyebrow,
+        title: cmsPage.title,
+        intro: cmsPage.intro,
+        sections: cmsPage.content || [],
+      }
+    : content[title] || {
     eyebrow: "Our store",
     title: title.replaceAll("-", " "),
     intro: "Thoughtful details for a simpler shopping experience.",
@@ -468,8 +495,12 @@ function ContactPage() {
           }),
         },
       );
+      const payload = await response.json().catch(() => null);
       if (!response.ok)
-        throw new Error("We could not send your message. Please try again.");
+        throw new Error(
+          payload?.error?.message ||
+            "We could not send your message. Please try again.",
+        );
       setSent(true);
       setRecaptchaToken("");
       formElement.reset();
@@ -546,6 +577,7 @@ function ContactPage() {
             {messageLabel}
             <textarea
               required
+              minLength={10}
               name="message"
               rows="4"
               placeholder={messagePlaceholder}

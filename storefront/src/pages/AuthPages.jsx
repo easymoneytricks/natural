@@ -161,7 +161,7 @@ export function Login() {
           {loading ? "Signing in..." : "Sign in"}
         </button>
         <p className="auth-switch">
-          New to {businessName}?{" "}
+          {businessName ? `New to ${businessName}? ` : ""}
           <Link to={`/register?returnTo=${encodeURIComponent(returnTo)}`}>
             Create an account
           </Link>
@@ -233,7 +233,7 @@ export function Register() {
   };
   return (
     <AuthLayout
-      eyebrow={`Join ${businessName}`}
+      eyebrow={businessName ? `Join ${businessName}` : "Create an account"}
       heading="Make your account yours."
       copy="Create an account to keep track of orders, addresses and the products you love."
     >

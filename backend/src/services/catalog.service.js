@@ -72,11 +72,44 @@ function buildProductFilters(query) {
       [attributeSlug, ...values],
     );
   }
-  if (query.q)
-    addExists(
-      `SELECT 1 FROM brands sb WHERE sb.id = p.brand_id AND (p.name LIKE ? OR p.short_description LIKE ? OR sb.name LIKE ?)`,
-      [escapedLike(query.q), escapedLike(query.q), escapedLike(query.q)],
+  if (query.q) {
+    const term = escapedLike(query.q);
+    where.push(`(
+      p.name LIKE ? OR
+      p.short_description LIKE ? OR
+      p.description LIKE ? OR
+      p.ingredients_text LIKE ? OR
+      p.how_to_use LIKE ? OR
+      p.texture LIKE ? OR
+      p.usage_time LIKE ? OR
+      EXISTS (SELECT 1 FROM brands sb WHERE sb.id = p.brand_id AND sb.name LIKE ?) OR
+      EXISTS (SELECT 1 FROM product_categories pc JOIN categories sc ON sc.id = pc.category_id WHERE pc.product_id = p.id AND sc.name LIKE ? AND sc.deleted_at IS NULL) OR
+      EXISTS (SELECT 1 FROM product_attribute_values pav JOIN attributes sa ON sa.id = pav.attribute_id JOIN attribute_values sav ON sav.id = pav.attribute_value_id WHERE pav.product_id = p.id AND (sa.name LIKE ? OR sav.value LIKE ? OR sav.display_value LIKE ?) AND sa.is_active = 1 AND sav.is_active = 1) OR
+      EXISTS (SELECT 1 FROM product_benefits sbf WHERE sbf.product_id = p.id AND sbf.benefit LIKE ?) OR
+      EXISTS (SELECT 1 FROM product_ingredients sig WHERE sig.product_id = p.id AND (sig.name LIKE ? OR sig.description LIKE ?)) OR
+      EXISTS (SELECT 1 FROM product_skus ss WHERE ss.product_id = p.id AND ss.deleted_at IS NULL AND (ss.sku LIKE ? OR ss.title LIKE ? OR ss.barcode LIKE ?))
+    )`);
+    params.push(
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
+      term,
     );
+  }
   if (query.minPrice !== undefined || query.maxPrice !== undefined) {
     const conditions = [
       "psp.product_id = p.id",
@@ -265,7 +298,7 @@ export async function getProduct(connection, slug) {
     [product.id],
   );
   const [attributeRows] = await connection.execute(
-    `SELECT a.id, a.name, a.slug, a.display_type, pa.is_required, pa.sort_order, av.id AS value_id, av.value, av.slug AS value_slug, av.display_value, pav.sort_order AS value_sort_order
+    `SELECT a.id, a.name, a.slug, a.display_type, pa.is_required, pa.sort_order, av.id AS value_id, av.value, av.slug AS value_slug, av.display_value, av.metadata_json AS value_metadata, pav.sort_order AS value_sort_order
     FROM product_attributes pa JOIN attributes a ON a.id = pa.attribute_id JOIN product_attribute_values pav ON pav.product_id = pa.product_id AND pav.attribute_id = pa.attribute_id JOIN attribute_values av ON av.id = pav.attribute_value_id
     WHERE pa.product_id = ? AND a.is_active = 1 AND av.is_active = 1 ORDER BY pa.sort_order, a.id, pav.sort_order, av.id`,
     [product.id],
@@ -289,6 +322,7 @@ export async function getProduct(connection, slug) {
       value: row.value,
       slug: row.value_slug,
       displayValue: row.display_value || row.value,
+      metadata: parseJson(row.value_metadata) || {},
     });
   }
   const [skuRows] = await connection.execute(

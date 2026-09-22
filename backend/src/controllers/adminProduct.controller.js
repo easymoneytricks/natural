@@ -63,3 +63,14 @@ export const restoreSku = wrap(async (req, res) =>
     ),
   }),
 );
+export const permanentlyRemoveSku = wrap(async (req, res) =>
+  res.json({
+    data: await service.permanentlyRemoveSku(
+      pool,
+      req.params.productId,
+      req.params.skuId,
+      req.admin.id,
+      req,
+    ),
+  }),
+);

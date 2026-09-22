@@ -90,7 +90,7 @@ export async function detail(pool, id) {
     attribute.values = values;
   }
   const [skus] = await pool.execute(
-    "SELECT s.*,COALESCE(i.quantity_on_hand,0) on_hand,COALESCE(i.reserved_quantity,0) reserved FROM product_skus s LEFT JOIN inventory i ON i.sku_id=s.id WHERE s.product_id=? AND s.deleted_at IS NULL ORDER BY s.sort_order,s.id",
+    "SELECT s.*,COALESCE(i.quantity_on_hand,0) on_hand,COALESCE(i.reserved_quantity,0) reserved FROM product_skus s LEFT JOIN inventory i ON i.sku_id=s.id WHERE s.product_id=? ORDER BY s.deleted_at IS NULL DESC,s.sort_order,s.id",
     [id],
   );
   for (const s of skus) {
@@ -140,7 +140,8 @@ async function saveProduct(pool, input, id, adminId, req) {
   if (
     input.weightGrams !== "" &&
     input.weightGrams != null &&
-    (!Number.isInteger(Number(input.weightGrams)) || Number(input.weightGrams) < 0)
+    (!Number.isInteger(Number(input.weightGrams)) ||
+      Number(input.weightGrams) < 0)
   )
     fail(400, "INVALID_WEIGHT", "Weight must be a non-negative whole number.");
   const vals = [
@@ -194,6 +195,14 @@ async function saveProduct(pool, input, id, adminId, req) {
       );
       pid = r.insertId;
     }
+    if (input.productType !== "variant")
+      await ensureSimpleSku(pool, pid, {
+        slug,
+        price,
+        mrp,
+        weightGrams: vals[13],
+        isActive: input.isActive !== false,
+      });
     if (Array.isArray(input.categories)) {
       await pool.execute("DELETE FROM product_categories WHERE product_id=?", [
         pid,
@@ -229,6 +238,58 @@ async function saveProduct(pool, input, id, adminId, req) {
     throw e;
   }
 }
+
+async function ensureSimpleSku(pool, productId, values) {
+  const [[existing]] = await pool.execute(
+    "SELECT id FROM product_skus WHERE product_id=? AND combination_key='simple' AND deleted_at IS NULL LIMIT 1",
+    [productId],
+  );
+  if (existing) {
+    await pool.execute(
+      "UPDATE product_skus SET price=?,mrp=?,weight_grams=?,is_active=? WHERE id=?",
+      [
+        values.price,
+        values.mrp,
+        values.weightGrams || null,
+        values.isActive,
+        existing.id,
+      ],
+    );
+    await pool.execute("INSERT IGNORE INTO inventory(sku_id) VALUES(?)", [
+      existing.id,
+    ]);
+    return existing.id;
+  }
+
+  const baseSku = `${values.slug}-standard`.slice(0, 150);
+  let sku = baseSku;
+  for (let suffix = 2; ; suffix += 1) {
+    const [[conflict]] = await pool.execute(
+      "SELECT id FROM product_skus WHERE sku=? LIMIT 1",
+      [sku],
+    );
+    if (!conflict) break;
+    const suffixText = `-${suffix}`;
+    sku = `${baseSku.slice(0, 150 - suffixText.length)}${suffixText}`;
+  }
+  const [result] = await pool.execute(
+    "INSERT INTO product_skus (product_id,sku,title,combination_key,price,mrp,is_active,track_inventory,allow_backorder,weight_grams) VALUES (?,?,?,'simple',?,?,?,1,0,?)",
+    [
+      productId,
+      sku,
+      "Standard",
+      values.price,
+      values.mrp,
+      values.isActive,
+      values.weightGrams || null,
+    ],
+  );
+  await pool.execute("INSERT INTO inventory(sku_id) VALUES(?)", [
+    result.insertId,
+  ]);
+  return result.insertId;
+}
+
 export async function sku(pool, productId, input, skuId, adminId, req) {
   const updating = Boolean(skuId);
   const conn = await pool.getConnection();
@@ -245,7 +306,11 @@ export async function sku(pool, productId, input, skuId, adminId, req) {
         "Restore the product before editing SKUs.",
       );
     if (product.product_type !== "variant")
-      fail(409, "SIMPLE_PRODUCT_NO_VARIANTS", "Simple products cannot have variant SKUs.");
+      fail(
+        409,
+        "SIMPLE_PRODUCT_NO_VARIANTS",
+        "Simple products cannot have variant SKUs.",
+      );
     const assignments = (input.attributes || []).map((a) => ({
       attributeId: Number(a.attributeId),
       attributeValueId: Number(a.valueId ?? a.attributeValueId),
@@ -432,5 +497,28 @@ export async function restoreSku(pool, productId, skuId, adminId, req) {
         "A live SKU already uses this code or combination.",
       );
     throw e;
+  }
+}
+
+export async function permanentlyRemoveSku(pool, productId, skuId, adminId, req) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [[row]] = await conn.execute(
+      "SELECT s.id,s.deleted_at,COALESCE((SELECT COUNT(*) FROM inventory_movements m WHERE m.sku_id=s.id),0) movement_count FROM product_skus s WHERE s.id=? AND s.product_id=? FOR UPDATE",
+      [skuId, productId],
+    );
+    if (!row) fail(404, "SKU_NOT_FOUND", "SKU not found.");
+    if (!row.deleted_at) fail(409, "SKU_MUST_BE_ARCHIVED", "Archive this SKU before permanently deleting it.");
+    if (Number(row.movement_count) > 0) fail(409, "SKU_HAS_HISTORY", "This SKU has inventory history and cannot be permanently deleted.");
+    await conn.execute("DELETE FROM product_skus WHERE id=? AND product_id=? AND deleted_at IS NOT NULL", [skuId, productId]);
+    await conn.commit();
+    await catalogAudit(pool, adminId, "sku.permanently_deleted", "product_skus", skuId, req);
+    return { id: Number(skuId), permanentlyDeleted: true };
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
   }
 }

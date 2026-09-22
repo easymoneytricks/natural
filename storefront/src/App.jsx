@@ -23,7 +23,7 @@ import {
   ResetPassword,
   VerifyEmail,
 } from "./pages/AuthPages";
-import { AccountOverview, Rewards, GiftCards } from "./pages/AccountDashboard";
+import { AccountOverview, AccountWishlist, Rewards, GiftCards } from "./pages/AccountDashboard";
 import {
   CustomerAddresses,
   CustomerProfile,
@@ -36,6 +36,7 @@ import { useLocation } from "react-router-dom";
 import { ConsentBanner } from "./components/layout/ConsentBanner";
 import { Analytics } from "./components/Analytics";
 import { ArrowUp } from "lucide-react";
+import { GiftCards as GiftCardPurchase, GiftCardSuccess } from "./pages/GiftCards";
 
 class RenderBoundary extends Component {
   state = { failed: false, message: "" };
@@ -57,9 +58,6 @@ const informationalRoutes = [
   "/journal",
   "/new-arrivals",
   "/best-sellers",
-  "/skin-types",
-  "/concerns",
-  "/gift-cards",
   "/contact",
   "/faq",
   "/shipping",
@@ -144,14 +142,32 @@ export default function App() {
         <RenderBoundary><Routes>
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
+          <Route
+            path="/best-sellers"
+            element={<Navigate to="/shop?sort=best-selling" replace />}
+          />
+          <Route
+            path="/new-arrivals"
+            element={<Navigate to="/shop?sort=newest" replace />}
+          />
+          <Route
+            path="/skin-types"
+            element={<Navigate to="/shop" replace />}
+          />
+          <Route
+            path="/concerns"
+            element={<Navigate to="/shop" replace />}
+          />
           <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
-          <Route path="/wishlist" element={<Navigate to="/account/wishlist" replace />} />
+          <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/compare" element={<Compare />} />
           <Route path="/pages/:slug" element={<CmsPage />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order-success" element={<OrderSuccess />} />
           <Route path="/order-failed" element={<OrderFailed />} />
+          <Route path="/gift-cards" element={<GiftCardPurchase />} />
+          <Route path="/gift-cards/success" element={<GiftCardSuccess />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -159,7 +175,7 @@ export default function App() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/account" element={<AccountOverview />} />
           <Route path="/account/orders" element={<CustomerOrders />} />
-          <Route path="/account/wishlist" element={<Wishlist />} />
+          <Route path="/account/wishlist" element={<AccountWishlist />} />
           <Route
             path="/account/orders/:orderNumber"
             element={<CustomerOrderDetail />}

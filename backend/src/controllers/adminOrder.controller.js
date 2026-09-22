@@ -2,6 +2,7 @@ import { pool } from "../config/database.js";
 import * as s from "../services/adminOrder.service.js";
 import { orderStatusEmail, sendEmail } from "../services/mail.service.js";
 import PDFDocument from "pdfkit";
+import { read as readSettings } from "../services/storeSettings.service.js";
 const w = (f) => (req, res, next) => f(req, res).catch(next);
 export const list = w(async (req, res) =>
   res.json({ data: await s.list(pool, req.query) }),
@@ -24,7 +25,7 @@ export const status = w(async (req, res) => {
   if (result.customer?.email)
     sendEmail(
       orderStatusEmail({
-        order: result.order,
+        order: { ...result.order, shipping: result.shipping },
         recipient: result.customer.email,
         status: req.body.status,
         note: req.body.note,
@@ -57,7 +58,7 @@ export const returnState = w(async (req, res) => {
   if (result.customer?.email) {
     sendEmail(
       orderStatusEmail({
-        order: result.order,
+        order: { ...result.order, shipping: result.shipping },
         recipient: result.customer.email,
         status: `return_${result.order.returnStatus}`,
         note: req.body.reason,
@@ -68,6 +69,14 @@ export const returnState = w(async (req, res) => {
 });
 export const invoice = w(async (req, res) => {
   const detail = await s.detail(pool, req.params.orderNumber);
+  const settings = await readSettings(pool);
+  const tax = detail.pricing.tax || {};
+  const businessName =
+    tax.sellerLegalName && tax.sellerLegalName !== "Your store"
+      ? tax.sellerLegalName
+      : settings.store?.store_name || tax.sellerLegalName || "Your store";
+  const businessAddress =
+    tax.sellerAddress || settings.tax?.seller_address || settings.contact?.address_line || "Registered address pending";
   const document = new PDFDocument({ size: "A4", margin: 50 });
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
@@ -75,12 +84,12 @@ export const invoice = w(async (req, res) => {
     `attachment; filename="${detail.order.orderNumber}-invoice.pdf"`,
   );
   document.pipe(res);
-  document.fontSize(22).text(detail.order.sellerLegalName || "Seller");
+  document.fontSize(22).text(businessName);
   document.fontSize(11).text("Tax invoice");
   document
     .fontSize(10)
-    .text("Seller: " + (detail.order.sellerLegalName || "Seller"))
-    .text("Address: " + (detail.order.sellerAddress || "Not configured"))
+    .text("Seller: " + businessName)
+    .text("Address: " + businessAddress)
     .text(
       detail.order.sellerGstin
         ? "GSTIN: " + detail.order.sellerGstin
@@ -102,9 +111,18 @@ export const invoice = w(async (req, res) => {
   document
     .fontSize(12)
     .text(`Subtotal: INR ${detail.pricing.subtotal.toFixed(2)}`);
-  document.text(
-    `Discounts: INR ${(detail.pricing.couponDiscount || 0).toFixed(2)}`,
+  const productDiscount = Math.max(
+    0,
+    Number(detail.pricing.mrpTotal || detail.pricing.subtotal) -
+      Number(detail.pricing.subtotal),
   );
+  if (productDiscount)
+    document.text(`Product discount: -INR ${productDiscount.toFixed(2)}`);
+  document.text(
+    `Coupon discount: -INR ${(detail.pricing.couponDiscount || 0).toFixed(2)}`,
+  );
+  if (detail.pricing.giftCardApplied)
+    document.text(`Gift card: -INR ${detail.pricing.giftCardApplied.toFixed(2)}`);
   document.text(`Shipping: INR ${detail.pricing.shipping.toFixed(2)}`);
   document.text(
     `${detail.pricing.tax?.label || "Tax"}: INR ${Number(detail.pricing.tax?.amount || 0).toFixed(2)}`,
@@ -114,6 +132,6 @@ export const invoice = w(async (req, res) => {
   );
   document
     .fontSize(15)
-    .text(`Total: INR ${detail.pricing.grandTotal.toFixed(2)}`);
+    .text(`Total: INR ${detail.pricing.total.toFixed(2)}`);
   document.end();
 });

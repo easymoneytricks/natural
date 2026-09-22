@@ -67,9 +67,11 @@ export function SeoMeta({
     const effectiveKeywords = keywords || seo.keywords || "";
     const effectiveImage = image || seo.og_image_url || "";
     document.title = title
-      ? title.endsWith(`| ${titleSuffix}`)
-        ? title
-        : `${title} | ${titleSuffix}`
+      ? titleSuffix
+        ? title.endsWith(`| ${titleSuffix}`)
+          ? title
+          : `${title} | ${titleSuffix}`
+        : title
       : titleSuffix;
     let link = document.head.querySelector("link[rel='canonical']");
     if (!link) {
